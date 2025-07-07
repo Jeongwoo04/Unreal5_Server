@@ -118,7 +118,7 @@ void AS1Player::SetMoveState(Protocol::MoveState State)
 	PlayerInfo.set_state(State);
 }
 
-void AS1Player::SetPlayerInfo(const Protocol::PlayerInfo& Info)
+void AS1Player::SetPlayerInfo(const Protocol::PosInfo& Info)
 {
 	if (PlayerInfo.object_id() != 0)
 	{
@@ -131,11 +131,11 @@ void AS1Player::SetPlayerInfo(const Protocol::PlayerInfo& Info)
 	SetActorLocation(Location);
 }
 
-void AS1Player::SetDestInfo(const Protocol::PlayerInfo& Info)
+void AS1Player::SetDestInfo(const Protocol::PosInfo& Info)
 {
 	if (PlayerInfo.object_id() != 0)
 	{
-		assert(PlayerInfo.object_id() == Info.object_id());
+		assert(PlayerPosInfo.object_id() == Info.object_id());
 	}
 
 	DestInfo.CopyFrom(Info);

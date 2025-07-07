@@ -3,8 +3,10 @@
 
 Object::Object()
 {
+
 }
 
 Object::~Object()
 {
+
 }

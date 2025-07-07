@@ -72,7 +72,7 @@ void US1GameInstance::SendPacket(SendBufferRef SendBuffer)
 	GameServerSession->SendPacket(SendBuffer);
 }
 
-void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo, bool IsMine)
+void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool IsMine)
 {
 	if (Socket == nullptr || GameServerSession == nullptr)
 		return;
@@ -82,11 +82,11 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo, bool I
 		return;
 
 	// 중복 처리 체크
-	const uint64 ObjectId = PlayerInfo.object_id();
+	const uint64 ObjectId = ObjectInfo.object_id();
 	if (Players.Find(ObjectId) != nullptr)
 		return;
 
-	FVector SpawnLocation(PlayerInfo.x(), PlayerInfo.y(), PlayerInfo.z());
+	FVector SpawnLocation(ObjectInfo.pos_info().x(), ObjectInfo.pos_info().y(), ObjectInfo.pos_info().z());
 
 	if (IsMine)
 	{
@@ -95,9 +95,9 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo, bool I
 		if (Player == nullptr)
 			return;
 
-		Player->SetPlayerInfo(PlayerInfo);
+		Player->SetPlayerInfo(ObjectInfo.pos_info());
 		MyPlayer = Player;
-		Players.Add(PlayerInfo.object_id(), Player);
+		Players.Add(ObjectInfo.object_id(), Player);
 	}
 	else
 	{
@@ -105,8 +105,8 @@ void US1GameInstance::HandleSpawn(const Protocol::PlayerInfo& PlayerInfo, bool I
 		if (Player == nullptr)
 			return;
 
-		Player->SetPlayerInfo(PlayerInfo);
-		Players.Add(PlayerInfo.object_id(), Player);
+		Player->SetPlayerInfo(ObjectInfo.pos_info());
+		Players.Add(ObjectInfo.object_id(), Player);
 	}
 }
 

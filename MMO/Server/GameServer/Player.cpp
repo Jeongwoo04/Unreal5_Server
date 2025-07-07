@@ -3,7 +3,7 @@
 
 Player::Player()
 {
-	
+	_isPlayer = true;
 }
 
 Player::~Player()

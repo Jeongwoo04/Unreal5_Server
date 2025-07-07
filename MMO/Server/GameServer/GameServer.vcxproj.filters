@@ -16,6 +16,9 @@
     <Filter Include="Game">
       <UniqueIdentifier>{b9095e81-eb17-4da6-a7bd-f02ed53932c9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Object">
+      <UniqueIdentifier>{5227e1d7-80e6-45d9-bfcc-64d7b1b41581}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameServer.cpp">
@@ -42,12 +45,6 @@
     <ClCompile Include="ServerPacketHandler.cpp">
       <Filter>Main</Filter>
     </ClCompile>
-    <ClCompile Include="Object.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Player.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
     <ClCompile Include="Room.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -56,6 +53,18 @@
     </ClCompile>
     <ClCompile Include="ObjectUtils.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>Game\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Creature.cpp">
+      <Filter>Game\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Monster.cpp">
+      <Filter>Game\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
+      <Filter>Game\Object</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -80,12 +89,6 @@
     <ClInclude Include="ServerPacketHandler.h">
       <Filter>Main</Filter>
     </ClInclude>
-    <ClInclude Include="Object.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Player.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="Room.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -94,6 +97,18 @@
     </ClInclude>
     <ClInclude Include="ObjectUtils.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Creature.h">
+      <Filter>Game\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Monster.h">
+      <Filter>Game\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>Game\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Game\Object</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

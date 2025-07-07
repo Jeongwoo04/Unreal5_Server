@@ -8,6 +8,7 @@
 //#include "ClientPacketHandler.h"
 #include <tchar.h>
 #include "Job.h"
+#include "Room.h"
 
 enum
 {
@@ -53,6 +54,8 @@ int main()
 
 	// Main Thread
 	//DoWorkerJob(service);
+
+	GRoom->DoAsync(&Room::UpdateTick);
 
 	while (true)
 	{

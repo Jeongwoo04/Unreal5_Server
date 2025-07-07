@@ -14,7 +14,7 @@ bool Handle_S_LOGIN(PacketSessionRef& session, Protocol::S_LOGIN& pkt)
 {
 	for (auto& Player : pkt.players())
 	{
-		const Protocol::PlayerInfo& info = Player;
+		const Protocol::ObjectInfo& info = Player;
 	}
 
 	Protocol::C_ENTER_GAME EnterGamePkt;
