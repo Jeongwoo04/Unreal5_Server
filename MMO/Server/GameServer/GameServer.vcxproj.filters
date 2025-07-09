@@ -19,6 +19,9 @@
     <Filter Include="Game\Object">
       <UniqueIdentifier>{5227e1d7-80e6-45d9-bfcc-64d7b1b41581}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Room">
+      <UniqueIdentifier>{dfe7a532-2fc6-4309-b4d1-944a99434821}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameServer.cpp">
@@ -45,13 +48,7 @@
     <ClCompile Include="ServerPacketHandler.cpp">
       <Filter>Main</Filter>
     </ClCompile>
-    <ClCompile Include="Room.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
     <ClCompile Include="Utils.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="ObjectUtils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="Player.cpp">
@@ -64,6 +61,18 @@
       <Filter>Game\Object</Filter>
     </ClCompile>
     <ClCompile Include="Object.cpp">
+      <Filter>Game\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>Game\Room</Filter>
+    </ClCompile>
+    <ClCompile Include="RoomManager.cpp">
+      <Filter>Game\Room</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectManager.cpp">
+      <Filter>Game\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Projectile.cpp">
       <Filter>Game\Object</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,13 +98,7 @@
     <ClInclude Include="ServerPacketHandler.h">
       <Filter>Main</Filter>
     </ClInclude>
-    <ClInclude Include="Room.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="Utils.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjectUtils.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="Creature.h">
@@ -108,6 +111,18 @@
       <Filter>Game\Object</Filter>
     </ClInclude>
     <ClInclude Include="Player.h">
+      <Filter>Game\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Room.h">
+      <Filter>Game\Room</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomManager.h">
+      <Filter>Game\Room</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectManager.h">
+      <Filter>Game\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Projectile.h">
       <Filter>Game\Object</Filter>
     </ClInclude>
   </ItemGroup>

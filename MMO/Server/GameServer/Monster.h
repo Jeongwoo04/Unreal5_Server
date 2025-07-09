@@ -6,5 +6,7 @@ class Monster : public Creature
 public:
 	Monster();
 	virtual ~Monster();
+
+	virtual void Update() override;
 };
 

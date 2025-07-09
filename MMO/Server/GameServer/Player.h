@@ -3,7 +3,8 @@
 #include "Protocol.pb.h"
 
 class GameSession;
-class Room;
+
+using namespace Protocol;
 
 class Player : public Creature
 {
