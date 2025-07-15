@@ -1,5 +1,6 @@
 #pragma once
 #include "Room.h"
+#include "Protocol.pb.h"
 
 using namespace Protocol;
 
@@ -10,10 +11,12 @@ public:
 	virtual ~Object();
 
 	virtual void Update();
+	virtual void OnDamaged(ObjectRef attacker, int32 damage);
+	virtual void OnDead(ObjectRef attacker);
 
-	virtual ObjectType GetObjectType() const { return _objectInfo.object_type(); }
-	virtual CreatureType GetCreatureType() const { return _objectInfo.creature_type(); }
-	virtual PlayerType GetPlayerType() const { return _objectInfo.player_type(); }
+	virtual Protocol::ObjectType GetObjectType() const { return _objectInfo.object_type(); }
+	virtual Protocol::CreatureType GetCreatureType() const { return _objectInfo.creature_type(); }
+	virtual Protocol::PlayerType GetPlayerType() const { return _objectInfo.player_type(); }
 
 	void SetId(uint64 id);
 	uint64 GetId() { return _id; }

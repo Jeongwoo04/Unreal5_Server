@@ -3,7 +3,7 @@
 
 Projectile::Projectile()
 {
-	_objectInfo.set_object_type(OBJECT_TYPE_PROJECTILE);
+	_objectInfo.set_object_type(Protocol::OBJECT_TYPE_PROJECTILE);
 }
 
 Projectile::~Projectile()

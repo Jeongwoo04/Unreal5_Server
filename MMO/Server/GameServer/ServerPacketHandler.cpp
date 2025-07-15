@@ -7,6 +7,7 @@
 #include "GameSession.h"
 #include "Player.h"
 #include "ObjectManager.h"
+#include "RoomManager.h"
 
 PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
@@ -44,8 +45,25 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 	// 플레이어 생성
 	PlayerRef player = ObjectManager::Instance().Add<Player>();
 
+	auto gameSession = static_pointer_cast<GameSession>(session);
+	if (gameSession == nullptr)
+		return false;
+
+	gameSession->_player = player;
+	player->SetSession(gameSession);
+
+	RoomRef room = nullptr;
+
+	if (!RoomManager::Instance().FindUsableRoom())
+	{
+		room = RoomManager::Instance().Add();
+		room->Init();
+	}
+	else
+		room = RoomManager::Instance().Find(1);
+
 	// 입장
-	GRoom->DoAsync(&Room::HandleEnterPlayer, player);
+	room->DoAsync(&Room::HandleEnterPlayer, player);
 
 	return true;
 }
@@ -62,7 +80,7 @@ bool Handle_C_LEAVE_GAME(PacketSessionRef& session, Protocol::C_LEAVE_GAME& pkt)
 	if (room == nullptr)
 		return false;
 
-	GRoom->DoAsync(&Room::HandleLeavePlayer, player);
+	room->DoAsync(&Room::HandleLeavePlayer, player);
 
 	return true;
 }
@@ -79,7 +97,7 @@ bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt)
 	if (room == nullptr)
 		return false;
 
-	GRoom->DoAsync(&Room::HandleMove, pkt);
+	room->DoAsync(&Room::HandleMove, pkt);
 
 	return true;
 }

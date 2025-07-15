@@ -112,14 +112,14 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 
 void US1GameInstance::HandleSpawn(const Protocol::S_ENTER_GAME& EnterGamePkt)
 {
-	HandleSpawn(EnterGamePkt.player(), true);
+	HandleSpawn(EnterGamePkt.object(), true);
 }
 
 void US1GameInstance::HandleSpawn(const Protocol::S_SPAWN& SpawnPkt)
 {
-	for (auto& Player : SpawnPkt.players())
+	for (auto& Object : SpawnPkt.objects())
 	{
-		HandleSpawn(Player, false);
+		HandleSpawn(Object, false);
 	}
 }
 

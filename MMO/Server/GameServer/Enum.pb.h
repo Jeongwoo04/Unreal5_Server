@@ -128,18 +128,45 @@ inline bool PlayerType_Parse(
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<PlayerType>(
     PlayerType_descriptor(), name, value);
 }
+enum StateMachine : int {
+  STATE_MACHINE_NONE = 0,
+  STATE_MACHINE_IDLE = 1,
+  STATE_MACHINE_PATROL = 2,
+  STATE_MACHINE_MOVING = 3,
+  STATE_MACHINE_SKILL = 4,
+  STATE_MACHINE_DEAD = 5,
+  StateMachine_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  StateMachine_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool StateMachine_IsValid(int value);
+constexpr StateMachine StateMachine_MIN = STATE_MACHINE_NONE;
+constexpr StateMachine StateMachine_MAX = STATE_MACHINE_DEAD;
+constexpr int StateMachine_ARRAYSIZE = StateMachine_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* StateMachine_descriptor();
+template<typename T>
+inline const std::string& StateMachine_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, StateMachine>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function StateMachine_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    StateMachine_descriptor(), enum_t_value);
+}
+inline bool StateMachine_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, StateMachine* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<StateMachine>(
+    StateMachine_descriptor(), name, value);
+}
 enum MoveState : int {
   MOVE_STATE_NONE = 0,
-  MOVE_STATE_IDLE = 1,
-  MOVE_STATE_RUN = 2,
-  MOVE_STATE_JUMP = 3,
-  MOVE_STATE_SKILL = 4,
+  MOVE_STATE_RUN = 1,
+  MOVE_STATE_JUMP = 2,
   MoveState_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   MoveState_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
 bool MoveState_IsValid(int value);
 constexpr MoveState MoveState_MIN = MOVE_STATE_NONE;
-constexpr MoveState MoveState_MAX = MOVE_STATE_SKILL;
+constexpr MoveState MoveState_MAX = MOVE_STATE_JUMP;
 constexpr int MoveState_ARRAYSIZE = MoveState_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* MoveState_descriptor();
@@ -192,6 +219,11 @@ template <> struct is_proto_enum< ::Protocol::PlayerType> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::Protocol::PlayerType>() {
   return ::Protocol::PlayerType_descriptor();
+}
+template <> struct is_proto_enum< ::Protocol::StateMachine> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Protocol::StateMachine>() {
+  return ::Protocol::StateMachine_descriptor();
 }
 template <> struct is_proto_enum< ::Protocol::MoveState> : ::std::true_type {};
 template <>

@@ -58,7 +58,7 @@ void AS1Player::BeginPlay()
 		DestInfo.set_y(Location.Y);
 		DestInfo.set_z(Location.Z);
 		DestInfo.set_yaw(GetControlRotation().Yaw);
-		SetMoveState(Protocol::MOVE_STATE_IDLE);
+		SetState(Protocol::STATE_MACHINE_IDLE);
 	}
 }
 
@@ -91,9 +91,9 @@ void AS1Player::Tick(float DeltaSeconds)
 		//FVector NextLocation = Location + MoveDir * MoveDist;
 
 		//SetActorLocation(NextLocation);
-		const Protocol::MoveState State = PlayerInfo.state();
+		const Protocol::StateMachine State = PlayerInfo.state();
 
-		if (State == Protocol::MOVE_STATE_RUN)
+		if (State == Protocol::STATE_MACHINE_MOVING)
 		{
 			SetActorRotation(FRotator(0, DestInfo.yaw(), 0));
 			AddMovementInput(GetActorForwardVector());
@@ -110,7 +110,7 @@ bool AS1Player::IsMyPlayer()
 	return Cast<AS1MyPlayer>(this) != nullptr;
 }
 
-void AS1Player::SetMoveState(Protocol::MoveState State)
+void AS1Player::SetState(Protocol::StateMachine State)
 {
 	if (PlayerInfo.state() == State)
 		return;
@@ -139,5 +139,5 @@ void AS1Player::SetDestInfo(const Protocol::PosInfo& Info)
 	}
 
 	DestInfo.CopyFrom(Info);
-	SetMoveState(Info.state());
+	SetState(Info.state());
 }

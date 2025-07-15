@@ -4,8 +4,6 @@
 #include "GameSession.h"
 #include "ObjectManager.h"
 
-RoomRef GRoom = make_shared<Room>();
-
 Room::Room()
 {
 
@@ -18,7 +16,7 @@ Room::~Room()
 
 void Room::Init()
 {
-	
+	//SpawnMonster();
 }
 
 void Room::UpdateTick()
@@ -31,6 +29,8 @@ void Room::UpdateTick()
 	{
 		p.second->Update();
 	}
+
+	//SpawnMonster();
 
 	DoTimer(100, &Room::UpdateTick);
 }
@@ -128,19 +128,9 @@ RoomRef Room::GetRoomRef()
 	return static_pointer_cast<Room>(shared_from_this());
 }
 
-void Room::RegisterPlayer(PlayerRef player)
+void Room::BroadcastMove(SendBufferRef sendBuffer, uint64 exceptId)
 {
-	_players[player->_objectInfo.object_id()] = player;
-}
-
-void Room::RegisterMonster(MonsterRef monster)
-{
-	_monsters[monster->_objectInfo.object_id()] = monster;
-}
-
-void Room::RegisterProjectile(ProjectileRef projectile)
-{
-	_projectiles[projectile->_objectInfo.object_id()] = projectile;
+	Broadcast(sendBuffer, exceptId);
 }
 
 bool Room::AddObject(ObjectRef object)
@@ -177,7 +167,12 @@ bool Room::AddObject(ObjectRef object)
 
 bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 {
+	if (object == nullptr)
+		return false;
+
 	object->SetRoom(nullptr);
+
+	int32 eraseCount = 0;
 
 	switch (object->GetObjectType())
 	{
@@ -185,23 +180,19 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 		switch (object->GetCreatureType())
 		{
 		case CREATURE_TYPE_PLAYER:
-			_players.erase(objectId);
+			eraseCount = static_cast<int32>(_players.erase(objectId));
 			break;
 		case CREATURE_TYPE_MONSTER:
-			_monsters.erase(objectId);
-			break;
-		default:
+			eraseCount = static_cast<int32>(_monsters.erase(objectId));
 			break;
 		}
 		break;
 	case OBJECT_TYPE_PROJECTILE:
-		_projectiles.erase(objectId);
-		break;
-	default:
+		eraseCount = static_cast<int32>(_projectiles.erase(objectId));
 		break;
 	}
 
-	return true;
+	return eraseCount > 0 ? true : false;
 }
 
 void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
@@ -212,8 +203,8 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 		if (player->_objectInfo.object_id() == exceptId)
 			continue;
 		
-		if (GameSessionRef gameSession = player->_session.lock())
-			gameSession->Send(sendBuffer);
+		if (auto session = player->GetSession())
+			session->Send(sendBuffer);
 	}
 }
 
@@ -221,47 +212,55 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 {
 	if (object->GetCreatureType() != CREATURE_TYPE_PLAYER)
 		return;
-
 	PlayerRef player = static_pointer_cast<Player>(object);
 
-	// 나에게 입장 알림
+	// object가 player일 경우 본인에게 Enter 패킷 + 이미 존재하는 주변 object spawn
 	{
-		Protocol::S_ENTER_GAME enterGamePkt;
-		enterGamePkt.set_success(success);
-		enterGamePkt.mutable_player()->CopyFrom(object->_objectInfo);
+		{
+			Protocol::S_ENTER_GAME enterGamePkt;
+			enterGamePkt.set_success(success);
+			enterGamePkt.mutable_object()->CopyFrom(object->_objectInfo);
 
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(enterGamePkt);
-		if (auto session = player->_session.lock())
-			session->Send(sendBuffer);
+			SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(enterGamePkt);
+			if (auto session = player->GetSession())
+				session->Send(sendBuffer);
+		}
+		{
+			Protocol::S_SPAWN spawnPkt;
+
+			for (auto& playerIt : _players)
+			{
+				if (playerIt.first == object->_objectInfo.object_id())
+					continue;
+
+				auto info = spawnPkt.add_objects();
+				info->CopyFrom(playerIt.second->_objectInfo);
+			}
+			for (auto& monsterIt : _monsters)
+			{
+				auto info = spawnPkt.add_objects();
+				info->CopyFrom(monsterIt.second->_objectInfo);
+			}
+			for (auto& projectileIt : _projectiles)
+			{
+				auto info = spawnPkt.add_objects();
+				info->CopyFrom(projectileIt.second->_objectInfo);
+			}
+
+			SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
+			if (auto session = player->GetSession())
+				session->Send(sendBuffer);
+		}
 	}
-
-	// 다른 플레이어에게 나의 입장 알림
+	// 다른 플레이어에게 object 입장 알림 (player, monster, projectile 입장 시)
 	{
 		Protocol::S_SPAWN spawnPkt;
 
-		auto info = spawnPkt.add_players();
+		auto info = spawnPkt.add_objects();
 		info->CopyFrom(object->_objectInfo);
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
 		Broadcast(sendBuffer, object->_objectInfo.object_id());
-	}
-
-	// 나에게 이미 존재하는 플레이어들을 알림
-	{
-		Protocol::S_SPAWN spawnPkt;
-
-		for (auto& it : _players)
-		{
-			if (it.first == object->_objectInfo.object_id())
-				continue;
-
-			auto info = spawnPkt.add_players();
-			info->CopyFrom(it.second->_objectInfo);
-		}
-
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
-		if (auto session = player->_session.lock())
-			session->Send(sendBuffer);
 	}
 }
 
@@ -277,20 +276,16 @@ void Room::NotifyDespawn(ObjectRef object, uint64 objectId)
 		Protocol::S_LEAVE_GAME leaveGamePkt;
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(leaveGamePkt);
-		if (auto session = player->_session.lock())
+		if (auto session = player->GetSession())
 			session->Send(sendBuffer);
 	}
 
-	// 타인에게 퇴장 사실을 알리기
+	// 다른 플레이어에게 object의 퇴장 알리기
 	{
 		Protocol::S_DESPAWN despawnPkt;
 		despawnPkt.add_object_ids(objectId);
-
+		
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(despawnPkt);
 		Broadcast(sendBuffer, objectId);
-
-		if (auto player = dynamic_pointer_cast<Player>(object))
-			if (auto session = player->_session.lock())
-				session->Send(sendBuffer);
 	}
 }

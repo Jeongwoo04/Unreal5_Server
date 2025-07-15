@@ -8,7 +8,7 @@ RoomRef RoomManager::Add()
 
 	WRITE_LOCK;
 	{
-		//room->SetRoomId(_roomId);
+		room->SetRoomId(_roomId);
 		_rooms[_roomId] = room;
 		_roomId++;
 	}
@@ -30,6 +30,15 @@ RoomRef RoomManager::Find(int32 roomId)
 		return it->second;
 
 	return nullptr;
+}
+
+bool RoomManager::FindUsableRoom()
+{
+	if (_rooms.empty())
+		return false;
+
+	// TODO : Room 입장 허용치에 관해 처리.
+	return true;
 }
 
 void RoomManager::Init()

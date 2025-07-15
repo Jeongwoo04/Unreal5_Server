@@ -24,8 +24,8 @@ protected:
 public:
 	bool IsMyPlayer();
 
-	Protocol::MoveState GetMoveState() { return PlayerInfo.state(); }
-	void SetMoveState(Protocol::MoveState State);
+	Protocol::StateMachine GetState() { return PlayerInfo.state(); }
+	void SetState(Protocol::StateMachine State);
 
 public:
 	void SetPlayerInfo(const Protocol::PosInfo& Info);

@@ -3,7 +3,7 @@
 
 Object::Object()
 {
-	_objectInfo.set_object_type(OBJECT_TYPE_NONE);
+	_objectInfo.set_object_type(Protocol::OBJECT_TYPE_NONE);
 }
 
 Object::~Object()
@@ -12,6 +12,16 @@ Object::~Object()
 }
 
 void Object::Update()
+{
+
+}
+
+void Object::OnDamaged(ObjectRef attacker, int32 damage)
+{
+
+}
+
+void Object::OnDead(ObjectRef attacker)
 {
 
 }

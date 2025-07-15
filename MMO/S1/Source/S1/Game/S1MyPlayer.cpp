@@ -11,6 +11,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "S1.h"
+#include "Engine/LocalPlayer.h"
 #include <Kismet/KismetMathLibrary.h>
 
 AS1MyPlayer::AS1MyPlayer()
@@ -84,9 +85,9 @@ void AS1MyPlayer::Tick(float DeltaTime)
 
 	// State
 	if (DesiredInput == FVector2D::Zero())
-		SetMoveState(Protocol::MOVE_STATE_IDLE);
+		SetState(Protocol::STATE_MACHINE_IDLE);
 	else
-		SetMoveState(Protocol::MOVE_STATE_RUN);
+		SetState(Protocol::STATE_MACHINE_MOVING);
 
 	MovePacketSendTimer -= DeltaTime;
 	if (MovePacketSendTimer <= 0 || ForceSendPacket)

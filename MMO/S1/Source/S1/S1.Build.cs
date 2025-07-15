@@ -10,14 +10,20 @@ public class S1 : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Sockets", "Networking", "EnhancedInput" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "ProtobufCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] {
+			"ProtobufCore",
+            "UnrealEd",
+            "Blutility",
+            "EditorSubsystem",
+            "EditorScriptingUtilities",
+		});
 
 		PrivateIncludePaths.AddRange(new string[]
 		{
 			"S1/",
 			"S1/Network/",
 			"S1/Game/",
-		});
+        });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

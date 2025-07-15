@@ -23,7 +23,7 @@ message C_ENTER_GAME
 message S_ENTER_GAME
 {
 	bool success = 1;
-	ObjectInfo player = 2;
+	ObjectInfo object = 2;
 }
 
 message C_LEAVE_GAME
@@ -38,7 +38,7 @@ message S_LEAVE_GAME
 
 message S_SPAWN
 {
-	repeated ObjectInfo players = 1;
+	repeated ObjectInfo objects = 1;
 }
 
 message S_DESPAWN

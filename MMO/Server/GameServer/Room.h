@@ -6,6 +6,9 @@ public:
 	Room();
 	virtual ~Room();
 
+	void SetRoomId(int32 roomId) { _roomId = roomId; }
+	int32 GetRoomId() { return _roomId; }
+
 	void Init();
 	void UpdateTick();
 
@@ -23,10 +26,7 @@ public:
 public:
 
 	RoomRef GetRoomRef();
-
-	void RegisterPlayer(PlayerRef player);
-	void RegisterMonster(MonsterRef monster);
-	void RegisterProjectile(ProjectileRef projectile);
+	void BroadcastMove(SendBufferRef sendBuffer, uint64 exceptId = 0);
 
 private:
 	bool AddObject(ObjectRef object);
@@ -41,6 +41,8 @@ private:
 	unordered_map<uint64, PlayerRef> _players;
 	unordered_map<uint64, MonsterRef> _monsters;
 	unordered_map<uint64, ProjectileRef> _projectiles;
+
+	int32 _roomId = 0;
 };
 
 extern RoomRef GRoom;

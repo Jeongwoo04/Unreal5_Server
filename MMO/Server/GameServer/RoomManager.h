@@ -14,6 +14,8 @@ public:
 	bool Remove(int32 roomId);
 	RoomRef Find(int32 roomId);
 
+	bool FindUsableRoom();
+
 	void Init();
 	void UpdateReserveAllRooms();
 

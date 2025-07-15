@@ -3,7 +3,7 @@
 
 Creature::Creature()
 {
-	_objectInfo.set_object_type(Protocol::ObjectType::OBJECT_TYPE_CREATURE);
+	_objectInfo.set_object_type(Protocol::OBJECT_TYPE_CREATURE);
 }
 
 Creature::~Creature()

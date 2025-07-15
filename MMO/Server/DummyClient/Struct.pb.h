@@ -188,6 +188,7 @@ class PosInfo final :
     kZFieldNumber = 4,
     kYawFieldNumber = 5,
     kStateFieldNumber = 6,
+    kMoveTypeFieldNumber = 7,
   };
   // uint64 object_id = 1;
   void clear_object_id();
@@ -234,13 +235,22 @@ class PosInfo final :
   void _internal_set_yaw(float value);
   public:
 
-  // .Protocol.MoveState state = 6;
+  // .Protocol.StateMachine state = 6;
   void clear_state();
-  ::Protocol::MoveState state() const;
-  void set_state(::Protocol::MoveState value);
+  ::Protocol::StateMachine state() const;
+  void set_state(::Protocol::StateMachine value);
   private:
-  ::Protocol::MoveState _internal_state() const;
-  void _internal_set_state(::Protocol::MoveState value);
+  ::Protocol::StateMachine _internal_state() const;
+  void _internal_set_state(::Protocol::StateMachine value);
+  public:
+
+  // .Protocol.MoveState move_type = 7;
+  void clear_move_type();
+  ::Protocol::MoveState move_type() const;
+  void set_move_type(::Protocol::MoveState value);
+  private:
+  ::Protocol::MoveState _internal_move_type() const;
+  void _internal_set_move_type(::Protocol::MoveState value);
   public:
 
   // @@protoc_insertion_point(class_scope:Protocol.PosInfo)
@@ -257,6 +267,7 @@ class PosInfo final :
     float z_;
     float yaw_;
     int state_;
+    int move_type_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -574,24 +585,44 @@ inline void PosInfo::set_yaw(float value) {
   // @@protoc_insertion_point(field_set:Protocol.PosInfo.yaw)
 }
 
-// .Protocol.MoveState state = 6;
+// .Protocol.StateMachine state = 6;
 inline void PosInfo::clear_state() {
   _impl_.state_ = 0;
 }
-inline ::Protocol::MoveState PosInfo::_internal_state() const {
-  return static_cast< ::Protocol::MoveState >(_impl_.state_);
+inline ::Protocol::StateMachine PosInfo::_internal_state() const {
+  return static_cast< ::Protocol::StateMachine >(_impl_.state_);
 }
-inline ::Protocol::MoveState PosInfo::state() const {
+inline ::Protocol::StateMachine PosInfo::state() const {
   // @@protoc_insertion_point(field_get:Protocol.PosInfo.state)
   return _internal_state();
 }
-inline void PosInfo::_internal_set_state(::Protocol::MoveState value) {
+inline void PosInfo::_internal_set_state(::Protocol::StateMachine value) {
   
   _impl_.state_ = value;
 }
-inline void PosInfo::set_state(::Protocol::MoveState value) {
+inline void PosInfo::set_state(::Protocol::StateMachine value) {
   _internal_set_state(value);
   // @@protoc_insertion_point(field_set:Protocol.PosInfo.state)
+}
+
+// .Protocol.MoveState move_type = 7;
+inline void PosInfo::clear_move_type() {
+  _impl_.move_type_ = 0;
+}
+inline ::Protocol::MoveState PosInfo::_internal_move_type() const {
+  return static_cast< ::Protocol::MoveState >(_impl_.move_type_);
+}
+inline ::Protocol::MoveState PosInfo::move_type() const {
+  // @@protoc_insertion_point(field_get:Protocol.PosInfo.move_type)
+  return _internal_move_type();
+}
+inline void PosInfo::_internal_set_move_type(::Protocol::MoveState value) {
+  
+  _impl_.move_type_ = value;
+}
+inline void PosInfo::set_move_type(::Protocol::MoveState value) {
+  _internal_set_move_type(value);
+  // @@protoc_insertion_point(field_set:Protocol.PosInfo.move_type)
 }
 
 // -------------------------------------------------------------------
