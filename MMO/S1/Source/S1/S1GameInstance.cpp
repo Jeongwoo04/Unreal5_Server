@@ -10,6 +10,7 @@
 #include "Protocol.pb.h"
 #include "ClientPacketHandler.h"
 #include "S1MyPlayer.h"
+#include "S1Monster.h"
 
 void US1GameInstance::ConnectToGameServer()
 {
@@ -83,10 +84,21 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 
 	// 중복 처리 체크
 	const uint64 ObjectId = ObjectInfo.object_id();
-	if (Players.Find(ObjectId) != nullptr)
+	if (Players.Find(ObjectId) != nullptr || Monsters.Find(ObjectId) != nullptr)
 		return;
 
 	FVector SpawnLocation(ObjectInfo.pos_info().x(), ObjectInfo.pos_info().y(), ObjectInfo.pos_info().z());
+
+	if (ObjectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
+	{
+		AS1Monster* Monster = World->SpawnActor<AS1Monster>(MonsterClass, SpawnLocation, FRotator::ZeroRotator);
+		if (Monster == nullptr)
+			return;
+
+		Monster->SetMonsterInfo(ObjectInfo.pos_info());
+		Monsters.Add(ObjectId, Monster);
+		return;
+	}
 
 	if (IsMine)
 	{
@@ -95,6 +107,8 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 		if (Player == nullptr)
 			return;
 
+		PC->Possess(Player);
+		UE_LOG(LogTemp, Warning, TEXT("Possessed Pawn: %s"), *GetNameSafe(PC->GetPawn()));
 		Player->SetPlayerInfo(ObjectInfo.pos_info());
 		MyPlayer = Player;
 		Players.Add(ObjectInfo.object_id(), Player);

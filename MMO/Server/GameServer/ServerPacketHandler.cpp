@@ -56,8 +56,7 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 
 	if (!RoomManager::Instance().FindUsableRoom())
 	{
-		room = RoomManager::Instance().Add();
-		room->Init();
+		room = RoomManager::Instance().Add(1);
 	}
 	else
 		room = RoomManager::Instance().Find(1);

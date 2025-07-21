@@ -33,6 +33,6 @@ public:
 	Protocol::PosInfo GetPlayerInfo() { return PlayerInfo; }
 
 protected:
-	class Protocol::PosInfo PlayerInfo; // 현재 위치
-	class Protocol::PosInfo DestInfo; // 목적지
+	class Protocol::PosInfo PlayerInfo;
+	class Protocol::PosInfo DestInfo;
 };

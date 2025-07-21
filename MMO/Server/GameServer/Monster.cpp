@@ -46,7 +46,10 @@ void Monster::UpdateIdle()
 	_nextSearchTick = tick + 3000;
 
 	// TODO : target find 로직 + 못찾으면 Patrol AI
-	PlayerRef target = nullptr;
+	PlayerRef target = GetRoom()->FindPlayer([&](const ObjectRef& p)
+		{
+			return true;
+		});
 
 	if (target == nullptr)
 		_posInfo.set_state(Protocol::STATE_MACHINE_PATROL);
@@ -90,9 +93,9 @@ void Monster::UpdateMoving()
 {
 	switch (_posInfo.move_type())
 	{
-	case Protocol::MOVE_STATE_RUN:
+	case Protocol::MOVE_STATE_WALK:
 		break;
-	case Protocol::MOVE_STATE_JUMP:
+	case Protocol::MOVE_STATE_RUN:
 		break;
 	}
 }

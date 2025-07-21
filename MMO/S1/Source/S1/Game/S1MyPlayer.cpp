@@ -16,7 +16,6 @@
 
 AS1MyPlayer::AS1MyPlayer()
 {
-	
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -54,10 +53,6 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 {
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
-
-		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::Move);
@@ -132,7 +127,7 @@ void AS1MyPlayer::Move(const FInputActionValue& Value)
 		// Cache
 		{
 			DesiredInput = MovementVector;
-			
+
 			DesiredMoveDir = FVector::ZeroVector;
 			DesiredMoveDir += ForwardDirection * MovementVector.Y;
 			DesiredMoveDir += RightDirection * MovementVector.X;
@@ -142,7 +137,7 @@ void AS1MyPlayer::Move(const FInputActionValue& Value)
 			FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(Location, Location + DesiredMoveDir);
 			DesiredYaw = Rotator.Yaw;
 		}
-	}	
+	}
 }
 
 void AS1MyPlayer::Look(const FInputActionValue& Value)

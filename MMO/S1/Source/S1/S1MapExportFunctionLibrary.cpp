@@ -133,10 +133,13 @@ void US1MapExportFunctionLibrary::ExportCollisionMap(int32 MapId, float CellSize
 
     // 6단계: CollisionMap 파일 저장
     FString SaveDir = FPaths::ProjectDir() + TEXT("Saved/CollisionMap");
+    FString ServerSaveDir = FPaths::ProjectDir() + TEXT("../Server/Common/CollisionMap");
     IFileManager::Get().MakeDirectory(*SaveDir, true);
+    IFileManager::Get().MakeDirectory(*ServerSaveDir, true);
 
     FString FileName = FString::Printf(TEXT("/Map_%03d.txt"), MapId);
     FString SavePath = SaveDir + FileName;
+    FString ServerSavePath = ServerSaveDir + FileName;
 
     FString Output;
     Output += FString::Printf(TEXT("%d %d %d %d\n"), MinX, MaxX, MinY, MaxY);
@@ -150,12 +153,12 @@ void US1MapExportFunctionLibrary::ExportCollisionMap(int32 MapId, float CellSize
         Output += TEXT("\n");
     }
 
-    if (FFileHelper::SaveStringToFile(Output, *SavePath))
+    if (FFileHelper::SaveStringToFile(Output, *SavePath) && FFileHelper::SaveStringToFile(Output, *ServerSavePath))
     {
-        UE_LOG(LogTemp, Log, TEXT("Collision map saved to: %s"), *SavePath);
+        UE_LOG(LogTemp, Log, TEXT("Collision map saved to: %s, %s"), *SavePath, *ServerSavePath);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to save collision map to: %s"), *SavePath);
+        UE_LOG(LogTemp, Error, TEXT("Failed to save collision map to: %s or %s"), *SavePath, *ServerSavePath);
     }
 }

@@ -38,6 +38,6 @@ enum StateMachine
 enum MoveState
 {
 	MOVE_STATE_NONE = 0;
-	MOVE_STATE_RUN = 1;
-	MOVE_STATE_JUMP = 2;
+	MOVE_STATE_WALK = 1;
+	MOVE_STATE_RUN = 2;
 }

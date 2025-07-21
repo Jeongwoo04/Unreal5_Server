@@ -2,7 +2,7 @@
 #include "RoomManager.h"
 #include "ObjectManager.h"
 
-RoomRef RoomManager::Add()
+RoomRef RoomManager::Add(int32 mapId)
 {
 	RoomRef room = make_shared<Room>();
 
@@ -12,6 +12,8 @@ RoomRef RoomManager::Add()
 		_rooms[_roomId] = room;
 		_roomId++;
 	}
+
+	room->DoAsync(&Room::Init, mapId);
 
 	return room;
 }

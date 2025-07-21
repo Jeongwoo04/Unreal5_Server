@@ -10,7 +10,7 @@ public:
 		return instance;
 	}
 
-	RoomRef Add();
+	RoomRef Add(int32 mapId);
 	bool Remove(int32 roomId);
 	RoomRef Find(int32 roomId);
 

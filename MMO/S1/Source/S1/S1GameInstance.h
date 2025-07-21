@@ -8,6 +8,7 @@
 #include "S1GameInstance.generated.h"
 
 class AS1Player;
+class AS1Monster;
 
 /**
  * 
@@ -50,8 +51,13 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AS1Player> OtherPlayerClass;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AS1Monster> MonsterClass;
+
 	AS1Player* MyPlayer;
+
 	TMap<uint64, AS1Player*> Players;
+	TMap<uint64, AS1Monster*> Monsters;
 
 	uint64 MyObjectId = 0;
 };

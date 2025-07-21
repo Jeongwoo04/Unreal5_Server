@@ -7,10 +7,12 @@ ObjectRef GameMap::Find()
 	return nullptr;
 }
 
-bool GameMap::CanGo()
+bool GameMap::CanGo(int32 x, int32 y)
 {
+	if (x < 0 || x >= _sizeX || y < 0 || y >= _sizeY)
+		return false;
 
-	return true;
+	return !_collision[y][x];
 }
 
 bool GameMap::ApplyLeave()
@@ -27,17 +29,21 @@ bool GameMap::ApplyMove()
 
 void GameMap::LoadGameMap(int32 mapId, string pathPrefix)
 {
-	stringstream ss;
-	ss << pathPrefix << "/Map_" << setfill('0') << setw(3) << mapId << ".txt";
+	std::stringstream ss;
+	ss << pathPrefix << "/Map_" << std::setfill('0') << std::setw(3) << mapId << ".txt";
+	std::string fullPath = ss.str();
 
-	ifstream inFile(ss.str());
+	std::ifstream inFile(fullPath);
 	if (!inFile.is_open())
+	{
+		std::cerr << "Failed to open collision map: " << fullPath << std::endl;
 		return;
+	}
 
 	inFile >> _minX >> _maxX >> _minY >> _maxY;
 
 	int32 xCount = _maxX - _minX + 1;
-	int32 yCount = _maxX - _minY + 1;
+	int32 yCount = _maxY - _minY + 1;
 
 	_collision.resize(yCount, vector<bool>(xCount, false));
 	_objects.resize(yCount, vector<ObjectRef>(xCount, nullptr));

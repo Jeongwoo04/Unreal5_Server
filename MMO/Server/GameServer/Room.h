@@ -1,4 +1,7 @@
 #pragma once
+#include "GameMap.h"
+
+using GameMapRef = shared_ptr<GameMap>;
 
 class Room : public JobQueue
 {
@@ -9,9 +12,10 @@ public:
 	void SetRoomId(int32 roomId) { _roomId = roomId; }
 	int32 GetRoomId() { return _roomId; }
 
-	void Init();
+	void Init(int32 mapId);
 	void UpdateTick();
 
+	PlayerRef FindPlayer(const function<bool(ObjectRef)>& condition);
 	void SpawnMonster();
 	void AssignRandomPos(ObjectRef object);
 
@@ -43,6 +47,9 @@ private:
 	unordered_map<uint64, ProjectileRef> _projectiles;
 
 	int32 _roomId = 0;
+	GameMapRef _map;
+
+	float MOVE_DISTANCE_PER_TICK = 100.0f;
 };
 
 extern RoomRef GRoom;

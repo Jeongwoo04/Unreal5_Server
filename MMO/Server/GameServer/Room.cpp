@@ -6,7 +6,7 @@
 
 Room::Room()
 {
-
+	_map = make_shared<GameMap>();
 }
 
 Room::~Room()
@@ -14,9 +14,11 @@ Room::~Room()
 
 }
 
-void Room::Init()
+void Room::Init(int32 mapId)
 {
-	//SpawnMonster();
+	_map->LoadGameMap(mapId);
+
+	SpawnMonster();
 }
 
 void Room::UpdateTick()
@@ -30,9 +32,20 @@ void Room::UpdateTick()
 		p.second->Update();
 	}
 
-	//SpawnMonster();
+	SpawnMonster();
 
 	DoTimer(100, &Room::UpdateTick);
+}
+
+PlayerRef Room::FindPlayer(const function<bool(ObjectRef)>& condition)
+{
+	for (auto& it : _players)
+	{
+		if (condition(it.second))
+			return it.second;
+	}
+
+	return nullptr;
 }
 
 void Room::SpawnMonster()
@@ -48,15 +61,25 @@ void Room::SpawnMonster()
 			MonsterRef monster = ObjectManager::Instance().Add<Monster>();
 			EnterRoom(monster, true);
 		}
-	}	
+	}
 }
 
 void Room::AssignRandomPos(ObjectRef object)
 {
-	object->_posInfo.set_x(Utils::GetRandom(0.f, 500.f));
-	object->_posInfo.set_y(Utils::GetRandom(0.f, 500.f));
-	object->_posInfo.set_z(100.f);
-	object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
+	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
+	{
+		object->_posInfo.set_x(Utils::GetRandom(0.f, 500.f));
+		object->_posInfo.set_y(Utils::GetRandom(0.f, 500.f));
+		object->_posInfo.set_z(100.f);
+		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
+	}
+	else if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
+	{
+		object->_posInfo.set_x(Utils::GetRandom(500.f, 1000.f));
+		object->_posInfo.set_y(Utils::GetRandom(500.f, 1000.f));
+		object->_posInfo.set_z(100.f);
+		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
+	}
 
 	object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
 }

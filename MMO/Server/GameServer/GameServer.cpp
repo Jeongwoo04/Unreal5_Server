@@ -9,6 +9,7 @@
 #include <tchar.h>
 #include "Job.h"
 #include "Room.h"
+#include "RoomManager.h"
 
 enum
 {
@@ -35,6 +36,8 @@ void DoWorkerJob(ServerServiceRef& service)
 int main()
 {
 	ServerPacketHandler::Init();
+
+	RoomRef room = RoomManager::Instance().Add(1);
 
 	ServerServiceRef service = make_shared<ServerService>(
 		NetAddress(L"127.0.0.1", 7777),
