@@ -67,11 +67,11 @@ void AS1Player::BeginPlay()
 	// 처음 시작점과 Dest가 동일하게끔 보정.
 	{
 		FVector Location = GetActorLocation();
-		DestInfo.set_x(Location.X);
-		DestInfo.set_y(Location.Y);
-		DestInfo.set_z(Location.Z);
-		DestInfo.set_yaw(GetControlRotation().Yaw);
-		SetState(Protocol::STATE_MACHINE_IDLE);
+		PosInfo.set_x(Location.X);
+		PosInfo.set_y(Location.Y);
+		PosInfo.set_z(Location.Z);
+		PosInfo.set_yaw(GetControlRotation().Yaw);
+		PosInfo.set_state(Protocol::STATE_MACHINE_IDLE);
 	}
 }
 
@@ -79,78 +79,32 @@ void AS1Player::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	{
-		FVector Location = GetActorLocation();
-		PlayerInfo.set_x(Location.X);
-		PlayerInfo.set_y(Location.Y);
-		PlayerInfo.set_z(Location.Z);
-		PlayerInfo.set_yaw(GetControlRotation().Yaw);
-	}
-
-	// OtherPlayer 일 경우 보정
-	if (IsMyPlayer() == false)
-	{
-		//FVector Location = GetActorLocation();
-		//FVector DestLocation = FVector(DestInfo.x(), DestInfo.y(), DestInfo.z());
-
-		//FVector MoveDir = (DestLocation - Location);
-		//const float DistToDest = MoveDir.Length();
-		//MoveDir.Normalize();
-
-		//// 방향 단위벡터 * 이동속도 * DeltaSeconds * 이동거리
-		//float MoveDist = (MoveDir * 600.f * DeltaSeconds).Length();
-		//// 거의 도달한경우 목적 위치를 초과하는 문제가 생길 수 있음. 왔다갔다 하는 현상
-		//MoveDist = FMath::Min(MoveDist, DistToDest);
-		//FVector NextLocation = Location + MoveDir * MoveDist;
-
-		//SetActorLocation(NextLocation);
-		const Protocol::StateMachine State = PlayerInfo.state();
-
-		if (State == Protocol::STATE_MACHINE_MOVING)
-		{
-			SetActorRotation(FRotator(0, DestInfo.yaw(), 0));
-			AddMovementInput(GetActorForwardVector());
-		}
-		else
-		{
-
-		}
-	}
 }
 
-bool AS1Player::IsMyPlayer()
+void AS1Player::ApplyServerPos(const Protocol::PosInfo& NewInfo)
 {
-	return Cast<AS1MyPlayer>(this) != nullptr;
+	SetPosInfo(NewInfo);
+
+	FVector NewPos(PosInfo.x(), PosInfo.y(), PosInfo.z());
+	SetActorLocation(NewPos);
+
+	SetActorRotation(FRotator(0.f, PosInfo.yaw(), 0.f));
 }
 
-void AS1Player::SetState(Protocol::StateMachine State)
+void AS1Player::SetPosInfo(const Protocol::PosInfo& Info)
 {
-	if (PlayerInfo.state() == State)
-		return;
-
-	PlayerInfo.set_state(State);
-}
-
-void AS1Player::SetPlayerInfo(const Protocol::PosInfo& Info)
-{
-	if (PlayerInfo.object_id() != 0)
+	if (PosInfo.object_id() != 0)
 	{
 		assert(PlayerInfo.object_id() == Info.object_id());
 	}
 
-	PlayerInfo.CopyFrom(Info);
+	PosInfo.CopyFrom(Info);
 
 	FVector Location(Info.x(), Info.y(), Info.z());
 	SetActorLocation(Location);
 }
 
-void AS1Player::SetDestInfo(const Protocol::PosInfo& Info)
+bool AS1Player::IsMyPlayer()
 {
-	if (PlayerInfo.object_id() != 0)
-	{
-		assert(PlayerPosInfo.object_id() == Info.object_id());
-	}
-
-	DestInfo.CopyFrom(Info);
-	SetState(Info.state());
+	return Cast<AS1MyPlayer>(this) != nullptr;
 }

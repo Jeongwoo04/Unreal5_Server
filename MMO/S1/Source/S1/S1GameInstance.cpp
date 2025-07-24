@@ -41,6 +41,7 @@ void US1GameInstance::ConnectToGameServer()
 			SendBufferRef SendBuffer = ClientPacketHandler::MakeSendBuffer(Pkt);
 			SendPacket(SendBuffer);
 		}
+		MapInit();
 	}
 	else
 	{
@@ -95,7 +96,7 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 		if (Monster == nullptr)
 			return;
 
-		Monster->SetMonsterInfo(ObjectInfo.pos_info());
+		Monster->SetPosInfo(ObjectInfo.pos_info());
 		Monsters.Add(ObjectId, Monster);
 		return;
 	}
@@ -107,9 +108,7 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 		if (Player == nullptr)
 			return;
 
-		PC->Possess(Player);
-		UE_LOG(LogTemp, Warning, TEXT("Possessed Pawn: %s"), *GetNameSafe(PC->GetPawn()));
-		Player->SetPlayerInfo(ObjectInfo.pos_info());
+		Player->SetPosInfo(ObjectInfo.pos_info());
 		MyPlayer = Player;
 		Players.Add(ObjectInfo.object_id(), Player);
 	}
@@ -119,7 +118,7 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 		if (Player == nullptr)
 			return;
 
-		Player->SetPlayerInfo(ObjectInfo.pos_info());
+		Player->SetPosInfo(ObjectInfo.pos_info());
 		Players.Add(ObjectInfo.object_id(), Player);
 	}
 }
@@ -174,12 +173,22 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 
 	AS1Player** FindActor = Players.Find(ObjectId);
 	if (FindActor == nullptr)
-		return;
+	{
+		AS1Monster** FindMonster = Monsters.Find(ObjectId);
+		if (FindMonster == nullptr)
+			return;
 
-	AS1Player* Player = (*FindActor);
-	if (Player->IsMyPlayer())
-		return;
+		AS1Monster* Monster = (*FindMonster);
+		Monster->SetPosInfo(MovePkt.info());
+	}
+	else
+	{
+		AS1Player* Player = (*FindActor);
+		if (Player->IsMyPlayer())
+			return;
 
-	//Player->SetPlayerInfo(MovePkt.info());
-	Player->SetDestInfo(MovePkt.info());
+		//Player->SetPlayerInfo(MovePkt.info());
+		Player->SetPosInfo(MovePkt.info());
+	}
+
 }

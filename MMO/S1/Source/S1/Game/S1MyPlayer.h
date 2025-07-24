@@ -60,9 +60,10 @@ protected:
 	float MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;
 
 	// Cache
-	FVector2D DesiredInput;
-	FVector DesiredMoveDir;
-	float DesiredYaw;
+	FVector2D CacheVector;
+	FVector2D InputVector;
 
-	FVector2D LastDesiredInput;
+	bool DirtyFlag = false;
+
+	void SendMovePacket();
 };

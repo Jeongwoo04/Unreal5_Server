@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "S1.h"
+#include "S1MapManger.h"
 #include "S1GameInstance.generated.h"
 
 class AS1Player;
@@ -46,6 +47,16 @@ public:
 	FString IpAddress = TEXT("127.0.0.1");
 	int16 Port = 7777;
 	TSharedPtr<class PacketSession> GameServerSession;
+
+public:
+	UPROPERTY()
+	US1MapManger* MapManager;
+
+	virtual void MapInit()
+	{
+		MapManager = NewObject<US1MapManger>(this);
+		MapManager->LoadMap(1, 100.f);
+	}
 
 public:
 	UPROPERTY(EditAnywhere)

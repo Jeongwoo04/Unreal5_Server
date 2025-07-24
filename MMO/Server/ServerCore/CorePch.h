@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#define NOMINMAX
 #include <windows.h>
 #include <iostream>
 #include <assert.h>

@@ -1,12 +1,11 @@
 #include "pch.h"
 #include "Room.h"
 #include "Player.h"
-#include "GameSession.h"
 #include "ObjectManager.h"
 
 Room::Room()
 {
-	_map = make_shared<GameMap>();
+	_gameMap = make_shared<GameMap>();
 }
 
 Room::~Room()
@@ -16,9 +15,11 @@ Room::~Room()
 
 void Room::Init(int32 mapId)
 {
-	_map->LoadGameMap(mapId);
+	_gameMap->LoadGameMap(mapId);
 
 	SpawnMonster();
+
+	DoTimer(100, &Room::UpdateTick);
 }
 
 void Room::UpdateTick()
@@ -50,7 +51,7 @@ PlayerRef Room::FindPlayer(const function<bool(ObjectRef)>& condition)
 
 void Room::SpawnMonster()
 {
-	int32 maxMonsterGen = 5;
+	int32 maxMonsterGen = 1;
 	int32 requireCount = 0;
 
 	requireCount = maxMonsterGen - static_cast<int32>(_monsters.size());
@@ -68,20 +69,21 @@ void Room::AssignRandomPos(ObjectRef object)
 {
 	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
 	{
-		object->_posInfo.set_x(Utils::GetRandom(0.f, 500.f));
-		object->_posInfo.set_y(Utils::GetRandom(0.f, 500.f));
+		object->_posInfo.set_x(Utils::GetRandom(0.f, 100.f));
+		object->_posInfo.set_y(Utils::GetRandom(0.f, 100.f));
 		object->_posInfo.set_z(100.f);
 		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
 	}
 	else if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
 	{
-		object->_posInfo.set_x(Utils::GetRandom(500.f, 1000.f));
-		object->_posInfo.set_y(Utils::GetRandom(500.f, 1000.f));
+		object->_posInfo.set_x(Utils::GetRandom(2000.f, 3000.f));
+		object->_posInfo.set_y(Utils::GetRandom(2000.f, 3000.f));
 		object->_posInfo.set_z(100.f);
 		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
 	}
 
 	object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
+	object->SetCellPos(object->_posInfo);
 }
 
 bool Room::EnterRoom(ObjectRef object, bool randPos /*= true*/)
@@ -131,19 +133,23 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 	
 	PlayerRef& player = _players[objectId];
 
-	// TODO : validation
+	Vector2Int gridPos = WorldToGrid(pkt.info());
+
+	if (!_gameMap->CanGo(gridPos))
+		return;
+
 	player->_posInfo.CopyFrom(pkt.info());
+	player->_gridPos = gridPos;
+	//player->SetV3Pos(player-> _posInfo);
 
 	{
 		Protocol::S_MOVE movePkt;
-		// 위치 정보
-		{
-			movePkt.mutable_info()->CopyFrom(pkt.info());
-		}
+		
+		movePkt.mutable_info()->CopyFrom(pkt.info());
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
 		Broadcast(sendBuffer);
-	}	
+	}
 }
 
 RoomRef Room::GetRoomRef()

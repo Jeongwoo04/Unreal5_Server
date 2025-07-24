@@ -70,74 +70,24 @@ void AS1MyPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	bool ForceSendPacket = false;
-
-	if (LastDesiredInput != DesiredInput)
+	if (!InputVector.IsNearlyZero())
 	{
-		ForceSendPacket = true;
-		LastDesiredInput = DesiredInput;
+		FVector Dir = GetActorForwardVector() * InputVector.Y + GetActorRightVector() * InputVector.X;
+		AddMovementInput(Dir.GetSafeNormal());
 	}
 
-	// State
-	if (DesiredInput == FVector2D::Zero())
-		SetState(Protocol::STATE_MACHINE_IDLE);
-	else
-		SetState(Protocol::STATE_MACHINE_MOVING);
+	if (InputVector != CacheVector)
+		DirtyFlag = true;
 
-	MovePacketSendTimer -= DeltaTime;
-	if (MovePacketSendTimer <= 0 || ForceSendPacket)
-	{
-		MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;
-
-		Protocol::C_MOVE MovePkt;
-
-		{
-			auto Info = MovePkt.mutable_info();
-			Info->CopyFrom(PlayerInfo);
-			// 최종 목적값 (실시간 값 x)
-			Info->set_yaw(DesiredYaw);
-		}
-
-		SEND_PACKET(MovePkt);
-	}
+	if (DirtyFlag)
+		SendMovePacket();
 }
 
 void AS1MyPlayer::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
-	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
-
-		// Camera 기준. Actor 기준 X
-		// Cache
-		{
-			DesiredInput = MovementVector;
-
-			DesiredMoveDir = FVector::ZeroVector;
-			DesiredMoveDir += ForwardDirection * MovementVector.Y;
-			DesiredMoveDir += RightDirection * MovementVector.X;
-			DesiredMoveDir.Normalize();
-
-			const FVector Location = GetActorLocation();
-			FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(Location, Location + DesiredMoveDir);
-			DesiredYaw = Rotator.Yaw;
-		}
-	}
+	CacheVector = InputVector;
+	InputVector = Value.Get<FVector2D>();
 }
 
 void AS1MyPlayer::Look(const FInputActionValue& Value)
@@ -151,4 +101,27 @@ void AS1MyPlayer::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AS1MyPlayer::SendMovePacket()
+{
+	FVector Loc = GetActorLocation();
+	FRotator Rot = GetActorRotation();
+
+	Protocol::C_MOVE MovePkt;
+	auto Info = MovePkt.mutable_info();
+
+	PosInfo.set_object_id(PosInfo.object_id()); // 기존 ID 유지
+	PosInfo.set_x(Loc.X);
+	PosInfo.set_y(Loc.Y);
+	PosInfo.set_z(Loc.Z);
+	PosInfo.set_yaw(Rot.Yaw);
+	PosInfo.set_move_type(Protocol::MOVE_STATE_WALK);
+	PosInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+
+	Info->CopyFrom(PosInfo);
+
+	SEND_PACKET(MovePkt);
+
+	DirtyFlag = false;
 }

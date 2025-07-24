@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 #include "Room.h"
 #include "Protocol.pb.h"
 
@@ -18,16 +19,33 @@ public:
 	virtual Protocol::CreatureType GetCreatureType() const { return _objectInfo.creature_type(); }
 	virtual Protocol::PlayerType GetPlayerType() const { return _objectInfo.player_type(); }
 
+	void SetState(Protocol::StateMachine& state) { _posInfo.set_state(state); }
+	Protocol::StateMachine GetState() const { return _posInfo.state(); }
+
+	void SetMoveType(Protocol::MoveState& type) { _posInfo.set_move_type(type); }
+	Protocol::MoveState GetMoveType() const { return _posInfo.move_type(); }
+
+	Vector2Int GetCellPos();
+	void SetCellPos(const Protocol::PosInfo& pos);
+
 	void SetId(uint64 id);
 	uint64 GetId() { return _id; }
-	RoomRef GetRoom() { return _room.lock(); }
+
 	void SetRoom(RoomRef room) { _room = room; }
+	RoomRef GetRoom() const { return _room.lock(); }
+
+	void GridToWorld(const Vector2Int& vec, float CELL_SIZE = 100.f);
 
 public: 
 	Protocol::ObjectInfo _objectInfo;
 	Protocol::PosInfo _posInfo;
 
+	Vector2Int _gridPos;
+
 protected:
+	Protocol::StateMachine _state = Protocol::STATE_MACHINE_IDLE;
+	Protocol::MoveState _moveState = Protocol::MOVE_STATE_NONE;
+
 	uint64 _id = 0;
 	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험
 };

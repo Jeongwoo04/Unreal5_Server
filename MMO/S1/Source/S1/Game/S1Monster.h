@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Protocol.pb.h"
+#include "S1Player.h"
 #include "S1Monster.generated.h"
 
 UCLASS()
@@ -21,9 +22,14 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	void SetMonsterInfo(const Protocol::PosInfo& Info);
-	Protocol::PosInfo GetMonsterInfo() const { return MonsterInfo; }
+	void SetTargetPlayer(AS1Player* Player) {}
+
+	void SetMonsterInfo(const Protocol::ObjectInfo& Info);
+	void SetPosInfo(const Protocol::PosInfo& Info);
+	Protocol::PosInfo GetPosInfo() const { return PosInfo; }
 
 protected:
-	Protocol::PosInfo MonsterInfo;
+	Protocol::PosInfo PosInfo;
+	Protocol::ObjectInfo MonsterInfo;
+	AS1Player* TargetPlayer = nullptr;
 };

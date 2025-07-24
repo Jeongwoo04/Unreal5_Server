@@ -18,14 +18,8 @@
 #include "ServerPacketHandler.h"
 #include "Utils.h"
 #include "GameSession.h"
-
-USING_SHARED_PTR(GameSession);
-USING_SHARED_PTR(Object);
-USING_SHARED_PTR(Creature);
-USING_SHARED_PTR(Player);
-USING_SHARED_PTR(Monster);
-USING_SHARED_PTR(Projectile);
-USING_SHARED_PTR(Room);
+#include "GameMap.h"
+#include "Room.h"
 
 using GameSessionRef = shared_ptr<class GameSession>;
 

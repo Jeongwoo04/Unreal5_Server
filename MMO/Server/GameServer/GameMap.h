@@ -1,99 +1,123 @@
 #pragma once
+#include "pch.h"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
 
-constexpr float PI = 3.14159265f;
-constexpr float DEG2RAD = PI / 180.0f;
-const float CELL_SIZE = 100.0f;
+using GameMapRef = shared_ptr<class GameMap>;
+using ObjectRef = shared_ptr<class Object>;
 
-struct Vector2float
+struct Pos
 {
-	float _x = 0;
-	float _y = 0;
+    Pos() {}
+    Pos(int32 y, int32 x) { _y = y; _x = x; }
+    int32 _y = 0;
+    int32 _x = 0;
+    bool operator==(const Pos& other) const { return _y == other._y && _x == other._x; }
+};
 
-	Vector2float() = default;
-	Vector2float(float x, float y) : _x(x), _y(y) { }
+struct PQNode
+{
+    int32 F;
+    int32 G;
+    int32 Y;
+    int32 X;
 
-	Vector2float operator+(const Vector2float& rhs) const
-	{
-		return Vector2float(_x + rhs._x, _y + rhs._y);
-	}
-
-	// 우측 스칼라 곱: Vector * float
-	Vector2float operator*(float scalar) const
-	{
-		return Vector2float(_x * scalar, _y * scalar);
-	}
-
-	// 좌측 스칼라 곱: float * Vector
-	friend Vector2float operator*(float scalar, const Vector2float& vec)
-	{
-		return Vector2float(vec._x * scalar, vec._y * scalar);
-	}
+    bool operator<(const PQNode& other) const
+    {
+        // C#의 CompareTo와 유사. F가 작을수록 우선순위 높음
+        if (F == other.F)
+            return false; // 같으면 false (priority_queue는 max-heap, false가 우선순위 높음)
+        return F > other.F; // F가 작을수록 우선순위 높게
+    }
 };
 
 struct Vector2Int
 {
-	int32 _x = 0;
-	int32 _y = 0;
+    int32 _x = 0;
+    int32 _y = 0;
 
-	Vector2Int() = default;
-	Vector2Int(int32 x, int32 y) : _x(x), _y(y) { }
+    Vector2Int() = default;
+    Vector2Int(int x, int y) : _x(x), _y(y) { }
 
-	//Vector2Int operator+(const Vector2Int& other) const
-	//{
-	//	return  Vector2Int(_x + other._x, _y + other._y);
-	//}
+    Vector2Int operator+(const Vector2Int& other) const
+    {
+        return  Vector2Int(_x + other._x, _y + other._y);
+    }
 
-	//Vector2Int& operator+=(const Vector2Int& other)
-	//{
-	//	_x += other._x;
-	//	_y += other._y;
-	//	return *this;
-	//}
+    Vector2Int& operator+=(const Vector2Int& other)
+    {
+        _x += other._x;
+        _y += other._y;
+        return *this;
+    }
 
-	//Vector2Int operator-(const Vector2Int& other) const
-	//{
-	//	return Vector2Int(_x - other._x, _y - other._y);
-	//}
+    Vector2Int operator-(const Vector2Int& other) const
+    {
+        return Vector2Int(_x - other._x, _y - other._y);
+    }
 
-	//Vector2Int& operator-=(const Vector2Int& other)
-	//{
-	//	_x -= other._x;
-	//	_y -= other._y;
-	//	return *this;
-	//}
+    Vector2Int& operator-=(const Vector2Int& other)
+    {
+        _x -= other._x;
+        _y -= other._y;
+        return *this;
+    }
+
+    float magnitude() const
+    {
+        return std::sqrt(static_cast<float>(sqrMagnitude()));
+    }
+    int32 sqrMagnitude() const
+    {
+        return _x * _x + _y * _y;
+    }
+    int32 cellDist() const
+    {
+        return std::abs(_x) + std::abs(_y);
+    }
+
+    // Debug 출력
+    friend std::ostream& operator<<(std::ostream& os, const Vector2Int& vec)
+    {
+        os << "(" << vec._x << ", " << vec._y << ")";
+        return os;
+    }
 };
 
-inline Vector2Int WorldToGrid(float x, float y)
+inline Vector2Int WorldToGrid(const Protocol::PosInfo& pos, float CELL_SIZE = 100.f)
 {
-	return Vector2Int(
-		static_cast<int32>(floor(x / CELL_SIZE)),
-		static_cast<int32>(floor(y / CELL_SIZE)));
+    // tileSize는 1셀의 실제 월드 좌표 크기
+    return Vector2Int(
+        static_cast<int32>(round(pos.x() / CELL_SIZE)),
+        static_cast<int32>(round(pos.y() / CELL_SIZE))
+    );
 }
 
-inline Vector2float GridToWorld(int32 x, int32 y)
-{
-	return Vector2float(
-		x * CELL_SIZE + CELL_SIZE / 2.0f,
-		y * CELL_SIZE + CELL_SIZE / 2.0f);
-}
-
-class GameMap : public enable_shared_from_this<GameMap>
+class GameMap : public std::enable_shared_from_this<GameMap>
 {
 public:
-	ObjectRef Find();
-	bool CanGo(int32 x, int32 y);
+    ObjectRef Find(Vector2Int cellPos);
+    bool CanGo(Vector2Int cell, bool checkObjects = true);
 
-	bool ApplyLeave();
-	bool ApplyMove();
+    bool ApplyLeave(ObjectRef object);
+    bool ApplyMove(ObjectRef object, Vector2Int dest);
 
-	void LoadGameMap(int32 mapId, string pathPrefix = "../Common/CollisionMap");
+    void LoadGameMap(int32 mapId, string pathPrefix = "../Common/CollisionMap");
+
+    vector<Vector2Int> FindPath(Vector2Int startCellPos, Vector2Int destCellPos, bool checkObjects = true);
+
+private:
+    vector<Vector2Int> CalcCellPathFromParent(const vector<vector<Pos>>& parent, const Pos& dest);
+
+    Pos Cell2Pos(const Vector2Int& cell);
+    Vector2Int Pos2Cell(const Pos& pos);
+
+    bool InRange(const Pos& pos);
 
 public:
-	int32 _minX, _maxX, _minY,  _maxY;
-	int32 _sizeX, _sizeY;
-	vector<vector<bool>> _collision;
-	vector<vector<ObjectRef>> _objects;
+    int32 _minX, _maxX, _minY, _maxY;
+    int32 _sizeX, _sizeY;
+    std::vector<std::vector<bool>> _collision;
+    std::vector<std::vector<ObjectRef>> _objects;
 };

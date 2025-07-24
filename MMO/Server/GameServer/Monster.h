@@ -1,7 +1,9 @@
 #pragma once
 #include "Creature.h"
 #include "Player.h"
-#include "Room.h"
+
+using RoomRef = std::shared_ptr<class Room>;
+using GameMapRef = std::shared_ptr<class GameMap>;
 
 class Monster : public Creature
 {
@@ -18,24 +20,21 @@ public:
 	virtual void UpdateSkill();
 	virtual void UpdateDead();
 
-	virtual bool DoPatrol();
-
 	virtual void OnDamaged(ObjectRef attacker, int32 damage) override;
 	virtual void OnDead(ObjectRef attacker) override;
 
-	void BroadcastMoveUpdate();
+	void BroadcastMove();
 
-	void SetTarget(const PlayerRef& player) { _target = player; }
-	PlayerRef GetTarget() const { return _target.lock(); }
-
-	void SetLastPos();
-	Protocol::PosInfo GetLastPos() { return _lastPos; }
+	void SetPlayer(const PlayerRef& player) { _targetPlayer = player; }
+	PlayerRef GetPlayer() const { return _targetPlayer.lock(); }
 
 protected:
-	weak_ptr<Player> _target;
+	int32 _searchCellDist = 10;
+	int32 _chaseCellDist = 20;
+	int32 _skillRange = 1;
+
 	uint64 _nextSearchTick = 0;
 	uint64 _nextMoveTick = 0;
-
-	Protocol::PosInfo _lastPos;
+	uint64 _coolTick = 0;
 };
 

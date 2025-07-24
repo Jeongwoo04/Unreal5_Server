@@ -18,21 +18,17 @@ public:
 	virtual ~AS1Player();
 
 protected:
-	virtual void BeginPlay();
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
 public:
+	virtual void ApplyServerPos(const Protocol::PosInfo& NewInfo);
+
+	void SetPosInfo(const Protocol::PosInfo& Info);
+	Protocol::PosInfo GetPosInfo() { return PosInfo; }
+
 	bool IsMyPlayer();
 
-	Protocol::StateMachine GetState() { return PlayerInfo.state(); }
-	void SetState(Protocol::StateMachine State);
-
-public:
-	void SetPlayerInfo(const Protocol::PosInfo& Info);
-	void SetDestInfo(const Protocol::PosInfo& Info);
-	Protocol::PosInfo GetPlayerInfo() { return PlayerInfo; }
-
 protected:
-	class Protocol::PosInfo PlayerInfo;
-	class Protocol::PosInfo DestInfo;
+	class Protocol::PosInfo PosInfo;
 };

@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "S1Monster.h"
+#include "S1GameInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -35,10 +36,10 @@ void AS1Monster::BeginPlay()
 	
 	{
 		FVector Location = GetActorLocation();
-		MonsterInfo.set_x(Location.X);
-		MonsterInfo.set_y(Location.Y);
-		MonsterInfo.set_z(Location.Z);
-		MonsterInfo.set_yaw(GetControlRotation().Yaw);
+		PosInfo.set_x(Location.X);
+		PosInfo.set_y(Location.Y);
+		PosInfo.set_z(Location.Z);
+		PosInfo.set_yaw(GetControlRotation().Yaw);
 	}
 }
 
@@ -47,10 +48,53 @@ void AS1Monster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!TargetPlayer)
+		return;
+
+	FVector Dir = (TargetPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	FVector DesiredMove = Dir * GetCharacterMovement()->MaxWalkSpeed * DeltaTime;
+	FVector NewLocation = GetActorLocation() + DesiredMove;
+
+	auto* MapManager = GetGameInstance<US1GameInstance>()->MapManager;
+	if (!MapManager->IsBlocked(NewLocation.X, NewLocation.Y))
+	{
+		SetActorLocation(NewLocation);
+	}
+
+	// È¸Àü
+	FRotator NewRot = Dir.Rotation();
+	SetActorRotation(NewRot);
 }
 
-void AS1Monster::SetMonsterInfo(const Protocol::PosInfo& Info)
+void AS1Monster::SetMonsterInfo(const Protocol::ObjectInfo& Info)
 {
+	if (Info.object_id() != 0)
+	{
+		assert(MonsterInfo.object_id() == Info.object_id());
+	}
 
+	PosInfo.CopyFrom(Info);
+}
+
+void AS1Monster::SetPosInfo(const Protocol::PosInfo& Info)
+{
+	if (MonsterInfo.object_id() != 0)
+	{
+		assert(MonsterInfo.object_id() == Info.object_id());
+	}
+
+	PosInfo.CopyFrom(Info);
+
+	//FVector Location(Info.x(), Info.y(), Info.z());
+	//SetActorLocation(Location);
+	FVector NewLocation(Info.x(), Info.y(), Info.z());
+	FVector OldLocation = GetActorLocation();
+
+	UE_LOG(LogTemp, Warning, TEXT("[AS1Monster] Old: (%.2f, %.2f, %.2f), New: (%.2f, %.2f, %.2f)"),
+		OldLocation.X, OldLocation.Y, OldLocation.Z,
+		NewLocation.X, NewLocation.Y, NewLocation.Z);
+
+
+	SetActorLocation(NewLocation);
 }
 
