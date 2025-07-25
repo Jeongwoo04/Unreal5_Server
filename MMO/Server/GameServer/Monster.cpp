@@ -7,7 +7,6 @@ Monster::Monster()
 
 	// TODO : Stat
 	_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-
 }
 
 Monster::~Monster()
@@ -42,12 +41,12 @@ void Monster::UpdateIdle()
     const uint64 tick = GetTickCount64();
     if (_nextSearchTick > tick)
         return;
-    _nextSearchTick = tick + 1000;
+    _nextSearchTick = tick + 500;
 
     PlayerRef target = GetRoom()->FindPlayer([&](const ObjectRef& p)
         {
-            Vector2Int dir = p->GetCellPos() - GetCellPos();
-            return dir.cellDist() <= _searchCellDist;
+            float dist = (Vector3(_posInfo) - Vector3(p->_posInfo)).Length();
+            return dist <= _searchRadius * 100.f;
         });
 
     if (target == nullptr)
@@ -69,7 +68,7 @@ void Monster::UpdateMoving()
         return;
 
     //const int32 moveTick = static_cast<int32>(1000 / _statInfo()->speed());
-    const int32 moveTick = 500;
+    const int32 moveTick = 50;
     _nextMoveTick = tick + moveTick;
 
     PlayerRef target = GetPlayer();
@@ -81,9 +80,10 @@ void Monster::UpdateMoving()
         return;
     }
 
-    Vector2Int dir = target->GetCellPos() - GetCellPos();
-    int32 dist = dir.cellDist();
-    if (dist == 0 || dist > _chaseCellDist)
+    Vector2Int v2dir = target->_gridPos - _gridPos;
+    int32 dist = v2dir.cellDist();
+
+    if (dist == 0 || dist > _chaseCellDist * 100.f)
     {
         SetPlayer(nullptr);
         _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
@@ -91,29 +91,58 @@ void Monster::UpdateMoving()
         return;
     }
 
-    vector<Vector2Int> path = GetRoom()->GetGameMap()->FindPath(GetCellPos(), target->GetCellPos(), /*checkObjects=*/false);
-    if (path.size() < 2 || path.size() > _chaseCellDist)
+    if (_path.empty())
     {
-        SetPlayer(nullptr);
+        Vector2Int start = _gridPos;
+        Vector2Int dest = target->_gridPos;
+
+        _path = GetRoom()->GetGameMap()->FindPath(start, dest);
+        _pathIndex = 1;
+
+        if (_path.size() < 2)
+        {
+            SetPlayer(nullptr);
+            _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
+            return;
+        }
+    }
+
+    if (_pathIndex >= _path.size())
+    {
         _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-        BroadcastMove();
         return;
+    }
+
+    Vector3 targetPos = GameMap::GridToWorld(_path[_pathIndex]);
+    _dir = (targetPos - Vector3(_posInfo)).Normalized();
+    float distance = _speed * _deltaTime;
+
+    if ((_worldPos - targetPos).Length() <= _reachThreshold)
+    {
+        _worldPos = targetPos;
+        _pathIndex++;
+    }
+    else
+    {
+        _worldPos += _dir * distance;
     }
 
     // Skill 가능 여부 체크
-    if (dist <= _skillRange && (dir._x == 0 || dir._y == 0))
+    if (dist <= _skillRange && (_dir._x == 0 || _dir._y == 0))
     {
         _coolTick = 0;
         _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
         return;
     }
 
-    // 이동
-    _gridPos = path[1];
-    GetRoom()->GetGameMap()->ApplyMove(shared_from_this(), path[1]);
+    ApplyPos();
+    GetRoom()->GetGameMap()->ApplyMove(shared_from_this(), _gridPos);
 
-    // 다른 플레이어에 알림
-    GridToWorld(_gridPos);
+    std::cout << "targetPos: " << targetPos._x << ", " << targetPos._y << std::endl;
+    std::cout << "_worldPos: " << _worldPos._x << ", " << _worldPos._y << std::endl;
+    std::cout << "_dir: " << _dir._x << ", " << _dir._y << std::endl;
+    std::cout << "distance: " << distance << std::endl;
+
     BroadcastMove();
 }
 
@@ -148,7 +177,7 @@ void Monster::UpdateSkill()
         }
 
         // 스킬 사용 가능한지
-        Vector2Int dir = (target->GetCellPos() - GetCellPos());
+        Vector2Int dir = (target->_gridPos - _gridPos);
         int32 dist = dir.cellDist();
         bool canUseSkill = (dist <= _skillRange && (dir._x == 0 || dir._y == 0));
         if (canUseSkill == false)

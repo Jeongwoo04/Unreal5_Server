@@ -26,16 +26,6 @@ void Object::OnDead(ObjectRef attacker)
 
 }
 
-Vector2Int Object::GetCellPos()
-{
-	return _gridPos;
-}
-
-void Object::SetCellPos(const Protocol::PosInfo& pos)
-{
-	_gridPos = WorldToGrid(pos);
-}
-
 void Object::SetId(uint64 id)
 {
 	_id = id;
@@ -43,8 +33,10 @@ void Object::SetId(uint64 id)
 	_posInfo.set_object_id(id);
 }
 
-void Object::GridToWorld(const Vector2Int& vec, float CELL_SIZE)
+void Object::ApplyPos()
 {
-	_posInfo.set_x(vec._x * CELL_SIZE);
-	_posInfo.set_y(vec._y * CELL_SIZE);
+	_gridPos = GameMap::WorldToGrid(_worldPos);
+	_posInfo.set_x(_worldPos._x);
+	_posInfo.set_y(_worldPos._y);
+	_posInfo.set_yaw(GameMap::YawFromDirection(_dir));
 }

@@ -28,9 +28,18 @@ public:
 	void SetPlayer(const PlayerRef& player) { _targetPlayer = player; }
 	PlayerRef GetPlayer() const { return _targetPlayer.lock(); }
 
+	vector<Vector3> SmoothPath(const std::vector<Vector3>& originalPath);
+
+public:
+	vector<Vector2Int> _path;
+	int32 _pathIndex = 1;
+	float _speed = 300.0f;
+	float _deltaTime = 0.05f;
+	float _reachThreshold = 50.f;
+
 protected:
-	int32 _searchCellDist = 10;
-	int32 _chaseCellDist = 20;
+	int32 _searchRadius = 12.f;
+	int32 _chaseCellDist = 20.f;
 	int32 _skillRange = 1;
 
 	uint64 _nextSearchTick = 0;

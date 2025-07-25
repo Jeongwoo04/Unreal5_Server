@@ -19,10 +19,10 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
+	virtual void Tick(float DeltaTime) override;
 
 public:
-	virtual void ApplyServerPos(const Protocol::PosInfo& NewInfo);
+	void Move(const Protocol::PosInfo& Info);
 
 	void SetPosInfo(const Protocol::PosInfo& Info);
 	Protocol::PosInfo GetPosInfo() { return PosInfo; }
@@ -30,5 +30,16 @@ public:
 	bool IsMyPlayer();
 
 protected:
+	UPROPERTY()
+	FVector TargetPosition;
+
+	UPROPERTY()
+	FRotator TargetRotation;
+
+	UPROPERTY()
+	float LerpAlpha = 0.1f;
+
+	bool bHasReceivedMove = false;
+
 	class Protocol::PosInfo PosInfo;
 };

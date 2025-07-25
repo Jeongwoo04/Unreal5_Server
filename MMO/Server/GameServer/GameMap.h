@@ -37,8 +37,21 @@ struct Vector2Int
     int32 _x = 0;
     int32 _y = 0;
 
+    const float CELL_SIZE = 100.f;
+
     Vector2Int() = default;
     Vector2Int(int x, int y) : _x(x), _y(y) { }
+    Vector2Int(const Protocol::PosInfo& pos)
+    {
+        _x = static_cast<int32>(round(pos.x() / CELL_SIZE));
+        _y = static_cast<int32>(round(pos.y() / CELL_SIZE));
+    }
+
+    Vector2Int& operator=(const Vector2Int& other)
+    {
+        _x = other._x; _y = other._y;
+        return *this;
+    }
 
     Vector2Int operator+(const Vector2Int& other) const
     {
@@ -85,14 +98,50 @@ struct Vector2Int
     }
 };
 
-inline Vector2Int WorldToGrid(const Protocol::PosInfo& pos, float CELL_SIZE = 100.f)
+struct Vector3
 {
-    // tileSize는 1셀의 실제 월드 좌표 크기
-    return Vector2Int(
-        static_cast<int32>(round(pos.x() / CELL_SIZE)),
-        static_cast<int32>(round(pos.y() / CELL_SIZE))
-    );
-}
+    float _x, _y;
+    Vector3() { };
+    Vector3(float x, float y): _x(x), _y(y) { }
+    Vector3(const Protocol::PosInfo& pos) { _x = pos.x(); _y = pos.y(); }
+
+    Vector3 operator-(const Vector3& other)
+    {
+        return Vector3(_x - other._x, _y - other._y);
+    }
+
+    Vector3 operator+(const Vector3& other) const
+    {
+        return Vector3(_x + other._x, _y + other._y);
+    }
+
+    Vector3& operator+=(const Vector3& other)
+    {
+        _x += other._x;
+        _y += other._y;
+        return *this;
+    }
+
+    Vector3 operator*(float scalar) const
+    {
+        return Vector3(_x * scalar, _y * scalar);
+    }
+
+    float Length() const
+    {
+        return sqrtf(_x * _x + _y * _y);
+    }
+
+    Vector3 Normalized() const
+    {
+        float len = sqrtf(_x * _x + _y * _y);
+        if (len == 0)
+            return Vector3{ 0, 0 };
+        return Vector3{ _x / len, _y / len };
+    }
+};
+
+static const float CELL_SIZE = 100.f;
 
 class GameMap : public std::enable_shared_from_this<GameMap>
 {
@@ -106,6 +155,23 @@ public:
     void LoadGameMap(int32 mapId, string pathPrefix = "../Common/CollisionMap");
 
     vector<Vector2Int> FindPath(Vector2Int startCellPos, Vector2Int destCellPos, bool checkObjects = true);
+
+    static Vector2Int WorldToGrid(const Vector3& vec, float CELL_SIZE = 100.f)
+    {
+        return Vector2Int(
+            static_cast<int32>(round(vec._x / CELL_SIZE)),
+            static_cast<int32>(round(vec._y / CELL_SIZE))
+        );
+    }
+    static Vector3 GridToWorld(const Vector2Int& vec)
+    {
+        return Vector3(vec._x * CELL_SIZE, vec._y * CELL_SIZE);
+    }
+
+    static float YawFromDirection(const Vector3& dir)
+    {
+        return atan2f(dir._y, dir._x) * (180.f / 3.141592f); // 라디안 → 도
+    }
 
 private:
     vector<Vector2Int> CalcCellPathFromParent(const vector<vector<Pos>>& parent, const Pos& dest);

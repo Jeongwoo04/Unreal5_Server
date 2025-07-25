@@ -40,7 +40,7 @@ AS1Player::AS1Player()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
@@ -75,20 +75,27 @@ void AS1Player::BeginPlay()
 	}
 }
 
-void AS1Player::Tick(float DeltaSeconds)
+void AS1Player::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaSeconds);
+	Super::Tick(DeltaTime);
 
+	if (bHasReceivedMove && !IsMyPlayer())
+	{
+		FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetPosition, DeltaTime, 10.f);
+		SetActorLocation(NewLocation);
+
+		FRotator CurrentRot = GetActorRotation();
+		FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRotation, DeltaTime, 10.f);
+		SetActorRotation(NewRot);
+	}
 }
 
-void AS1Player::ApplyServerPos(const Protocol::PosInfo& NewInfo)
+void AS1Player::Move(const Protocol::PosInfo& Info)
 {
-	SetPosInfo(NewInfo);
-
-	FVector NewPos(PosInfo.x(), PosInfo.y(), PosInfo.z());
-	SetActorLocation(NewPos);
-
-	SetActorRotation(FRotator(0.f, PosInfo.yaw(), 0.f));
+	TargetPosition = FVector(Info.x(), Info.y(), Info.z());
+	TargetRotation = FRotator(0.f, Info.yaw(), 0.f);
+	bHasReceivedMove = true;
+	UE_LOG(LogTemp, Warning, TEXT("[Move] Received Yaw: %.2f"), Info.yaw());
 }
 
 void AS1Player::SetPosInfo(const Protocol::PosInfo& Info)
@@ -100,8 +107,7 @@ void AS1Player::SetPosInfo(const Protocol::PosInfo& Info)
 
 	PosInfo.CopyFrom(Info);
 
-	FVector Location(Info.x(), Info.y(), Info.z());
-	SetActorLocation(Location);
+	Move(Info);
 }
 
 bool AS1Player::IsMyPlayer()

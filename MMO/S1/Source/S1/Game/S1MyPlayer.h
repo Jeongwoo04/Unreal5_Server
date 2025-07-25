@@ -64,6 +64,8 @@ protected:
 	FVector2D InputVector;
 
 	bool DirtyFlag = false;
+	float MoveSendInterval = 0.1f;
+	float TimeSinceLastSend = 0.f;
 
 	void SendMovePacket();
 };

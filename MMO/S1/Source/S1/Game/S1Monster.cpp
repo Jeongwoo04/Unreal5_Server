@@ -48,32 +48,22 @@ void AS1Monster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!TargetPlayer)
-		return;
-
-	FVector Dir = (TargetPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-	FVector DesiredMove = Dir * GetCharacterMovement()->MaxWalkSpeed * DeltaTime;
-	FVector NewLocation = GetActorLocation() + DesiredMove;
-
-	auto* MapManager = GetGameInstance<US1GameInstance>()->MapManager;
-	if (!MapManager->IsBlocked(NewLocation.X, NewLocation.Y))
+	if (bHasReceivedMove)
 	{
+		FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetPosition, DeltaTime, 10.f);
 		SetActorLocation(NewLocation);
-	}
 
-	// È¸Àü
-	FRotator NewRot = Dir.Rotation();
-	SetActorRotation(NewRot);
+		FRotator CurrentRot = GetActorRotation();
+		FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRotation, DeltaTime, 10.f);
+		SetActorRotation(NewRot);
+	}
 }
 
-void AS1Monster::SetMonsterInfo(const Protocol::ObjectInfo& Info)
+void AS1Monster::Move(const Protocol::PosInfo& Info)
 {
-	if (Info.object_id() != 0)
-	{
-		assert(MonsterInfo.object_id() == Info.object_id());
-	}
-
-	PosInfo.CopyFrom(Info);
+	TargetPosition = FVector(Info.x(), Info.y(), Info.z());
+	TargetRotation = FRotator(0.f, Info.yaw(), 0.f);
+	bHasReceivedMove = true;
 }
 
 void AS1Monster::SetPosInfo(const Protocol::PosInfo& Info)
@@ -85,16 +75,6 @@ void AS1Monster::SetPosInfo(const Protocol::PosInfo& Info)
 
 	PosInfo.CopyFrom(Info);
 
-	//FVector Location(Info.x(), Info.y(), Info.z());
-	//SetActorLocation(Location);
-	FVector NewLocation(Info.x(), Info.y(), Info.z());
-	FVector OldLocation = GetActorLocation();
-
-	UE_LOG(LogTemp, Warning, TEXT("[AS1Monster] Old: (%.2f, %.2f, %.2f), New: (%.2f, %.2f, %.2f)"),
-		OldLocation.X, OldLocation.Y, OldLocation.Z,
-		NewLocation.X, NewLocation.Y, NewLocation.Z);
-
-
-	SetActorLocation(NewLocation);
+	Move(Info);
 }
 

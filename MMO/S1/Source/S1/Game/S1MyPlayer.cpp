@@ -27,6 +27,8 @@ AS1MyPlayer::AS1MyPlayer()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -76,11 +78,28 @@ void AS1MyPlayer::Tick(float DeltaTime)
 		AddMovementInput(Dir.GetSafeNormal());
 	}
 
+	// 입력값 변화 확인
 	if (InputVector != CacheVector)
+	{
 		DirtyFlag = true;
+		CacheVector = InputVector;
+	}
 
-	if (DirtyFlag)
+	// 이동 중이면 일정 주기로 위치 패킷 전송
+	TimeSinceLastSend += DeltaTime;
+	if (!InputVector.IsNearlyZero() && TimeSinceLastSend >= MoveSendInterval)
+	{
 		SendMovePacket();
+		TimeSinceLastSend = 0.f;
+	}
+
+	// 멈춘 직후 한번 전송 (Idle 처리)
+	if (DirtyFlag && InputVector.IsNearlyZero())
+	{
+		SendMovePacket();
+		DirtyFlag = false;
+		TimeSinceLastSend = 0.f;
+	}
 }
 
 void AS1MyPlayer::Move(const FInputActionValue& Value)

@@ -22,13 +22,22 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 public:
+	void Move(const Protocol::PosInfo& Info);
+
 	void SetTargetPlayer(AS1Player* Player) {}
 
-	void SetMonsterInfo(const Protocol::ObjectInfo& Info);
 	void SetPosInfo(const Protocol::PosInfo& Info);
 	Protocol::PosInfo GetPosInfo() const { return PosInfo; }
 
 protected:
+	UPROPERTY()
+	FVector TargetPosition;
+
+	UPROPERTY()
+	FRotator TargetRotation;
+
+	bool bHasReceivedMove = false;
+
 	Protocol::PosInfo PosInfo;
 	Protocol::ObjectInfo MonsterInfo;
 	AS1Player* TargetPlayer = nullptr;

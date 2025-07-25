@@ -89,6 +89,7 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 		return;
 
 	FVector SpawnLocation(ObjectInfo.pos_info().x(), ObjectInfo.pos_info().y(), ObjectInfo.pos_info().z());
+	FRotator SpawnRotation = FRotator(0.f, ObjectInfo.pos_info().yaw(), 0.f);
 
 	if (ObjectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
 	{
@@ -97,6 +98,8 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 			return;
 
 		Monster->SetPosInfo(ObjectInfo.pos_info());
+		Monster->SetActorLocation(SpawnLocation);
+		Monster->SetActorRotation(SpawnRotation);
 		Monsters.Add(ObjectId, Monster);
 		return;
 	}
@@ -109,6 +112,9 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 			return;
 
 		Player->SetPosInfo(ObjectInfo.pos_info());
+		Player->SetActorLocation(SpawnLocation);
+		Player->SetActorRotation(SpawnRotation);
+		PC->SetControlRotation(SpawnRotation);
 		MyPlayer = Player;
 		Players.Add(ObjectInfo.object_id(), Player);
 	}
@@ -119,6 +125,8 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 			return;
 
 		Player->SetPosInfo(ObjectInfo.pos_info());
+		Player->SetActorLocation(SpawnLocation);
+		Player->SetActorRotation(SpawnRotation);
 		Players.Add(ObjectInfo.object_id(), Player);
 	}
 }

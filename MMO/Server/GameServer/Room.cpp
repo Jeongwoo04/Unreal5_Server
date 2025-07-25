@@ -83,7 +83,8 @@ void Room::AssignRandomPos(ObjectRef object)
 	}
 
 	object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
-	object->SetCellPos(object->_posInfo);
+	object->_gridPos = Vector2Int(object->_posInfo);
+	object->_worldPos = Vector3(object->_posInfo);
 }
 
 bool Room::EnterRoom(ObjectRef object, bool randPos /*= true*/)
@@ -133,7 +134,7 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 	
 	PlayerRef& player = _players[objectId];
 
-	Vector2Int gridPos = WorldToGrid(pkt.info());
+	Vector2Int gridPos = Vector2Int(pkt.info());
 
 	if (!_gameMap->CanGo(gridPos))
 		return;

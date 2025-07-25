@@ -25,22 +25,22 @@ public:
 	void SetMoveType(Protocol::MoveState& type) { _posInfo.set_move_type(type); }
 	Protocol::MoveState GetMoveType() const { return _posInfo.move_type(); }
 
-	Vector2Int GetCellPos();
-	void SetCellPos(const Protocol::PosInfo& pos);
-
 	void SetId(uint64 id);
 	uint64 GetId() { return _id; }
 
 	void SetRoom(RoomRef room) { _room = room; }
 	RoomRef GetRoom() const { return _room.lock(); }
 
-	void GridToWorld(const Vector2Int& vec, float CELL_SIZE = 100.f);
+	void ApplyPos();
 
 public: 
 	Protocol::ObjectInfo _objectInfo;
 	Protocol::PosInfo _posInfo;
 
 	Vector2Int _gridPos;
+	Vector3 _worldPos;
+
+	Vector3 _dir;
 
 protected:
 	Protocol::StateMachine _state = Protocol::STATE_MACHINE_IDLE;
