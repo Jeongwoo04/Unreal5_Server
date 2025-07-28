@@ -34,10 +34,3 @@ enum StateMachine
 	STATE_MACHINE_SKILL = 4;
 	STATE_MACHINE_DEAD = 5;
 }
-
-enum MoveState
-{
-	MOVE_STATE_NONE = 0;
-	MOVE_STATE_WALK = 1;
-	MOVE_STATE_RUN = 2;
-}

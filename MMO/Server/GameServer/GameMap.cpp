@@ -32,8 +32,8 @@ bool GameMap::ApplyLeave(ObjectRef object)
         return false;
 
     {
-        int32 x = posInfo.x() - _minX;
-        int32 y = _maxY - posInfo.y();
+        int32 x = static_cast<int32>(posInfo.x() / CELL_SIZE) - _minX;
+        int32 y = _maxY - static_cast<int32>(posInfo.y() / CELL_SIZE);
         if (_objects[y][x] && _objects[y][x]->GetId() == object->GetId())
         {
             _objects[y][x] = nullptr;
@@ -61,10 +61,6 @@ bool GameMap::ApplyMove(ObjectRef object, Vector2Int dest)
         int32 y = _maxY - dest._y;
         _objects[y][x] = object;
     }
-
-    // 실제 좌표 이동
-    posInfo.set_x(dest._x);
-    posInfo.set_y(dest._y);
 
     return true;
 }

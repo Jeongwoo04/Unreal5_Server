@@ -22,9 +22,6 @@ public:
 	void SetState(Protocol::StateMachine& state) { _posInfo.set_state(state); }
 	Protocol::StateMachine GetState() const { return _posInfo.state(); }
 
-	void SetMoveType(Protocol::MoveState& type) { _posInfo.set_move_type(type); }
-	Protocol::MoveState GetMoveType() const { return _posInfo.move_type(); }
-
 	void SetId(uint64 id);
 	uint64 GetId() { return _id; }
 
@@ -44,7 +41,6 @@ public:
 
 protected:
 	Protocol::StateMachine _state = Protocol::STATE_MACHINE_IDLE;
-	Protocol::MoveState _moveState = Protocol::MOVE_STATE_NONE;
 
 	uint64 _id = 0;
 	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험

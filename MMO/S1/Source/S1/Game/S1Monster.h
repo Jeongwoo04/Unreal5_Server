@@ -38,6 +38,9 @@ protected:
 
 	bool bHasReceivedMove = false;
 
+	FVector PreviousLocation;
+	FVector Velocity;
+
 	Protocol::PosInfo PosInfo;
 	Protocol::ObjectInfo MonsterInfo;
 	AS1Player* TargetPlayer = nullptr;

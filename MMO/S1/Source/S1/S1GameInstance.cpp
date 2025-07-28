@@ -199,4 +199,5 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 		Player->SetPosInfo(MovePkt.info());
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("[Anim] S_MOVE Received: speed = %f"), MovePkt.info().speed());
 }

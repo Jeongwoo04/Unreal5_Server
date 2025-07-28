@@ -10,6 +10,9 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Animation/AnimInstance.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "S1MyPlayer.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -52,6 +55,24 @@ AS1Player::AS1Player()
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
 	GetCharacterMovement()->bRunPhysicsWithNoController = true;
+
+	// Skeletal Mesh 로드
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny.SKM_Manny"));
+	if (MeshAsset.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+	}
+
+	// Anim Blueprint 로드
+	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBP(TEXT("/Game/Characters/Mannequins/Animations/ABP_Manny.ABP_Manny_C"));
+	if (AnimBP.Succeeded())
+	{
+		GetMesh()->SetAnimInstanceClass(AnimBP.Class);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load AnimBPClass!"));
+	}
 }
 
 AS1Player::~AS1Player()
@@ -79,13 +100,17 @@ void AS1Player::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	FVector CurrentLocation = GetActorLocation();
+
 	if (bHasReceivedMove && !IsMyPlayer())
 	{
-		FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetPosition, DeltaTime, 10.f);
+		PreviousLocation = CurrentLocation;
+
+		// 보간 이동
+		FVector NewLocation = FMath::VInterpTo(CurrentLocation, TargetPosition, DeltaTime, 10.f);
 		SetActorLocation(NewLocation);
 
-		FRotator CurrentRot = GetActorRotation();
-		FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRotation, DeltaTime, 10.f);
+		FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 10.f);
 		SetActorRotation(NewRot);
 	}
 }
@@ -95,7 +120,6 @@ void AS1Player::Move(const Protocol::PosInfo& Info)
 	TargetPosition = FVector(Info.x(), Info.y(), Info.z());
 	TargetRotation = FRotator(0.f, Info.yaw(), 0.f);
 	bHasReceivedMove = true;
-	UE_LOG(LogTemp, Warning, TEXT("[Move] Received Yaw: %.2f"), Info.yaw());
 }
 
 void AS1Player::SetPosInfo(const Protocol::PosInfo& Info)

@@ -128,7 +128,7 @@ void Monster::UpdateMoving()
     }
 
     // Skill 가능 여부 체크
-    if (dist <= _skillRange && (_dir._x == 0 || _dir._y == 0))
+    if (dist <= static_cast<int32>(_skillRange * CELL_SIZE) && (_dir._x == 0 || _dir._y == 0))
     {
         _coolTick = 0;
         _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);

@@ -38,9 +38,9 @@ public:
 	float _reachThreshold = 50.f;
 
 protected:
-	int32 _searchRadius = 12.f;
-	int32 _chaseCellDist = 20.f;
-	int32 _skillRange = 1;
+	float _searchRadius = 12.f;
+	float _chaseCellDist = 20.f;
+	float _skillRange = 5.f;
 
 	uint64 _nextSearchTick = 0;
 	uint64 _nextMoveTick = 0;

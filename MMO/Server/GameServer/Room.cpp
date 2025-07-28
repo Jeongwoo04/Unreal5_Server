@@ -141,7 +141,6 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 
 	player->_posInfo.CopyFrom(pkt.info());
 	player->_gridPos = gridPos;
-	//player->SetV3Pos(player-> _posInfo);
 
 	{
 		Protocol::S_MOVE movePkt;
@@ -151,6 +150,8 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
 		Broadcast(sendBuffer);
 	}
+
+	cout << pkt.info().speed() << endl;
 }
 
 RoomRef Room::GetRoomRef()

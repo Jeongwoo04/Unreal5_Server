@@ -8,6 +8,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Animation/AnimInstance.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
@@ -48,13 +51,17 @@ void AS1Monster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	FVector CurrentLocation = GetActorLocation();
+
 	if (bHasReceivedMove)
 	{
-		FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetPosition, DeltaTime, 10.f);
+		PreviousLocation = CurrentLocation;
+
+		// 보간 이동
+		FVector NewLocation = FMath::VInterpTo(CurrentLocation, TargetPosition, DeltaTime, 10.f);
 		SetActorLocation(NewLocation);
 
-		FRotator CurrentRot = GetActorRotation();
-		FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRotation, DeltaTime, 10.f);
+		FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 10.f);
 		SetActorRotation(NewRot);
 	}
 }

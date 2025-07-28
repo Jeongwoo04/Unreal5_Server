@@ -89,6 +89,7 @@ void AS1MyPlayer::Tick(float DeltaTime)
 	TimeSinceLastSend += DeltaTime;
 	if (!InputVector.IsNearlyZero() && TimeSinceLastSend >= MoveSendInterval)
 	{
+		SetState(Protocol::STATE_MACHINE_MOVING);
 		SendMovePacket();
 		TimeSinceLastSend = 0.f;
 	}
@@ -96,6 +97,7 @@ void AS1MyPlayer::Tick(float DeltaTime)
 	// 肛冕 流饶 茄锅 傈价 (Idle 贸府)
 	if (DirtyFlag && InputVector.IsNearlyZero())
 	{
+		SetState(Protocol::STATE_MACHINE_IDLE);
 		SendMovePacket();
 		DirtyFlag = false;
 		TimeSinceLastSend = 0.f;
@@ -135,8 +137,9 @@ void AS1MyPlayer::SendMovePacket()
 	PosInfo.set_y(Loc.Y);
 	PosInfo.set_z(Loc.Z);
 	PosInfo.set_yaw(Rot.Yaw);
-	PosInfo.set_move_type(Protocol::MOVE_STATE_WALK);
-	PosInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+
+	float Speed = GetVelocity().Size();
+	PosInfo.set_speed(Speed);
 
 	Info->CopyFrom(PosInfo);
 

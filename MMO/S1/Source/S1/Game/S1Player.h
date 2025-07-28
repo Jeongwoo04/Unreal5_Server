@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Protocol.pb.h"
+#include "S1AnimEnum.h"
+#include "S1AnimInstance.h"
 #include "S1Player.generated.h"
 
 UCLASS()
@@ -29,6 +31,10 @@ public:
 
 	bool IsMyPlayer();
 
+public:
+	void SetState(const Protocol::StateMachine& State) { PosInfo.set_state(State); }
+	EStateMachine GetCurrentState() const { return StaticCast<EStateMachine>(PosInfo.state()); }
+
 protected:
 	UPROPERTY()
 	FVector TargetPosition;
@@ -36,10 +42,9 @@ protected:
 	UPROPERTY()
 	FRotator TargetRotation;
 
-	UPROPERTY()
-	float LerpAlpha = 0.1f;
-
 	bool bHasReceivedMove = false;
+
+	FVector PreviousLocation;
 
 	class Protocol::PosInfo PosInfo;
 };

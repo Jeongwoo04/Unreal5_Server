@@ -10,8 +10,8 @@ message PosInfo
 	float y = 3;
 	float z = 4;
 	float yaw = 5;
-	StateMachine state = 6;
-	MoveState move_type = 7;
+	float speed = 6;
+	StateMachine state = 7;
 }
 
 message ObjectInfo
