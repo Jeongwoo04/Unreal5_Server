@@ -148,6 +148,61 @@ vector<Vector2Int> GameMap::FindPath(Vector2Int startCellPos, Vector2Int destCel
     return CalcCellPathFromParent(parent, dest);
 }
 
+vector<Vector3> GameMap::SimplifyPathRaycast(Vector3& start, vector<Vector2Int>& path)
+{
+    std::vector<Vector3> result;
+    if (path.empty())
+        return result;
+
+    int anchor = 0;
+    Vector3 anchorPos = start;
+    result.push_back(anchorPos);
+
+    for (int i = 1; i < path.size(); ++i)
+    {
+        Vector3 to = GridToWorld(path[i]);
+
+        if (HasLineOfSightRayCast(anchorPos, to))
+        {
+            continue; // 아직 직선 가능
+        }
+
+        Vector3 candidate = GridToWorld(path[i - 1]);
+        if ((candidate - result.back()).Length() >= 1.0f)
+        {
+            result.push_back(candidate);
+        }
+        anchorPos = candidate;
+        anchor = i - 1;
+    }
+
+    Vector3 last = GridToWorld(path.back());
+    if ((result.back() - last).Length() >= 1.0f)
+    {
+        result.push_back(last);
+    }
+
+    return result;
+}
+
+bool GameMap::HasLineOfSightRayCast(Vector3& from, Vector3& to)
+{
+    // float 기반 RayCast
+    Vector3 dir = (to - from);
+    int steps = static_cast<int>(dir.Length() / 0.1f);
+    Vector3 step = dir * (1.f / steps);
+
+    Vector3 current = from;
+    for (int i = 0; i <= steps; ++i)
+    {
+        Vector2Int cell = WorldToGrid(current);
+        if (!CanGo(cell, false))
+            return false;
+        current += step;
+    }
+    return true;
+}
+
 vector<Vector2Int> GameMap::CalcCellPathFromParent(const vector<vector<Pos>>& parent, const Pos& dest)
 {
     vector<Vector2Int> cells;

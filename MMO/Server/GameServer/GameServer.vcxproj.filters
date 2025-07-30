@@ -22,6 +22,9 @@
     <Filter Include="Game\Room">
       <UniqueIdentifier>{dfe7a532-2fc6-4309-b4d1-944a99434821}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Data">
+      <UniqueIdentifier>{6c2ef249-9e15-407a-82e5-aace883ce117}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameServer.cpp">
@@ -78,6 +81,15 @@
     <ClCompile Include="GameMap.cpp">
       <Filter>Game\Room</Filter>
     </ClCompile>
+    <ClCompile Include="Data.Contents.cpp">
+      <Filter>Game\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigManager.cpp">
+      <Filter>Game\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="DataManager.cpp">
+      <Filter>Game\Data</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -130,6 +142,15 @@
     </ClInclude>
     <ClInclude Include="GameMap.h">
       <Filter>Game\Room</Filter>
+    </ClInclude>
+    <ClInclude Include="Data.Contents.h">
+      <Filter>Game\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfigManager.h">
+      <Filter>Game\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="DataManager.h">
+      <Filter>Game\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

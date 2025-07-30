@@ -27,6 +27,24 @@ AS1Monster::AS1Monster()
 
 	// Player (Pawn)과만 충돌
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+
+	// Skeletal Mesh 로드
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny.SKM_Manny"));
+	if (MeshAsset.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+	}
+
+	// Anim Blueprint 로드
+	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBP(TEXT("/Game/Characters/Mannequins/Animations/ABP_Manny.ABP_Manny_C"));
+	if (AnimBP.Succeeded())
+	{
+		GetMesh()->SetAnimInstanceClass(AnimBP.Class);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Monster Failed to load AnimBPClass!"));
+	}
 }
 
 AS1Monster::~AS1Monster()
@@ -43,6 +61,7 @@ void AS1Monster::BeginPlay()
 		PosInfo.set_y(Location.Y);
 		PosInfo.set_z(Location.Z);
 		PosInfo.set_yaw(GetControlRotation().Yaw);
+		PosInfo.set_state(Protocol::STATE_MACHINE_IDLE);
 	}
 }
 

@@ -112,6 +112,7 @@ bool Room::LeaveRoom(ObjectRef object)
 	bool success = RemoveObject(object, objectId);
 
 	NotifyDespawn(object, objectId);
+	// TODO : GameMap에서 지워야하는 애들 처리
 
 	return success;
 }
@@ -141,6 +142,7 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 
 	player->_posInfo.CopyFrom(pkt.info());
 	player->_gridPos = gridPos;
+	player->_worldPos = { pkt.info().x(), pkt.info().y() };
 
 	{
 		Protocol::S_MOVE movePkt;
@@ -150,8 +152,6 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
 		Broadcast(sendBuffer);
 	}
-
-	cout << pkt.info().speed() << endl;
 }
 
 RoomRef Room::GetRoomRef()

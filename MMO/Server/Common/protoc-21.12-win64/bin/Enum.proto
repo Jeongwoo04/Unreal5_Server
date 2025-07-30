@@ -34,3 +34,11 @@ enum StateMachine
 	STATE_MACHINE_SKILL = 4;
 	STATE_MACHINE_DEAD = 5;
 }
+
+enum SkillType
+{
+	SKILL_NONE = 0;
+	SKILL_AUTO = 1;
+	SKILL_PROJECTILE = 2;
+	SKILL_AOE_DOT = 3;
+}

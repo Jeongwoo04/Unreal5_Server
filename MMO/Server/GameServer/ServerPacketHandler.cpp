@@ -101,6 +101,11 @@ bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt)
 	return true;
 }
 
+bool Handle_C_SKILL(PacketSessionRef& session, Protocol::C_SKILL& pkt)
+{
+	return true;
+}
+
 bool Handle_C_CHAT(PacketSessionRef& session, Protocol::C_CHAT& pkt)
 {
 	return true;

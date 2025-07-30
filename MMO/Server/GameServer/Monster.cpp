@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Monster.h"
+#include "DataManager.h"
 
 Monster::Monster()
 {
@@ -7,6 +8,7 @@ Monster::Monster()
 
 	// TODO : Stat
 	_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
+    _posInfo.set_speed(_speed);
 }
 
 Monster::~Monster()
@@ -46,7 +48,7 @@ void Monster::UpdateIdle()
     PlayerRef target = GetRoom()->FindPlayer([&](const ObjectRef& p)
         {
             float dist = (Vector3(_posInfo) - Vector3(p->_posInfo)).Length();
-            return dist <= _searchRadius * 100.f;
+            return dist <= _searchRadius * CELL_SIZE;
         });
 
     if (target == nullptr)
@@ -67,7 +69,7 @@ void Monster::UpdateMoving()
     if (_nextMoveTick > tick)
         return;
 
-    //const int32 moveTick = static_cast<int32>(1000 / _statInfo()->speed());
+    //const int32 moveTick = static_cast<int32>(1000 / _statInfo.speed());
     const int32 moveTick = 50;
     _nextMoveTick = tick + moveTick;
 
@@ -80,69 +82,107 @@ void Monster::UpdateMoving()
         return;
     }
 
-    Vector2Int v2dir = target->_gridPos - _gridPos;
-    int32 dist = v2dir.cellDist();
+    GameMapRef map = GetRoom()->GetGameMap();
+    Vector3 myPos = _worldPos;
+    Vector3 targetPos = target->_worldPos;
+    float dist = (targetPos - myPos).Length();
 
-    if (dist == 0 || dist > _chaseCellDist * 100.f)
+    // 사정거리 초과 시 추적 종료
+    if (dist > _chaseCellDist * CELL_SIZE)
     {
         SetPlayer(nullptr);
         _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
         BroadcastMove();
         return;
     }
+    
+    //// 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
+    //if (dist <= static_cast<float>(_skillRange * CELL_SIZE) && map->HasLineOfSightRayCast(myPos, targetPos))
+    //{
+    //    _coolTick = 0;
+    //    _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
+    //    BroadcastMove(); // 상태 변경 알림
+    //    return;
+    //}
 
-    if (_path.empty())
+    // 직선 추적 가능 시 바로 이동
+    if (map->HasLineOfSightRayCast(myPos, targetPos))
     {
-        Vector2Int start = _gridPos;
-        Vector2Int dest = target->_gridPos;
+        Vector3 dir = (targetPos - myPos).Normalized();
+        float moveDist = _speed * _deltaTime;
+        if (moveDist > dist)
+            moveDist = dist;
 
-        _path = GetRoom()->GetGameMap()->FindPath(start, dest);
-        _pathIndex = 1;
+        _worldPos += dir * moveDist;
+        _posInfo.set_yaw(atan2f(dir._y, dir._x) * 180.f / PI);
+        _gridPos = GameMap::WorldToGrid(_worldPos);
 
+        _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+        ApplyPos();
+        map->ApplyMove(shared_from_this(), _gridPos);
+        BroadcastMove();
+        return;
+    }
+
+    // 경로 필요 시 갱신
+    static Vector3 lastTargetPos = Vector3(-99999, -99999);
+    bool needRepath = false;
+
+    if (_simplifiedPath.empty() || _simplifiedIndex >= _simplifiedPath.size())
+        needRepath = true;
+    else if ((targetPos - lastTargetPos).Length() > 10.f * CELL_SIZE)
+        needRepath = true;
+
+    if (needRepath)
+    {
+        _path = map->FindPath(_gridPos, target->_gridPos, false);
         if (_path.size() < 2)
         {
             SetPlayer(nullptr);
             _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
+            BroadcastMove();
             return;
         }
+
+        _simplifiedPath = map->SimplifyPathRaycast(_worldPos, _path);
+        _simplifiedIndex = 1;
+        lastTargetPos = targetPos;
     }
 
-    if (_pathIndex >= _path.size())
+    // 간소화 경로 따라 이동
+    if (_simplifiedIndex < _simplifiedPath.size())
     {
-        _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
+        Vector3 next = _simplifiedPath[_simplifiedIndex];
+        Vector3 dir = next - _worldPos;
+        float segDist = dir.Length();
+
+        if (segDist < 0.01f)
+        {
+            _worldPos = next;
+            _gridPos = GameMap::WorldToGrid(_worldPos);
+            _simplifiedIndex++;
+        }
+        else
+        {
+            dir = dir / segDist;
+            float moveDist = _speed * _deltaTime;
+            if (moveDist > segDist)
+                moveDist = segDist;
+
+            _worldPos += dir * moveDist;
+            _posInfo.set_yaw(atan2f(dir._y, dir._x) * 180.f / PI);
+            _gridPos = GameMap::WorldToGrid(_worldPos);
+        }
+
+        _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+        ApplyPos();
+        map->ApplyMove(shared_from_this(), _gridPos);
+        BroadcastMove();
         return;
     }
 
-    Vector3 targetPos = GameMap::GridToWorld(_path[_pathIndex]);
-    _dir = (targetPos - Vector3(_posInfo)).Normalized();
-    float distance = _speed * _deltaTime;
-
-    if ((_worldPos - targetPos).Length() <= _reachThreshold)
-    {
-        _worldPos = targetPos;
-        _pathIndex++;
-    }
-    else
-    {
-        _worldPos += _dir * distance;
-    }
-
-    // Skill 가능 여부 체크
-    if (dist <= static_cast<int32>(_skillRange * CELL_SIZE) && (_dir._x == 0 || _dir._y == 0))
-    {
-        _coolTick = 0;
-        _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
-        return;
-    }
-
-    ApplyPos();
-    GetRoom()->GetGameMap()->ApplyMove(shared_from_this(), _gridPos);
-
-    std::cout << "targetPos: " << targetPos._x << ", " << targetPos._y << std::endl;
-    std::cout << "_worldPos: " << _worldPos._x << ", " << _worldPos._y << std::endl;
-    std::cout << "_dir: " << _dir._x << ", " << _dir._y << std::endl;
-    std::cout << "distance: " << distance << std::endl;
-
+    // 그 외: Idle 전환
+    _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
     BroadcastMove();
 }
 
@@ -167,8 +207,7 @@ void Monster::UpdateSkill()
     {
         // 유효한 타겟 체크
         PlayerRef target = GetPlayer();
-        //if (target == nullptr || target->GetRoom() != GetRoom() || target->_statInfo()->hp() == 0)
-        if (target == nullptr || target->GetRoom() != GetRoom())
+        if (target == nullptr || target->GetRoom() != GetRoom() || target->_statInfo.hp() == 0)
         {
             SetPlayer(nullptr);
             _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
@@ -176,55 +215,51 @@ void Monster::UpdateSkill()
             return;
         }
 
-        // 스킬 사용 가능한지
-        Vector2Int dir = (target->_gridPos - _gridPos);
-        int32 dist = dir.cellDist();
-        bool canUseSkill = (dist <= _skillRange && (dir._x == 0 || dir._y == 0));
-        if (canUseSkill == false)
+        // 타겟과 거리 확인
+        float dist = (target->_worldPos - _worldPos).Length();
+        if (dist > _skillRange * CELL_SIZE)
         {
             SetPlayer(nullptr);
             _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-            BroadcastMove();
+            BroadcastMove(); // 상태 전환 알림
             return;
         }
 
-        // 타겟 방향 주시
-        //MoveDir lookDir = GetDirFromVec(dir);
-        //if (_posInfo()->movedir() != lookDir)
-        //{
-        //    _posInfo()->set_movedir(lookDir);
-        //    BroadcastMove();
-        //}
+        Vector3 dir = (target->_worldPos - _worldPos).Normalized();
+        float yaw = atan2f(dir._y, dir._x) * 180.f / PI;
+        _posInfo.set_yaw(yaw);
+        BroadcastMove();
 
-        //SkillRef skillData = nullptr;
-        //auto it = DataManager::Instance().SkillDict.find(1);
-        //if (it == DataManager::Instance().SkillDict.end())
-        //    return;
-        //skillData = it->second;
+        // 스킬 데이터 가져오기 (ID 1 고정)
+        SkillRef skillData = nullptr;
+        auto it = DataManager::Instance().SkillDict.find(1);
+        if (it == DataManager::Instance().SkillDict.end())
+            return;
 
-        //// 데미지 판정
-        //target->OnDamaged(shared_from_this(), skillData->damage + _statInfo()->attack());
+        skillData = it->second;
 
-        //// 스킬 사용 Broadcast
-        //S_Skill skillPkt;
-        //skillPkt.set_objectid(GetId());
-        //skillPkt.mutable_info()->set_skillid(skillData->id);
+        // 데미지 적용
+        target->OnDamaged(shared_from_this(), skillData->damage + _statInfo.attack());
 
-        //if (auto room = GetRoom())
-        //{
-        //    auto sendBuffer = ServerPacketHandler::MakeSendBuffer(skillPkt);
-        //    room->Broadcast(sendBuffer);
-        //}
+        // 스킬 사용 패킷 전송
+        S_SKILL skillPkt;
+        skillPkt.set_object_id(GetId());
+        skillPkt.mutable_skill_info()->set_skillid(skillData->id);
 
-        // 스킬 쿨타임 적용
-        //_coolTick = tick + static_cast<int64>(1000 * skillData->cooldown);
-        _coolTick = tick + 1000;
+        if (auto room = GetRoom())
+        {
+            auto sendBuffer = ServerPacketHandler::MakeSendBuffer(skillPkt);
+            room->Broadcast(sendBuffer);
+        }
+
+        // 쿨타임 설정
+        _coolTick = tick + static_cast<int64>(1000 * skillData->cooldown);
     }
-
-    if (_coolTick > tick)
-        return;
-
-    _coolTick = 0;
+    else
+    {
+        // 쿨타임 끝
+        _coolTick = 0;
+    }
 }
 
 void Monster::UpdateDead()
@@ -234,7 +269,24 @@ void Monster::UpdateDead()
 
 void Monster::OnDamaged(ObjectRef attacker, int32 damage)
 {
+    auto room = _room.lock();
+    if (!room)
+        return;
 
+    _statInfo.set_hp(_statInfo.hp() - damage);
+
+    if (_statInfo.hp() <= 0)
+    {
+        OnDead(attacker);
+        return;
+    }
+
+    S_CHANGE_HP changeHpPkt;
+    changeHpPkt.set_object_id(GetId());
+    changeHpPkt.set_hp(_statInfo.hp());
+
+    auto sendBuffer = ServerPacketHandler::MakeSendBuffer(changeHpPkt);
+    room->Broadcast(sendBuffer);
 }
 
 void Monster::OnDead(ObjectRef attacker)
@@ -243,19 +295,12 @@ void Monster::OnDead(ObjectRef attacker)
     if (room == nullptr)
         return;
 
-    //S_Die diePkt;
-    //diePkt.set_objectid(GetId());
-    //diePkt.set_attackerid(attacker->GetId());
+    S_DIE diePkt;
+    diePkt.set_object_id(GetId());
+    diePkt.set_attacker_id(attacker->GetId());
 
-    //auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
-    //room->Broadcast(sendBuffer);
+    auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
+    room->Broadcast(sendBuffer);
 
-    //room->LeaveGame(GetId());
-
-    //_statInfo()->set_hp(_statInfo()->maxhp());
-    //_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-    //_posInfo.set_posx(5);
-    //_posInfo.set_posy(5);
-
-    //room->DoAsync(&Room::EnterGame, shared_from_this());
+    room->LeaveRoom(shared_from_this());
 }

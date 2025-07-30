@@ -38,5 +38,4 @@ void Object::ApplyPos()
 	_gridPos = GameMap::WorldToGrid(_worldPos);
 	_posInfo.set_x(_worldPos._x);
 	_posInfo.set_y(_worldPos._y);
-	_posInfo.set_yaw(GameMap::YawFromDirection(_dir));
 }

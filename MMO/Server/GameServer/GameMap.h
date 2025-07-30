@@ -127,6 +127,11 @@ struct Vector3
         return Vector3(_x * scalar, _y * scalar);
     }
 
+    Vector3 operator/(float scalar) const
+    {
+        return Vector3(_x / scalar, _y / scalar);
+    }
+
     float Length() const
     {
         return sqrtf(_x * _x + _y * _y);
@@ -138,6 +143,11 @@ struct Vector3
         if (len == 0)
             return Vector3{ 0, 0 };
         return Vector3{ _x / len, _y / len };
+    }
+
+    float Dot(const Vector3& rhs) const
+    {
+        return _x * rhs._x + _y * rhs._y;
     }
 };
 
@@ -155,6 +165,9 @@ public:
     void LoadGameMap(int32 mapId, string pathPrefix = "../Common/CollisionMap");
 
     vector<Vector2Int> FindPath(Vector2Int startCellPos, Vector2Int destCellPos, bool checkObjects = true);
+    vector<Vector3> SimplifyPathRaycast(Vector3& start, vector<Vector2Int>& path);
+    // RayCast로 장애물 사이의 시야 확인
+    bool HasLineOfSightRayCast(Vector3& from, Vector3& to);
 
     static Vector2Int WorldToGrid(const Vector3& vec, float CELL_SIZE = 100.f)
     {
@@ -166,11 +179,6 @@ public:
     static Vector3 GridToWorld(const Vector2Int& vec)
     {
         return Vector3(vec._x * CELL_SIZE, vec._y * CELL_SIZE);
-    }
-
-    static float YawFromDirection(const Vector3& dir)
-    {
-        return atan2f(dir._y, dir._x) * (180.f / 3.141592f); // 라디안 → 도
     }
 
 private:

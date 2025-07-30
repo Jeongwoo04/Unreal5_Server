@@ -29,6 +29,9 @@ public:
 	void SetPosInfo(const Protocol::PosInfo& Info);
 	Protocol::PosInfo GetPosInfo() const { return PosInfo; }
 
+public:
+	EStateMachine GetCurrentState() const { return StaticCast<EStateMachine>(PosInfo.state()); }
+
 protected:
 	UPROPERTY()
 	FVector TargetPosition;

@@ -71,7 +71,7 @@ AS1Player::AS1Player()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to load AnimBPClass!"));
+		UE_LOG(LogTemp, Error, TEXT("Player Failed to load AnimBPClass!"));
 	}
 }
 

@@ -10,6 +10,8 @@
 #include "Job.h"
 #include "Room.h"
 #include "RoomManager.h"
+#include "DataManager.h"
+#include "ConfigManager.h"
 
 enum
 {
@@ -37,6 +39,8 @@ int main()
 {
 	ServerPacketHandler::Init();
 
+	ConfigManager::Instance().LoadConfig("../Data/config.json");
+	DataManager::Instance().LoadData("../Data");
 	RoomRef room = RoomManager::Instance().Add(1);
 
 	ServerServiceRef service = make_shared<ServerService>(
