@@ -76,16 +76,23 @@ bool Handle_S_MOVE(PacketSessionRef& session, Protocol::S_MOVE& pkt)
 
 bool Handle_S_SKILL(PacketSessionRef& session, Protocol::S_SKILL& pkt)
 {
+	UE_LOG(LogTemp, Log, TEXT("Received S_SKILL packet: object_id=%llu, skill_id=%d"),
+		pkt.object_id(),
+		pkt.skill_info().skillid());
 	return true;
 }
 
 bool Handle_S_CHANGE_HP(PacketSessionRef& session, Protocol::S_CHANGE_HP& pkt)
 {
+	UE_LOG(LogTemp, Log, TEXT("Received S_CHANGE_HP packet: object_id=%llu, hp=%d"),
+		pkt.object_id(), pkt.hp());
 	return true;
 }
 
 bool Handle_S_DIE(PacketSessionRef& session, Protocol::S_DIE& pkt)
 {
+	UE_LOG(LogTemp, Log, TEXT("Received S_DIE packet: object_id=%llu"),
+		pkt.object_id());
 	return true;
 }
 

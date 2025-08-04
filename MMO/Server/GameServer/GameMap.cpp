@@ -3,68 +3,6 @@
 #include "Object.h"
 #include "Room.h"
 
-#define NOMINMAX
-#include <limits>
-
-ObjectRef GameMap::Find(Vector2Int cellPos)
-{
-    if (cellPos._x < _minX || cellPos._x > _maxX)
-        return nullptr;
-    if (cellPos._y < _minY || cellPos._y > _maxY)
-        return nullptr;
-
-    int32 x = cellPos._x - _minX;
-    int32 y = _maxY - cellPos._y;
-    return _objects[y][x];
-}
-
-bool GameMap::ApplyLeave(ObjectRef object)
-{
-    if (object->GetRoom() == nullptr)
-        return false;
-    if (object->GetRoom()->GetGameMap() != shared_from_this())
-        return false;
-
-    auto posInfo = object->_posInfo;
-    if (posInfo.x() < _minX || posInfo.x() > _maxX)
-        return false;
-    if (posInfo.y() < _minY || posInfo.y() > _maxY)
-        return false;
-
-    {
-        int32 x = static_cast<int32>(posInfo.x() / CELL_SIZE) - _minX;
-        int32 y = _maxY - static_cast<int32>(posInfo.y() / CELL_SIZE);
-        if (_objects[y][x] && _objects[y][x]->GetId() == object->GetId())
-        {
-            _objects[y][x] = nullptr;
-        }
-    }
-
-    return true;
-}
-
-bool GameMap::ApplyMove(ObjectRef object, Vector2Int dest)
-{
-    ApplyLeave(object);
-
-    if (object->GetRoom() == nullptr)
-        return false;
-    if (object->GetRoom()->GetGameMap() != shared_from_this())
-        return false;
-
-    auto posInfo = object->_posInfo;
-    if (CanGo(dest, true) == false)
-        return false;
-
-    {
-        int32 x = dest._x - _minX;
-        int32 y = _maxY - dest._y;
-        _objects[y][x] = object;
-    }
-
-    return true;
-}
-
 void GameMap::LoadGameMap(int32 mapId, string pathPrefix)
 {
     stringstream ss;
@@ -80,7 +18,6 @@ void GameMap::LoadGameMap(int32 mapId, string pathPrefix)
     int32 yCount = _maxY - _minY + 1;
 
     _collision.resize(yCount, std::vector<bool>(xCount, false));
-    _objects.resize(yCount, std::vector<ObjectRef>(xCount, nullptr));
 
     string line;
     getline(inFile, line);
@@ -246,9 +183,7 @@ bool GameMap::CanGo(Vector2Int cell, bool checkObjects)
 
     if (checkObjects)
     {
-        ObjectRef obj = _objects[pos._y][pos._x];
-        if (obj != nullptr && obj->GetCreatureType() != Protocol::CREATURE_TYPE_PLAYER)
-            return false;
+        // TODO : Room으로 gridCell 이전 Object 체크는 Room에서. Map은 static collision만
     }
 
     return true;

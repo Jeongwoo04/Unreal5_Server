@@ -7,8 +7,15 @@ Monster::Monster()
 	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_MONSTER);
 
 	// TODO : Stat
-	_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-    _posInfo.set_speed(_speed);
+    auto it = DataManager::Instance().StatDict.find(1);
+    if (it == DataManager::Instance().StatDict.end())
+    {
+        delete this;
+        return;
+    }
+
+    _statInfo.CopyFrom(it->second);
+    _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
 }
 
 Monster::~Monster()
@@ -45,11 +52,7 @@ void Monster::UpdateIdle()
         return;
     _nextSearchTick = tick + 500;
 
-    PlayerRef target = GetRoom()->FindPlayer([&](const ObjectRef& p)
-        {
-            float dist = (Vector3(_posInfo) - Vector3(p->_posInfo)).Length();
-            return dist <= _searchRadius * CELL_SIZE;
-        });
+    PlayerRef target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius * CELL_SIZE), _worldPos);
 
     if (target == nullptr)
         return;
@@ -96,14 +99,14 @@ void Monster::UpdateMoving()
         return;
     }
     
-    //// 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
-    //if (dist <= static_cast<float>(_skillRange * CELL_SIZE) && map->HasLineOfSightRayCast(myPos, targetPos))
-    //{
-    //    _coolTick = 0;
-    //    _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
-    //    BroadcastMove(); // 상태 변경 알림
-    //    return;
-    //}
+    // 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
+    if (dist <= (_skillRange * CELL_SIZE) && map->HasLineOfSightRayCast(myPos, targetPos))
+    {
+        _coolTick = 0;
+        _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
+        BroadcastMove(); // 상태 변경 알림
+        return;
+    }
 
     // 직선 추적 가능 시 바로 이동
     if (map->HasLineOfSightRayCast(myPos, targetPos))
@@ -119,18 +122,17 @@ void Monster::UpdateMoving()
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
         ApplyPos();
-        map->ApplyMove(shared_from_this(), _gridPos);
+        GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), GameMap::WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;
     }
 
     // 경로 필요 시 갱신
-    static Vector3 lastTargetPos = Vector3(-99999, -99999);
     bool needRepath = false;
 
     if (_simplifiedPath.empty() || _simplifiedIndex >= _simplifiedPath.size())
         needRepath = true;
-    else if ((targetPos - lastTargetPos).Length() > 10.f * CELL_SIZE)
+    else if ((targetPos - _lastTargetPos).Length() > 10.f * CELL_SIZE)
         needRepath = true;
 
     if (needRepath)
@@ -146,7 +148,7 @@ void Monster::UpdateMoving()
 
         _simplifiedPath = map->SimplifyPathRaycast(_worldPos, _path);
         _simplifiedIndex = 1;
-        lastTargetPos = targetPos;
+        _lastTargetPos = targetPos;
     }
 
     // 간소화 경로 따라 이동
@@ -176,7 +178,7 @@ void Monster::UpdateMoving()
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
         ApplyPos();
-        map->ApplyMove(shared_from_this(), _gridPos);
+        GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), GameMap::WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;
     }
@@ -231,20 +233,19 @@ void Monster::UpdateSkill()
         BroadcastMove();
 
         // 스킬 데이터 가져오기 (ID 1 고정)
-        SkillRef skillData = nullptr;
         auto it = DataManager::Instance().SkillDict.find(1);
         if (it == DataManager::Instance().SkillDict.end())
             return;
 
-        skillData = it->second;
+        const Skill& skillData = it->second;
 
         // 데미지 적용
-        target->OnDamaged(shared_from_this(), skillData->damage + _statInfo.attack());
+        target->OnDamaged(shared_from_this(), skillData.damage + _statInfo.attack());
 
         // 스킬 사용 패킷 전송
         S_SKILL skillPkt;
         skillPkt.set_object_id(GetId());
-        skillPkt.mutable_skill_info()->set_skillid(skillData->id);
+        skillPkt.mutable_skill_info()->set_skillid(skillData.id);
 
         if (auto room = GetRoom())
         {
@@ -253,7 +254,7 @@ void Monster::UpdateSkill()
         }
 
         // 쿨타임 설정
-        _coolTick = tick + static_cast<int64>(1000 * skillData->cooldown);
+        _coolTick = tick + static_cast<int64>(1000 * skillData.cooldown);
     }
     else
     {

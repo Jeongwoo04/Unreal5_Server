@@ -103,6 +103,17 @@ bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt)
 
 bool Handle_C_SKILL(PacketSessionRef& session, Protocol::C_SKILL& pkt)
 {
+	auto gameSession = static_pointer_cast<GameSession>(session);
+
+	PlayerRef player = gameSession->_player;
+	if (player == nullptr)
+		return false;
+
+	RoomRef room = player->GetRoom();
+	if (room == nullptr)
+		return false;
+
+	room->DoAsync(&Room::HandleSkill, player, pkt);
 	return true;
 }
 

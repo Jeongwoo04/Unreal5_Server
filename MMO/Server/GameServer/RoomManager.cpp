@@ -48,13 +48,14 @@ void RoomManager::Init()
 	UpdateReserveAllRooms();
 }
 
+// 현재 Add -> Init -> Timer로 진행중.
 void RoomManager::UpdateReserveAllRooms()
 {
-	for (auto& it : _rooms)
-	{
-		RoomRef room = it.second;
-		if (room == nullptr)
-			return;
-		room->DoAsync(&Room::UpdateTick);
-	}
+	//for (auto& it : _rooms)
+	//{
+	//	RoomRef room = it.second;
+	//	if (room == nullptr)
+	//		return;
+	//	room->DoAsync(&Room::UpdateTick);
+	//}
 }

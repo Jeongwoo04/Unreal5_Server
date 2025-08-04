@@ -16,50 +16,49 @@ struct ProjectileInfo
 {
     string name;
     float speed = 0;
-    int range = 0;
-    string prefab;
+    int32 range = 0;
 };
 
 // Skill 구조체
 struct Skill
 {
-    int id = 0;
+    int32 id = 0;
     string name;
     float cooldown = 0;
-    int damage = 0;
+    int32 damage = 0;
     SkillType skillType = SkillType::SKILL_AUTO;
-    shared_ptr<ProjectileInfo> projectile; // optional
+    ProjectileInfo projectile; // optional
 };
 
-SkillType ToSkillType(const std::string& str);
+SkillType ToSkillType(const string& str);
 
 // 템플릿 인터페이스
 template<typename Key, typename Value>
 class ILoader
 {
 public:
-    virtual std::unordered_map<Key, std::shared_ptr<Value>> MakeDict() const = 0;
+    virtual unordered_map<Key, Value> MakeDict() = 0;
     virtual ~ILoader() = default;
 };
 
 // StatData
-class StatData : public ILoader<int, StatInfo>
+class StatData : public ILoader<int32, StatInfo>
 {
 public:
-    std::vector<std::shared_ptr<StatInfo>> stats;
+    vector<StatInfo> stats;
 
-    std::unordered_map<int, std::shared_ptr<StatInfo>> MakeDict() const override;
+    unordered_map<int32, StatInfo> MakeDict() override;
 
-    static std::shared_ptr<StatData> LoadFromJson(const std::string& path);
+    static StatData LoadFromJson(const string& path);
 };
 
 // SkillData
-class SkillData : public ILoader<int, Skill>
+class SkillData : public ILoader<int32, Skill>
 {
 public:
-    std::vector<std::shared_ptr<Skill>> skills;
+    vector<Skill> skills;
 
-    std::unordered_map<int, std::shared_ptr<Skill>> MakeDict() const override;
+    unordered_map<int32, Skill> MakeDict() override;
 
-    static std::shared_ptr<SkillData> LoadFromJsonFile(const std::string& path); // 이름 다르게!
+    static SkillData LoadFromJsonFile(const string& path); // 이름 다르게!
 };

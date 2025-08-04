@@ -40,7 +40,7 @@ struct Vector2Int
     const float CELL_SIZE = 100.f;
 
     Vector2Int() = default;
-    Vector2Int(int x, int y) : _x(x), _y(y) { }
+    Vector2Int(int32 x, int32 y) : _x(x), _y(y) { }
     Vector2Int(const Protocol::PosInfo& pos)
     {
         _x = static_cast<int32>(round(pos.x() / CELL_SIZE));
@@ -75,6 +75,11 @@ struct Vector2Int
         _x -= other._x;
         _y -= other._y;
         return *this;
+    }
+
+    bool operator==(const Vector2Int& other) const
+    {
+        return (_x == other._x && _y == other._y);
     }
 
     float magnitude() const
@@ -137,6 +142,11 @@ struct Vector3
         return sqrtf(_x * _x + _y * _y);
     }
 
+    float LengthSquared() const
+    {
+        return _x * _x + _y * _y;
+    }
+
     Vector3 Normalized() const
     {
         float len = sqrtf(_x * _x + _y * _y);
@@ -145,9 +155,19 @@ struct Vector3
         return Vector3{ _x / len, _y / len };
     }
 
-    float Dot(const Vector3& rhs) const
+    static float Dot(const Vector3& a, const Vector3& b)
     {
-        return _x * rhs._x + _y * rhs._y;
+        return a._x * b._x + a._y * b._y;
+    }
+};
+
+struct Vector2IntHash
+{
+    size_t operator()(const Vector2Int& vec) const noexcept
+    {
+        size_t h1 = hash<int32>()(vec._x);
+        size_t h2 = hash<int32>()(vec._y);
+        return h1 ^ (h2 << 1);
     }
 };
 
@@ -156,11 +176,7 @@ static const float CELL_SIZE = 100.f;
 class GameMap : public std::enable_shared_from_this<GameMap>
 {
 public:
-    ObjectRef Find(Vector2Int cellPos);
     bool CanGo(Vector2Int cell, bool checkObjects = true);
-
-    bool ApplyLeave(ObjectRef object);
-    bool ApplyMove(ObjectRef object, Vector2Int dest);
 
     void LoadGameMap(int32 mapId, string pathPrefix = "../Common/CollisionMap");
 
@@ -192,6 +208,5 @@ private:
 public:
     int32 _minX, _maxX, _minY, _maxY;
     int32 _sizeX, _sizeY;
-    std::vector<std::vector<bool>> _collision;
-    std::vector<std::vector<ObjectRef>> _objects;
+    vector<vector<bool>> _collision;
 };

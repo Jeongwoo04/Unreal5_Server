@@ -5,7 +5,7 @@
 
 ServerConfig ConfigManager::_config;
 
-bool ConfigManager::LoadConfig(const std::string& filePath)
+bool ConfigManager::LoadConfig(const string& filePath)
 {
     std::ifstream input(filePath);
     if (!input.is_open())

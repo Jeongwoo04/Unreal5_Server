@@ -2,11 +2,8 @@
 #include "Creature.h"
 #include "Player.h"
 
-using RoomRef = std::shared_ptr<class Room>;
-using GameMapRef = std::shared_ptr<class GameMap>;
-using SkillRef = std::shared_ptr<class Skill>;
-
-#define PI 3.1415926f
+using RoomRef = shared_ptr<class Room>;
+using GameMapRef = shared_ptr<class GameMap>;
 
 class Monster : public Creature
 {
@@ -35,10 +32,10 @@ public:
 	vector<Vector2Int> _path;
 	vector<Vector3> _simplifiedPath;
 	int32 _simplifiedIndex = 0;
-	Vector3 _lastTargetPos;
 
 	float _speed = 300.0f;
 	float _deltaTime = 0.1f;
+	float _collisionRadius = 42.f;
 
 protected:
 	float _searchRadius = 20.f;
@@ -48,5 +45,7 @@ protected:
 	uint64 _nextSearchTick = 0;
 	uint64 _nextMoveTick = 0;
 	uint64 _coolTick = 0;
+
+	Vector3 _lastTargetPos = Vector3(-99999, -99999);
 };
 

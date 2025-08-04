@@ -9,6 +9,9 @@ public:
 
 	virtual void Update();
 
-private:
+	void SetData(Skill data) { _data = data; }
+	Skill GetData() const { return _data; }
 
+protected:
+	Skill _data;
 };

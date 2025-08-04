@@ -3,7 +3,7 @@
 
 struct ServerConfig
 {
-    std::string dataPath;
+    string dataPath;
 };
 
 using json = nlohmann::json;
@@ -17,7 +17,7 @@ public:
         return instance;
     }
 
-    static bool LoadConfig(const std::string& filePath);
+    static bool LoadConfig(const string& filePath);
     static const ServerConfig& GetConfig();
 
 private:

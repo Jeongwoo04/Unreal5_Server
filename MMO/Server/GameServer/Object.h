@@ -1,9 +1,14 @@
 #pragma once
 #include "pch.h"
 #include "Room.h"
+#include "Data.Contents.h"
 #include "Protocol.pb.h"
 
 using namespace Protocol;
+
+using RoomRef = shared_ptr<class Room>;
+
+#define PI 3.1415926f
 
 class Object : public enable_shared_from_this<Object>
 {
@@ -33,6 +38,7 @@ public:
 public: 
 	Protocol::ObjectInfo _objectInfo;
 	Protocol::PosInfo _posInfo;
+	Protocol::StatInfo _statInfo;
 
 	Vector2Int _gridPos;
 	Vector3 _worldPos;

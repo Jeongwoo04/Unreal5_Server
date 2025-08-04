@@ -38,17 +38,6 @@ void Room::UpdateTick()
 	DoTimer(100, &Room::UpdateTick);
 }
 
-PlayerRef Room::FindPlayer(const function<bool(ObjectRef)>& condition)
-{
-	for (auto& it : _players)
-	{
-		if (condition(it.second))
-			return it.second;
-	}
-
-	return nullptr;
-}
-
 void Room::SpawnMonster()
 {
 	int32 maxMonsterGen = 1;
@@ -73,6 +62,15 @@ void Room::AssignRandomPos(ObjectRef object)
 		object->_posInfo.set_y(Utils::GetRandom(0.f, 100.f));
 		object->_posInfo.set_z(100.f);
 		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
+		object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
+		object->_gridPos = Vector2Int(object->_posInfo);
+		object->_worldPos = Vector3(object->_posInfo);
+
+		PlayerRef player = static_pointer_cast<Player>(object);
+		if (player->GetRoom() == nullptr)
+			return;
+
+		_playerGrid.ApplyAdd(player, player->_gridPos);
 	}
 	else if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
 	{
@@ -80,11 +78,16 @@ void Room::AssignRandomPos(ObjectRef object)
 		object->_posInfo.set_y(Utils::GetRandom(2000.f, 3000.f));
 		object->_posInfo.set_z(100.f);
 		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
-	}
+		object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
+		object->_gridPos = Vector2Int(object->_posInfo);
+		object->_worldPos = Vector3(object->_posInfo);
 
-	object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
-	object->_gridPos = Vector2Int(object->_posInfo);
-	object->_worldPos = Vector3(object->_posInfo);
+		MonsterRef monster = static_pointer_cast<Monster>(object);
+		if (monster->GetRoom() == nullptr)
+			return;
+
+		_monsterGrid.ApplyAdd(monster, monster->_gridPos);
+	}
 }
 
 bool Room::EnterRoom(ObjectRef object, bool randPos /*= true*/)
@@ -109,6 +112,25 @@ bool Room::LeaveRoom(ObjectRef object)
 		return false;
 
 	const uint64 objectId = object->_objectInfo.object_id();
+
+	//_gameMap->RemoveObject(object);
+	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
+	{
+		PlayerRef player = static_pointer_cast<Player>(object);
+		if (player->GetRoom() == nullptr)
+			return false;
+
+		_playerGrid.ApplyRemove(player, player->_gridPos);
+	}
+	else if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
+	{
+		MonsterRef monster = static_pointer_cast<Monster>(object);
+		if (monster->GetRoom() == nullptr)
+			return false;
+
+		_monsterGrid.ApplyRemove(monster, monster->_gridPos);
+	}
+
 	bool success = RemoveObject(object, objectId);
 
 	NotifyDespawn(object, objectId);
@@ -134,14 +156,18 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 		return;
 	
 	PlayerRef& player = _players[objectId];
-
-	Vector2Int gridPos = Vector2Int(pkt.info());
-
-	if (!_gameMap->CanGo(gridPos))
+	if (player == nullptr || player->GetRoom() == nullptr || player->GetRoom()->GetGameMap() == nullptr)
 		return;
 
+	Vector2Int destPos = Vector2Int(pkt.info());
+
+	if (!_gameMap->CanGo(destPos, false))
+		return;
+
+	_playerGrid.ApplyMove(player, player->_gridPos, destPos);
+
 	player->_posInfo.CopyFrom(pkt.info());
-	player->_gridPos = gridPos;
+	player->_gridPos = destPos;
 	player->_worldPos = { pkt.info().x(), pkt.info().y() };
 
 	{
@@ -151,6 +177,85 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
 		Broadcast(sendBuffer);
+	}
+}
+
+void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
+{
+	if (player == nullptr)
+		return;
+
+	if (player->_posInfo.state() != Protocol::STATE_MACHINE_IDLE)
+		return;
+
+	const auto& skillInfo = pkt.info();
+
+	player->_posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
+	S_SKILL skillPkt;
+	skillPkt.set_object_id(player->GetId());
+	skillPkt.mutable_skill_info()->set_skillid(2);
+
+	{
+		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(skillPkt);
+		Broadcast(sendBuffer);
+	}
+
+	auto it = DataManager::Instance().SkillDict.find(pkt.info().skillid());
+	if (it == DataManager::Instance().SkillDict.end())
+		return;
+
+	const Skill& skillData = it->second;
+
+	switch (skillData.skillType)
+	{
+	case Protocol::SKILL_NONE:
+		break;
+	case Protocol::SKILL_AUTO:
+	{
+		const float attackRange = 1.f * CELL_SIZE;     // 평타 사거리
+		const float monsterRadius = 42.f;              // 몬스터 반지름
+		const float totalRadius = attackRange + monsterRadius;
+
+		const float halfDegree = 45.f;
+		const float cosThreshold = cosf(halfDegree * (PI / 180.f));
+
+		const Vector3 attWorldPos = Vector3(player->_posInfo);
+		const float yaw = player->_posInfo.yaw();
+
+		const Vector3 forward(cosf(yaw), sinf(yaw)); // _x, _y 사용, _z는 무시
+
+		const int32 gridRadius = static_cast<int32>(ceil(totalRadius / CELL_SIZE));
+		const Vector2Int attGridPos(player->_posInfo);
+
+		vector<MonsterRef> candidates = _monsterGrid.FindAround(attGridPos, gridRadius);
+
+		for (MonsterRef monster : candidates)
+		{
+			if (monster == nullptr)
+				continue;
+
+			Vector3 targetWorldPos = Vector3(monster->_posInfo);
+			Vector3 targetDir = targetWorldPos - attWorldPos;
+
+			float distSq = targetDir.LengthSquared();  // _x, _y만 사용한 길이
+			if (distSq > totalRadius * totalRadius)
+				continue;
+
+			Vector3 dir = targetDir.Normalized(); // _x, _y만 정규화
+			float dot = Vector3::Dot(dir, forward);
+
+			if (dot >= cosThreshold)
+			{
+				monster->OnDamaged(player, player->_statInfo.attack() + skillData.damage);
+			}
+		}
+	}
+		break;
+	case Protocol::SKILL_PROJECTILE:
+
+		break;
+	case Protocol::SKILL_AOE_DOT:
+		break;
 	}
 }
 
