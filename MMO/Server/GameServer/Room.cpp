@@ -19,7 +19,7 @@ void Room::Init(int32 mapId)
 
 	SpawnMonster();
 
-	DoTimer(100, &Room::UpdateTick);
+	UpdateTick();
 }
 
 void Room::UpdateTick()
@@ -32,6 +32,7 @@ void Room::UpdateTick()
 	{
 		p.second->Update();
 	}
+	ClearRemoveList();
 
 	SpawnMonster();
 
@@ -185,8 +186,8 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	if (player == nullptr)
 		return;
 
-	if (player->_posInfo.state() != Protocol::STATE_MACHINE_IDLE)
-		return;
+	//if (player->_posInfo.state() != Protocol::STATE_MACHINE_IDLE)
+	//	return;
 
 	const auto& skillInfo = pkt.info();
 
@@ -252,11 +253,36 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	}
 		break;
 	case Protocol::SKILL_PROJECTILE:
+	{
+		ArrowRef arrow = ObjectManager::Instance().Add<Arrow>();
+		if (arrow == nullptr)
+			return;
 
+		arrow->SetOwner(player);
+		arrow->SetData(skillData);
+
+		arrow->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+		arrow->_posInfo.set_yaw(player->_posInfo.yaw());
+		arrow->_posInfo.set_x(player->_posInfo.x());
+		arrow->_posInfo.set_y(player->_posInfo.y());
+		arrow->_posInfo.set_z(player->_posInfo.z());
+		arrow->_statInfo.set_speed(skillData.projectile.speed);
+
+		arrow->_gridPos = Vector2Int(arrow->_posInfo);
+		arrow->_worldPos = Vector3(arrow->_posInfo);
+
+		EnterRoom(static_pointer_cast<Object>(arrow), false);
+	}
 		break;
 	case Protocol::SKILL_AOE_DOT:
 		break;
 	}
+
+	player->SetState(Protocol::STATE_MACHINE_IDLE);
+	S_MOVE movePkt;
+	movePkt.mutable_info()->CopyFrom(player->_posInfo);
+	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
+	BroadcastMove(sendBuffer);
 }
 
 RoomRef Room::GetRoomRef()
@@ -346,12 +372,11 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 
 void Room::NotifySpawn(ObjectRef object, bool success)
 {
-	if (object->GetCreatureType() != CREATURE_TYPE_PLAYER)
-		return;
-	PlayerRef player = static_pointer_cast<Player>(object);
-
 	// object가 player일 경우 본인에게 Enter 패킷 + 이미 존재하는 주변 object spawn
+	if (object->GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
+		PlayerRef player = static_pointer_cast<Player>(object);
+
 		{
 			Protocol::S_ENTER_GAME enterGamePkt;
 			enterGamePkt.set_success(success);
@@ -388,12 +413,14 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 				session->Send(sendBuffer);
 		}
 	}
+
 	// 다른 플레이어에게 object 입장 알림 (player, monster, projectile 입장 시)
 	{
 		Protocol::S_SPAWN spawnPkt;
 
 		auto info = spawnPkt.add_objects();
 		info->CopyFrom(object->_objectInfo);
+		info->mutable_pos_info()->CopyFrom(object->_posInfo);
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
 		Broadcast(sendBuffer, object->_objectInfo.object_id());
@@ -402,13 +429,11 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 
 void Room::NotifyDespawn(ObjectRef object, uint64 objectId)
 {
-	if (object->GetCreatureType() != CREATURE_TYPE_PLAYER)
-		return;
-
-	PlayerRef player = static_pointer_cast<Player>(object);
-
 	// 나에게 퇴장 패킷 보내기
+	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
 	{
+		PlayerRef player = static_pointer_cast<Player>(object);
+
 		Protocol::S_LEAVE_GAME leaveGamePkt;
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(leaveGamePkt);
@@ -424,4 +449,17 @@ void Room::NotifyDespawn(ObjectRef object, uint64 objectId)
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(despawnPkt);
 		Broadcast(sendBuffer, objectId);
 	}
+}
+
+void Room::AddRemoveList(ObjectRef object)
+{
+	_removePending.push_back(object);
+}
+
+void Room::ClearRemoveList()
+{
+	for (auto it : _removePending)
+		LeaveRoom(it);
+
+	_removePending.clear();
 }

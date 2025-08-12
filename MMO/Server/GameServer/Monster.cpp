@@ -7,14 +7,24 @@ Monster::Monster()
 	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_MONSTER);
 
 	// TODO : Stat
-    auto it = DataManager::Instance().StatDict.find(1);
-    if (it == DataManager::Instance().StatDict.end())
+    auto statIt = DataManager::Instance().StatDict.find(1);
+    if (statIt == DataManager::Instance().StatDict.end())
     {
         delete this;
         return;
     }
 
-    _statInfo.CopyFrom(it->second);
+    // 스킬 데이터 가져오기 (ID 1 고정)
+    auto skillIt = DataManager::Instance().SkillDict.find(2);
+    if (skillIt == DataManager::Instance().SkillDict.end())
+        return;
+
+    skillData = skillIt->second;
+
+    _statInfo.CopyFrom(statIt->second);
+    _skillRange = skillData.projectile.range;
+    _coolTick = skillData.cooldown;
+
     _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
 }
 
@@ -48,11 +58,12 @@ void Monster::Update()
 void Monster::UpdateIdle()
 {
     const uint64 tick = GetTickCount64();
+
     if (_nextSearchTick > tick)
         return;
     _nextSearchTick = tick + 500;
 
-    PlayerRef target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius * CELL_SIZE), _worldPos);
+    PlayerRef target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
 
     if (target == nullptr)
         return;
@@ -100,7 +111,7 @@ void Monster::UpdateMoving()
     }
     
     // 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
-    if (dist <= (_skillRange * CELL_SIZE) && map->HasLineOfSightRayCast(myPos, targetPos))
+    if (dist <= (_skillRange * CELL_SIZE))
     {
         _coolTick = 0;
         _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
@@ -118,11 +129,11 @@ void Monster::UpdateMoving()
 
         _worldPos += dir * moveDist;
         _posInfo.set_yaw(atan2f(dir._y, dir._x) * 180.f / PI);
-        _gridPos = GameMap::WorldToGrid(_worldPos);
+        _gridPos = WorldToGrid(_worldPos);
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
         ApplyPos();
-        GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), GameMap::WorldToGrid(myPos), _gridPos);
+        GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;
     }
@@ -132,11 +143,13 @@ void Monster::UpdateMoving()
 
     if (_simplifiedPath.empty() || _simplifiedIndex >= _simplifiedPath.size())
         needRepath = true;
-    else if ((targetPos - _lastTargetPos).Length() > 10.f * CELL_SIZE)
+    else if ((targetPos - _lastTargetPos).Length() > 50.f * CELL_SIZE)
         needRepath = true;
 
-    if (needRepath)
+    if (needRepath && tick > _nextPathUpdateTick)
     {
+        _nextPathUpdateTick = tick + 1000;
+
         _path = map->FindPath(_gridPos, target->_gridPos, false);
         if (_path.size() < 2)
         {
@@ -161,7 +174,7 @@ void Monster::UpdateMoving()
         if (segDist < 0.01f)
         {
             _worldPos = next;
-            _gridPos = GameMap::WorldToGrid(_worldPos);
+            _gridPos = WorldToGrid(_worldPos);
             _simplifiedIndex++;
         }
         else
@@ -173,12 +186,12 @@ void Monster::UpdateMoving()
 
             _worldPos += dir * moveDist;
             _posInfo.set_yaw(atan2f(dir._y, dir._x) * 180.f / PI);
-            _gridPos = GameMap::WorldToGrid(_worldPos);
+            _gridPos = WorldToGrid(_worldPos);
         }
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
         ApplyPos();
-        GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), GameMap::WorldToGrid(myPos), _gridPos);
+        GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;
     }
@@ -232,13 +245,7 @@ void Monster::UpdateSkill()
         _posInfo.set_yaw(yaw);
         BroadcastMove();
 
-        // 스킬 데이터 가져오기 (ID 1 고정)
-        auto it = DataManager::Instance().SkillDict.find(1);
-        if (it == DataManager::Instance().SkillDict.end())
-            return;
-
-        const Skill& skillData = it->second;
-
+        /*
         // 데미지 적용
         target->OnDamaged(shared_from_this(), skillData.damage + _statInfo.attack());
 
@@ -252,6 +259,7 @@ void Monster::UpdateSkill()
             auto sendBuffer = ServerPacketHandler::MakeSendBuffer(skillPkt);
             room->Broadcast(sendBuffer);
         }
+        */
 
         // 쿨타임 설정
         _coolTick = tick + static_cast<int64>(1000 * skillData.cooldown);
@@ -275,6 +283,8 @@ void Monster::OnDamaged(ObjectRef attacker, int32 damage)
         return;
 
     _statInfo.set_hp(_statInfo.hp() - damage);
+
+    cout << "Monster Hp : " << _statInfo.hp() << endl;
 
     if (_statInfo.hp() <= 0)
     {
@@ -300,8 +310,10 @@ void Monster::OnDead(ObjectRef attacker)
     diePkt.set_object_id(GetId());
     diePkt.set_attacker_id(attacker->GetId());
 
+    cout << "Monster is Dead" << endl;
+
     auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
     room->Broadcast(sendBuffer);
 
-    room->LeaveRoom(shared_from_this());
+    room->AddRemoveList(shared_from_this());
 }

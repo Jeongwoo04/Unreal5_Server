@@ -40,8 +40,13 @@ public:
 protected:
 	float _searchRadius = 20.f;
 	float _chaseCellDist = 30.f;
-	float _skillRange = 1.f;
 
+	Skill skillData;
+
+	float _skillRange;
+
+	uint64 _nextPathUpdateTick = 0;
+	uint64 _nextLOSCheckTick = 0;
 	uint64 _nextSearchTick = 0;
 	uint64 _nextMoveTick = 0;
 	uint64 _coolTick = 0;

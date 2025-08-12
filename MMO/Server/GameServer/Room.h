@@ -6,6 +6,7 @@ using GameMapRef = shared_ptr<class GameMap>;
 using RoomRef = shared_ptr<class Room>;
 using MonsterRef = shared_ptr<class Monster>;
 using ProjectileRef = shared_ptr<class Projectile>;
+using ArrowRef = shared_ptr<class Arrow>;
 
 class Room : public JobQueue
 {
@@ -48,6 +49,10 @@ public:
 	void NotifyDespawn(ObjectRef object, uint64 objectId);
 
 public:
+	void AddRemoveList(ObjectRef object);
+	void ClearRemoveList();
+
+public:
 	GameMapRef _gameMap;
 	SpatialHashGrid<PlayerRef> _playerGrid;
 	SpatialHashGrid<MonsterRef> _monsterGrid;
@@ -56,6 +61,8 @@ private:
 	unordered_map<uint64, PlayerRef> _players;
 	unordered_map<uint64, MonsterRef> _monsters;
 	unordered_map<uint64, ProjectileRef> _projectiles;
+
+	vector<ObjectRef> _removePending;
 
 	//SpatialHashGrid<ProjectileRef> _projectileGrid;
 

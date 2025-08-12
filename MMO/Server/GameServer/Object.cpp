@@ -28,14 +28,13 @@ void Object::OnDead(ObjectRef attacker)
 
 void Object::SetId(uint64 id)
 {
-	_id = id;
 	_objectInfo.set_object_id(id);
 	_posInfo.set_object_id(id);
 }
 
 void Object::ApplyPos()
 {
-	_gridPos = GameMap::WorldToGrid(_worldPos);
+	_gridPos = WorldToGrid(_worldPos);
 	_posInfo.set_x(_worldPos._x);
 	_posInfo.set_y(_worldPos._y);
 }

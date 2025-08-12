@@ -63,6 +63,12 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::Look);
 
+		//Skill
+		EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkill);
+		if (SkillAction == nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SkillAction is null!"));
+		}
 	}
 
 }
@@ -102,6 +108,8 @@ void AS1MyPlayer::Tick(float DeltaTime)
 		DirtyFlag = false;
 		TimeSinceLastSend = 0.f;
 	}
+
+	TimeSinceLastSkill += DeltaTime;
 }
 
 void AS1MyPlayer::Move(const FInputActionValue& Value)
@@ -122,6 +130,21 @@ void AS1MyPlayer::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AS1MyPlayer::UseSkill()
+{
+	if (TimeSinceLastSkill < SkillCooldown)
+		return;
+
+	DirtyFlag = true;
+
+	Protocol::C_SKILL pkt;
+	pkt.mutable_info()->set_skillid(2);
+
+	SEND_PACKET(pkt);
+
+	TimeSinceLastSkill = 0.f;
 }
 
 void AS1MyPlayer::SendMovePacket()

@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Arrow.h"
+#include "Player.h"
+#include "Monster.h"
 
 void Arrow::Update()
 {
@@ -10,31 +12,73 @@ void Arrow::Update()
     if (_nextMoveTick > tick)
         return;
 
-    const float speed = GetData().projectile.speed;
-    const uint64 moveTick = static_cast<uint64>(1000 / speed);
+    const uint64 moveTick = static_cast<uint64>(1000 / _statInfo.speed());
     _nextMoveTick = tick + moveTick;
 
     auto room = GetRoom();
     if (room == nullptr)
         return;
 
-    // 현재 위치 및 이동 계산
-    Vector3 currentPos = _worldPos;
-    float yawRad = GetOwner()->_posInfo.yaw() * PI / 180.f;
-    Vector3 dir = Vector3(cosf(yawRad), sinf(yawRad));
-    Vector3 nextPos = currentPos + dir * GetData().projectile.speed * 0.05f;
+    constexpr float deltaTime = 0.1f; // Room Tick
 
-    // 명중 거리 체크 (float 기반)
-    const float kHitDistance = 50.f; // 0.5 셀 * 100 셀 크기
-    float hitDistSq = kHitDistance * kHitDistance;
+    if (_distance > _data.projectile.range * CELL_SIZE * 1.5f)
+    {
+        room->AddRemoveList(shared_from_this());
+        return;
+    }
 
-    //for (auto& obj : room->GetGameMap()->GetObjects())
-    //{
-    //    if (obj == nullptr || obj->GetType() != ObjectType::Monster)
-    //        continue;
+    Vector3 dir = Vector3::YawToDir(_posInfo.yaw());
+    Vector3 move = dir * _statInfo.speed() * deltaTime;
+    _destPos = _worldPos + move;
 
-    //    Vector3 targetPos = obj->_worldPos;
-    //    float distSq = (nextPos - targetPos).Length(); // float 거리 비교
+    ObjectRef target = nullptr;
+
+    if (GetOwner()->GetCreatureType() == Protocol::CREATURE_TYPE_MONSTER)
+    {
+        PlayerRef playerTarget = room->_playerGrid.FindNearestOnPath(_worldPos, _destPos, _radius);
+        if (playerTarget)
+        {
+            target = playerTarget;
+        }
+    }        
+    else if (GetOwner()->GetCreatureType() == Protocol::CREATURE_TYPE_PLAYER)
+    {
+        MonsterRef monsterTarget = room->_monsterGrid.FindNearestOnPath(_worldPos, _destPos, _radius);
+        if (monsterTarget)
+        {
+            target = monsterTarget;
+        }
+    }
+
+    if (target)
+    {
+        target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data.damage);
+        room->AddRemoveList(shared_from_this());
+        return;
+    }
+    else
+    {
+        ;
+    }
+
+    if (room->GetGameMap() && !room->GetGameMap()->CanGo(WorldToGrid(_destPos)))
+    {
+        room->AddRemoveList(shared_from_this());
+        return;
+    }
+
+    _posInfo.set_x(_destPos._x);
+    _posInfo.set_y(_destPos._y);
+    _worldPos = _destPos;
+    _gridPos = Vector2Int(_posInfo);
+    _distance += move.Length();
+
+    S_MOVE movePkt;
+    movePkt.mutable_info()->CopyFrom(_posInfo);
+    {
+        auto sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
+        room->BroadcastMove(sendBuffer);
+    }
 
     //    if (distSq * distSq <= hitDistSq)
     //    {

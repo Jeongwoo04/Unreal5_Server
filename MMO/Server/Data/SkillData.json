@@ -16,7 +16,7 @@
       "projectile": {
         "name": "화살",
         "speed": 300.0,
-        "range": 10
+        "range": 6
       }
     }
   ]

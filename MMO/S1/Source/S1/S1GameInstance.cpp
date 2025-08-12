@@ -12,6 +12,24 @@
 #include "S1MyPlayer.h"
 #include "S1Monster.h"
 
+void US1GameInstance::Init()
+{
+	Super::Init();
+
+	ObjectManager = NewObject<US1ObjectManager>(this);
+	if (ObjectManager)
+	{
+		ObjectManager->Init(GetWorld());
+		ObjectManager->SetClasses(MyPlayerClass, OtherPlayerClass, MonsterClass);
+	}
+
+	MapManager = NewObject<US1MapManger>(this);
+	if (MapManager)
+	{
+		MapManager->LoadMap(1, 100.f);
+	}
+}
+
 void US1GameInstance::ConnectToGameServer()
 {
 	Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(TEXT("Stream"), TEXT("Client Socket"));
@@ -41,7 +59,6 @@ void US1GameInstance::ConnectToGameServer()
 			SendBufferRef SendBuffer = ClientPacketHandler::MakeSendBuffer(Pkt);
 			SendPacket(SendBuffer);
 		}
-		MapInit();
 	}
 	else
 	{
@@ -84,50 +101,26 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 		return;
 
 	// 중복 처리 체크
-	const uint64 ObjectId = ObjectInfo.object_id();
-	if (Players.Find(ObjectId) != nullptr || Monsters.Find(ObjectId) != nullptr)
+	AActor* NewActor = ObjectManager->SpawnObject(ObjectInfo, IsMine);
+	if (!NewActor)
 		return;
-
-	FVector SpawnLocation(ObjectInfo.pos_info().x(), ObjectInfo.pos_info().y(), ObjectInfo.pos_info().z());
-	FRotator SpawnRotation = FRotator(0.f, ObjectInfo.pos_info().yaw(), 0.f);
-
-	if (ObjectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
-	{
-		AS1Monster* Monster = World->SpawnActor<AS1Monster>(MonsterClass, SpawnLocation, FRotator::ZeroRotator);
-		if (Monster == nullptr)
-			return;
-
-		Monster->SetPosInfo(ObjectInfo.pos_info());
-		Monster->SetActorLocation(SpawnLocation);
-		Monster->SetActorRotation(SpawnRotation);
-		Monsters.Add(ObjectId, Monster);
-		return;
-	}
 
 	if (IsMine)
 	{
 		auto* PC = UGameplayStatics::GetPlayerController(this, 0);
-		AS1Player* Player = Cast<AS1Player>(PC->GetPawn());
-		if (Player == nullptr)
+		if (!PC)
 			return;
 
-		Player->SetPosInfo(ObjectInfo.pos_info());
-		Player->SetActorLocation(SpawnLocation);
-		Player->SetActorRotation(SpawnRotation);
+		APawn* DefaultPawn = PC->GetPawn();
+		if (DefaultPawn)
+			DefaultPawn->Destroy();
+
+		PC->Possess(Cast<APawn>(NewActor));
+
+		MyPlayer = Cast<AS1MyPlayer>(NewActor);
+
+		FRotator SpawnRotation(0.f, ObjectInfo.pos_info().yaw(), 0.f);
 		PC->SetControlRotation(SpawnRotation);
-		MyPlayer = Player;
-		Players.Add(ObjectInfo.object_id(), Player);
-	}
-	else
-	{
-		AS1Player* Player = Cast<AS1Player>(World->SpawnActor(OtherPlayerClass, &SpawnLocation));
-		if (Player == nullptr)
-			return;
-
-		Player->SetPosInfo(ObjectInfo.pos_info());
-		Player->SetActorLocation(SpawnLocation);
-		Player->SetActorRotation(SpawnRotation);
-		Players.Add(ObjectInfo.object_id(), Player);
 	}
 }
 
@@ -153,11 +146,7 @@ void US1GameInstance::HandleDespawn(uint64 ObjectId)
 	if (World == nullptr)
 		return;
 
-	AS1Player** FindActor = Players.Find(ObjectId);
-	if (FindActor == nullptr)
-		return;
-
-	World->DestroyActor(*FindActor);
+	ObjectManager->DespawnObject(ObjectId);
 }
 
 void US1GameInstance::HandleDespawn(const Protocol::S_DESPAWN& DespawnPkt)
@@ -200,4 +189,43 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("[Anim] S_MOVE Received: speed = %f"), MovePkt.info().speed());
+}
+
+void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
+{
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
+
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	// TODO : Skill anim
+	SkillPkt.object_id();
+	SkillPkt.skill_info().skillid();
+}
+
+void US1GameInstance::HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt)
+{
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
+
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	// TODO : Hp UI 변경
+}
+
+void US1GameInstance::HandleDie(const Protocol::S_DIE& DiePkt)
+{
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
+
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	// TODO : Die anim
+	HandleDespawn(DiePkt.object_id());
 }

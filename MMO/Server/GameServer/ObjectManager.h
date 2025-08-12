@@ -2,6 +2,7 @@
 #include "Object.h"
 #include "Player.h"
 #include "Projectile.h"
+#include "Arrow.h"
 #include "Monster.h"
 
 using namespace Protocol;

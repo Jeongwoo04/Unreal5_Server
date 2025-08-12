@@ -8,8 +8,6 @@ using namespace Protocol;
 
 using RoomRef = shared_ptr<class Room>;
 
-#define PI 3.1415926f
-
 class Object : public enable_shared_from_this<Object>
 {
 public:
@@ -24,14 +22,16 @@ public:
 	virtual Protocol::CreatureType GetCreatureType() const { return _objectInfo.creature_type(); }
 	virtual Protocol::PlayerType GetPlayerType() const { return _objectInfo.player_type(); }
 
-	void SetState(Protocol::StateMachine& state) { _posInfo.set_state(state); }
+	void SetState(const Protocol::StateMachine& state) { _posInfo.set_state(state); }
 	Protocol::StateMachine GetState() const { return _posInfo.state(); }
 
 	void SetId(uint64 id);
-	uint64 GetId() { return _id; }
+	uint64 GetId() { return _posInfo.object_id(); }
 
 	void SetRoom(RoomRef room) { _room = room; }
 	RoomRef GetRoom() const { return _room.lock(); }
+
+	bool IsDead() { return GetState() == Protocol::STATE_MACHINE_DEAD; }
 
 	void ApplyPos();
 
@@ -48,7 +48,6 @@ public:
 protected:
 	Protocol::StateMachine _state = Protocol::STATE_MACHINE_IDLE;
 
-	uint64 _id = 0;
 	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험
 };
 

@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "S1.h"
 #include "S1MapManger.h"
+#include "S1ObjectManager.h"
 #include "S1GameInstance.generated.h"
 
 class AS1Player;
@@ -20,6 +21,8 @@ class S1_API US1GameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	virtual void Init() override;
+
 	UFUNCTION(BlueprintCallable)
 	void ConnectToGameServer();
 
@@ -41,6 +44,12 @@ public:
 
 	void HandleMove(const Protocol::S_MOVE& MovePkt);
 
+	void HandleSkill(const Protocol::S_SKILL& SkillPkt);
+
+	void HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt);
+
+	void HandleDie(const Protocol::S_DIE& DiePkt);
+
 public:
 	// GameServer
 	class FSocket* Socket;
@@ -52,13 +61,13 @@ public:
 	UPROPERTY()
 	US1MapManger* MapManager;
 
-	virtual void MapInit()
-	{
-		MapManager = NewObject<US1MapManger>(this);
-		MapManager->LoadMap(1, 100.f);
-	}
+	UPROPERTY()
+	US1ObjectManager* ObjectManager;
 
 public:
+	UPROPERTY(EditAnywhere, Category = "Classes")
+	TSubclassOf<AS1MyPlayer> MyPlayerClass;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AS1Player> OtherPlayerClass;
 
@@ -69,6 +78,4 @@ public:
 
 	TMap<uint64, AS1Player*> Players;
 	TMap<uint64, AS1Monster*> Monsters;
-
-	uint64 MyObjectId = 0;
 };

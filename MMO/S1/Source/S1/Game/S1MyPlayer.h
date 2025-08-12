@@ -33,6 +33,7 @@ public:
 protected:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void UseSkill();
 
 protected:
 	/** Camera boom positioning the camera behind the character */
@@ -55,6 +56,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SkillAction;
+
 protected:
 	const float MOVE_PACKET_SEND_DELAY = 0.2f;
 	float MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;
@@ -66,6 +70,9 @@ protected:
 	bool DirtyFlag = false;
 	float MoveSendInterval = 0.1f;
 	float TimeSinceLastSend = 0.f;
+
+	float SkillCooldown = 0.5f; // TODO : skill data Ã³¸®
+	float TimeSinceLastSkill = 0.f;
 
 	void SendMovePacket();
 };
