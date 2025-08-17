@@ -11,6 +11,10 @@
 
 class AS1Player;
 class AS1Monster;
+class AS1MyPlayer;
+class AS1Projectile;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnMyPlayerSpawned, AS1MyPlayer*);
 
 /**
  * 
@@ -33,6 +37,8 @@ public:
 	void HandleRecvPackets();
 
 	void SendPacket(SendBufferRef SendBuffer);
+
+	FOnMyPlayerSpawned OnMyPlayerSpawned;
 
 public:
 	void HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool IsMine);
@@ -68,14 +74,18 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Classes")
 	TSubclassOf<AS1MyPlayer> MyPlayerClass;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Classes")
 	TSubclassOf<AS1Player> OtherPlayerClass;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Classes")
 	TSubclassOf<AS1Monster> MonsterClass;
 
-	AS1Player* MyPlayer;
+	UPROPERTY(EditAnywhere, Category = "Classes")
+	TSubclassOf<AS1Projectile> ProjectileClass;
 
-	TMap<uint64, AS1Player*> Players;
-	TMap<uint64, AS1Monster*> Monsters;
+	UPROPERTY(BlueprintReadOnly)
+	AS1MyPlayer* MyPlayer = nullptr;
+
+	bool Connected = false;
+	bool bInitialized = false;
 };

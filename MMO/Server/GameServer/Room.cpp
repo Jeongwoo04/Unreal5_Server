@@ -2,6 +2,7 @@
 #include "Room.h"
 #include "Player.h"
 #include "ObjectManager.h"
+#include "GameSessionManager.h"
 
 Room::Room()
 {

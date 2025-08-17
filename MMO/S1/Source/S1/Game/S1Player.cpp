@@ -2,18 +2,14 @@
 
 
 #include "Game/S1Player.h"
-#include "Camera/CameraComponent.h"
+#include "S1MyPlayer.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "S1MyPlayer.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ATP_ThirdPersonCharacter
@@ -80,58 +76,9 @@ AS1Player::~AS1Player()
 
 }
 
-void AS1Player::BeginPlay()
-{
-	// Call the base class
-	Super::BeginPlay();
-
-	// 처음 시작점과 Dest가 동일하게끔 보정.
-	{
-		FVector Location = GetActorLocation();
-		PosInfo.set_x(Location.X);
-		PosInfo.set_y(Location.Y);
-		PosInfo.set_z(Location.Z);
-		PosInfo.set_yaw(GetControlRotation().Yaw);
-		PosInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-	}
-}
-
 void AS1Player::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	FVector CurrentLocation = GetActorLocation();
-
-	if (bHasReceivedMove && !IsMyPlayer())
-	{
-		PreviousLocation = CurrentLocation;
-
-		// 보간 이동
-		FVector NewLocation = FMath::VInterpTo(CurrentLocation, TargetPosition, DeltaTime, 10.f);
-		SetActorLocation(NewLocation);
-
-		FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 10.f);
-		SetActorRotation(NewRot);
-	}
-}
-
-void AS1Player::Move(const Protocol::PosInfo& Info)
-{
-	TargetPosition = FVector(Info.x(), Info.y(), Info.z());
-	TargetRotation = FRotator(0.f, Info.yaw(), 0.f);
-	bHasReceivedMove = true;
-}
-
-void AS1Player::SetPosInfo(const Protocol::PosInfo& Info)
-{
-	if (PosInfo.object_id() != 0)
-	{
-		assert(PlayerInfo.object_id() == Info.object_id());
-	}
-
-	PosInfo.CopyFrom(Info);
-
-	Move(Info);
 }
 
 bool AS1Player::IsMyPlayer()

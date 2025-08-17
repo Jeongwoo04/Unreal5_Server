@@ -11,8 +11,8 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "S1.h"
+#include "S1PlayerController.h"
 #include "Engine/LocalPlayer.h"
-#include <Kismet/KismetMathLibrary.h>
 
 AS1MyPlayer::AS1MyPlayer()
 {
@@ -35,17 +35,7 @@ AS1MyPlayer::AS1MyPlayer()
 
 void AS1MyPlayer::BeginPlay()
 {
-	// Call the base class  
 	Super::BeginPlay();
-
-	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -57,11 +47,11 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 
 		//Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::Move);
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &AS1MyPlayer::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::InputMove);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &AS1MyPlayer::InputMove);
 
 		//Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::Look);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::InputLook);
 
 		//Skill
 		EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkill);
@@ -70,7 +60,6 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 			UE_LOG(LogTemp, Warning, TEXT("SkillAction is null!"));
 		}
 	}
-
 }
 
 // MOVE_PACKET_SEND_DELAY 마다 처리를하게 될 경우. State가 변할때 대응이 안됨.
@@ -112,14 +101,14 @@ void AS1MyPlayer::Tick(float DeltaTime)
 	TimeSinceLastSkill += DeltaTime;
 }
 
-void AS1MyPlayer::Move(const FInputActionValue& Value)
+void AS1MyPlayer::InputMove(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	CacheVector = InputVector;
 	InputVector = Value.Get<FVector2D>();
 }
 
-void AS1MyPlayer::Look(const FInputActionValue& Value)
+void AS1MyPlayer::InputLook(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -145,6 +134,47 @@ void AS1MyPlayer::UseSkill()
 	SEND_PACKET(pkt);
 
 	TimeSinceLastSkill = 0.f;
+}
+
+void AS1MyPlayer::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (AS1PlayerController* PC = Cast<AS1PlayerController>(NewController))
+	{
+		if (PC->IsLocalController())
+		{
+			// 한 틱 뒤에 시도 (Input 컴포넌트/서브시스템 안정화 후)
+			GetWorld()->GetTimerManager().SetTimerForNextTick([this, PC]()
+				{
+					TrySetupInput(PC);
+				});
+		}
+	}
+}
+
+void AS1MyPlayer::TrySetupInput(AS1PlayerController* PC)
+{
+	if (ULocalPlayer* LP = PC->GetLocalPlayer())
+	{
+		if (auto* Subsys = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+		{
+			Subsys->ClearAllMappings();
+			if (DefaultMappingContext)
+				Subsys->AddMappingContext(DefaultMappingContext, 0);
+
+			if (GEngine && IsLocallyControlled())
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Blue,
+					TEXT("Input Mapping Added (Local)"));
+			}
+		}
+	}
+	else
+	{
+		// 아직이면 다음 틱에 재시도
+		GetWorldTimerManager().SetTimerForNextTick([this, PC]() { TrySetupInput(PC); });
+	}
 }
 
 void AS1MyPlayer::SendMovePacket()

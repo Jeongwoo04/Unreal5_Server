@@ -44,6 +44,7 @@ PROTOBUF_CONSTEXPR ObjectInfo::ObjectInfo(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.pos_info_)*/nullptr
   , /*decltype(_impl_.object_id_)*/uint64_t{0u}
+  , /*decltype(_impl_.playerindex_)*/0
   , /*decltype(_impl_.object_type_)*/0
   , /*decltype(_impl_.creature_type_)*/0
   , /*decltype(_impl_.player_type_)*/0
@@ -114,6 +115,7 @@ const uint32_t TableStruct_Struct_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::Protocol::ObjectInfo, _impl_.object_id_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::ObjectInfo, _impl_.playerindex_),
   PROTOBUF_FIELD_OFFSET(::Protocol::ObjectInfo, _impl_.pos_info_),
   PROTOBUF_FIELD_OFFSET(::Protocol::ObjectInfo, _impl_.object_type_),
   PROTOBUF_FIELD_OFFSET(::Protocol::ObjectInfo, _impl_.creature_type_),
@@ -141,8 +143,8 @@ const uint32_t TableStruct_Struct_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::Protocol::PosInfo)},
   { 13, -1, -1, sizeof(::Protocol::ObjectInfo)},
-  { 24, -1, -1, sizeof(::Protocol::StatInfo)},
-  { 36, -1, -1, sizeof(::Protocol::SkillInfo)},
+  { 25, -1, -1, sizeof(::Protocol::StatInfo)},
+  { 37, -1, -1, sizeof(::Protocol::SkillInfo)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -157,22 +159,23 @@ const char descriptor_table_protodef_Struct_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "\007PosInfo\022\021\n\tobject_id\030\001 \001(\004\022\t\n\001x\030\002 \001(\002\022\t"
   "\n\001y\030\003 \001(\002\022\t\n\001z\030\004 \001(\002\022\013\n\003yaw\030\005 \001(\002\022\r\n\005spe"
   "ed\030\006 \001(\002\022%\n\005state\030\007 \001(\0162\026.Protocol.State"
-  "Machine\"\311\001\n\nObjectInfo\022\021\n\tobject_id\030\001 \001("
-  "\004\022#\n\010pos_info\030\002 \001(\0132\021.Protocol.PosInfo\022)"
-  "\n\013object_type\030\003 \001(\0162\024.Protocol.ObjectTyp"
-  "e\022-\n\rcreature_type\030\004 \001(\0162\026.Protocol.Crea"
-  "tureType\022)\n\013player_type\030\005 \001(\0162\024.Protocol"
-  ".PlayerType\"e\n\010StatInfo\022\r\n\005level\030\001 \001(\005\022\n"
-  "\n\002hp\030\002 \001(\005\022\r\n\005maxHp\030\003 \001(\005\022\016\n\006attack\030\004 \001("
-  "\005\022\r\n\005speed\030\005 \001(\002\022\020\n\010totalExp\030\006 \001(\r\"\034\n\tSk"
-  "illInfo\022\017\n\007skillId\030\001 \001(\005b\006proto3"
+  "Machine\"\336\001\n\nObjectInfo\022\021\n\tobject_id\030\001 \001("
+  "\004\022\023\n\013playerIndex\030\002 \001(\005\022#\n\010pos_info\030\003 \001(\013"
+  "2\021.Protocol.PosInfo\022)\n\013object_type\030\004 \001(\016"
+  "2\024.Protocol.ObjectType\022-\n\rcreature_type\030"
+  "\005 \001(\0162\026.Protocol.CreatureType\022)\n\013player_"
+  "type\030\006 \001(\0162\024.Protocol.PlayerType\"e\n\010Stat"
+  "Info\022\r\n\005level\030\001 \001(\005\022\n\n\002hp\030\002 \001(\005\022\r\n\005maxHp"
+  "\030\003 \001(\005\022\016\n\006attack\030\004 \001(\005\022\r\n\005speed\030\005 \001(\002\022\020\n"
+  "\010totalExp\030\006 \001(\r\"\034\n\tSkillInfo\022\017\n\007skillId\030"
+  "\001 \001(\005b\006proto3"
   ;
 static const ::_pbi::DescriptorTable* const descriptor_table_Struct_2eproto_deps[1] = {
   &::descriptor_table_Enum_2eproto,
 };
 static ::_pbi::once_flag descriptor_table_Struct_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Struct_2eproto = {
-    false, false, 512, descriptor_table_protodef_Struct_2eproto,
+    false, false, 533, descriptor_table_protodef_Struct_2eproto,
     "Struct.proto",
     &descriptor_table_Struct_2eproto_once, descriptor_table_Struct_2eproto_deps, 1, 4,
     schemas, file_default_instances, TableStruct_Struct_2eproto::offsets,
@@ -604,6 +607,7 @@ ObjectInfo::ObjectInfo(const ObjectInfo& from)
   new (&_impl_) Impl_{
       decltype(_impl_.pos_info_){nullptr}
     , decltype(_impl_.object_id_){}
+    , decltype(_impl_.playerindex_){}
     , decltype(_impl_.object_type_){}
     , decltype(_impl_.creature_type_){}
     , decltype(_impl_.player_type_){}
@@ -626,6 +630,7 @@ inline void ObjectInfo::SharedCtor(
   new (&_impl_) Impl_{
       decltype(_impl_.pos_info_){nullptr}
     , decltype(_impl_.object_id_){uint64_t{0u}}
+    , decltype(_impl_.playerindex_){0}
     , decltype(_impl_.object_type_){0}
     , decltype(_impl_.creature_type_){0}
     , decltype(_impl_.player_type_){0}
@@ -681,35 +686,43 @@ const char* ObjectInfo::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
         } else
           goto handle_unusual;
         continue;
-      // .Protocol.PosInfo pos_info = 2;
+      // int32 playerIndex = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          _impl_.playerindex_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .Protocol.PosInfo pos_info = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_pos_info(), ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
-      // .Protocol.ObjectType object_type = 3;
-      case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+      // .Protocol.ObjectType object_type = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
           uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
           _internal_set_object_type(static_cast<::Protocol::ObjectType>(val));
         } else
           goto handle_unusual;
         continue;
-      // .Protocol.CreatureType creature_type = 4;
-      case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+      // .Protocol.CreatureType creature_type = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 40)) {
           uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
           _internal_set_creature_type(static_cast<::Protocol::CreatureType>(val));
         } else
           goto handle_unusual;
         continue;
-      // .Protocol.PlayerType player_type = 5;
-      case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 40)) {
+      // .Protocol.PlayerType player_type = 6;
+      case 6:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 48)) {
           uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
           _internal_set_player_type(static_cast<::Protocol::PlayerType>(val));
@@ -751,32 +764,38 @@ uint8_t* ObjectInfo::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_object_id(), target);
   }
 
-  // .Protocol.PosInfo pos_info = 2;
+  // int32 playerIndex = 2;
+  if (this->_internal_playerindex() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(2, this->_internal_playerindex(), target);
+  }
+
+  // .Protocol.PosInfo pos_info = 3;
   if (this->_internal_has_pos_info()) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(2, _Internal::pos_info(this),
+      InternalWriteMessage(3, _Internal::pos_info(this),
         _Internal::pos_info(this).GetCachedSize(), target, stream);
   }
 
-  // .Protocol.ObjectType object_type = 3;
+  // .Protocol.ObjectType object_type = 4;
   if (this->_internal_object_type() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteEnumToArray(
-      3, this->_internal_object_type(), target);
+      4, this->_internal_object_type(), target);
   }
 
-  // .Protocol.CreatureType creature_type = 4;
+  // .Protocol.CreatureType creature_type = 5;
   if (this->_internal_creature_type() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteEnumToArray(
-      4, this->_internal_creature_type(), target);
+      5, this->_internal_creature_type(), target);
   }
 
-  // .Protocol.PlayerType player_type = 5;
+  // .Protocol.PlayerType player_type = 6;
   if (this->_internal_player_type() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteEnumToArray(
-      5, this->_internal_player_type(), target);
+      6, this->_internal_player_type(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -795,7 +814,7 @@ size_t ObjectInfo::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .Protocol.PosInfo pos_info = 2;
+  // .Protocol.PosInfo pos_info = 3;
   if (this->_internal_has_pos_info()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
@@ -807,19 +826,24 @@ size_t ObjectInfo::ByteSizeLong() const {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_object_id());
   }
 
-  // .Protocol.ObjectType object_type = 3;
+  // int32 playerIndex = 2;
+  if (this->_internal_playerindex() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_playerindex());
+  }
+
+  // .Protocol.ObjectType object_type = 4;
   if (this->_internal_object_type() != 0) {
     total_size += 1 +
       ::_pbi::WireFormatLite::EnumSize(this->_internal_object_type());
   }
 
-  // .Protocol.CreatureType creature_type = 4;
+  // .Protocol.CreatureType creature_type = 5;
   if (this->_internal_creature_type() != 0) {
     total_size += 1 +
       ::_pbi::WireFormatLite::EnumSize(this->_internal_creature_type());
   }
 
-  // .Protocol.PlayerType player_type = 5;
+  // .Protocol.PlayerType player_type = 6;
   if (this->_internal_player_type() != 0) {
     total_size += 1 +
       ::_pbi::WireFormatLite::EnumSize(this->_internal_player_type());
@@ -849,6 +873,9 @@ void ObjectInfo::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PRO
   }
   if (from._internal_object_id() != 0) {
     _this->_internal_set_object_id(from._internal_object_id());
+  }
+  if (from._internal_playerindex() != 0) {
+    _this->_internal_set_playerindex(from._internal_playerindex());
   }
   if (from._internal_object_type() != 0) {
     _this->_internal_set_object_type(from._internal_object_type());

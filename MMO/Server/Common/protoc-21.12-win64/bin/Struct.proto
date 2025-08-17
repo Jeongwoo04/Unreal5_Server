@@ -17,10 +17,11 @@ message PosInfo
 message ObjectInfo
 {
 	uint64 object_id = 1;
-	PosInfo pos_info = 2;
-	ObjectType object_type = 3;
-	CreatureType creature_type = 4;
-	PlayerType player_type = 5;
+	int32 playerIndex = 2;
+	PosInfo pos_info = 3;
+	ObjectType object_type = 4;
+	CreatureType creature_type = 5;
+	PlayerType player_type = 6;
 }
 
 message StatInfo

@@ -13,6 +13,7 @@
 class AS1Player;
 class AS1Monster;
 class AS1MyPlayer;
+class AS1Projectile;
 
 USTRUCT()
 struct FS1ObjectKey
@@ -56,6 +57,8 @@ public:
 	void Init(UWorld* TWorld);
 	void AddFactory(const FS1ObjectKey& Key, CreateFunc Create, DestroyFunc Destroy);
 
+	AActor* FindObject(uint64 ObjectId);
+
 	AActor* SpawnObject(const Protocol::ObjectInfo& Info, bool IsMine);
 	void DespawnObject(uint64 ObjectId);
 
@@ -74,9 +77,10 @@ public:
 	TMap<uint64, FS1ObjectEntry> Objects;
 	TMap<uint64, AS1Player*> Players;
 	TMap<uint64, AS1Monster*> Monsters;
+	TMap<uint64, AS1Projectile*> Projectiles;
 
 public:
-	void SetClasses(TSubclassOf<AS1MyPlayer> InMyPlayerClass, TSubclassOf<AS1Player> InOtherPlayerClass, TSubclassOf<AS1Monster> InMonsterClass);
+	void SetClasses(TSubclassOf<AS1MyPlayer> InMyPlayerClass, TSubclassOf<AS1Player> InOtherPlayerClass, TSubclassOf<AS1Monster> InMonsterClass, TSubclassOf<AS1Projectile> InProjectileClass);
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Classes")
@@ -87,4 +91,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Classes")
 	TSubclassOf<AS1Monster> MonsterClass;
+
+	UPROPERTY(EditAnywhere, Category = "Classes")
+	TSubclassOf<AS1Projectile> ProjectileClass;
 };

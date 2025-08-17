@@ -4,6 +4,7 @@
 #include "S1ObjectManager.h"
 #include "S1MyPlayer.h"
 #include "S1Monster.h"
+#include "S1Projectile.h"
 
 void US1ObjectManager::Init(UWorld* TWorld)
 {
@@ -15,11 +16,11 @@ void US1ObjectManager::Init(UWorld* TWorld)
 
 	TypeConstructors.Add(Protocol::OBJECT_TYPE_CREATURE,
 		[](const Protocol::ObjectInfo& Info) { return Info.creature_type(); });
-	//TypeConstructors.Add(Protocol::OBJECT_TYPE_PROJECTILE,
-	//	[](const Protocol::ObjectInfo& Info) { return Info.projectile_type(); });
+	TypeConstructors.Add(Protocol::OBJECT_TYPE_PROJECTILE,
+		[](const Protocol::ObjectInfo& Info) { return 0; });
 
 	// Player
-	AddFactory(FS1ObjectKey{Protocol::OBJECT_TYPE_CREATURE, Protocol::CREATURE_TYPE_PLAYER},
+	AddFactory(FS1ObjectKey{ Protocol::OBJECT_TYPE_CREATURE, Protocol::CREATURE_TYPE_PLAYER },
 		[this](UWorld* W, const Protocol::ObjectInfo& Info, bool IsMine) -> AActor*
 		{
 			if (!OtherPlayerClass)
@@ -31,12 +32,11 @@ void US1ObjectManager::Init(UWorld* TWorld)
 			if (IsMine)
 			{
 				auto* MyPlayer = W->SpawnActor<AS1MyPlayer>(MyPlayerClass, Loc, Rot);
-				if (MyPlayer)
-					MyPlayer->SetPosInfo(Info.pos_info());
-
-				if (!Players.Contains(Info.object_id()))
+				if (MyPlayer && !Players.Contains(Info.object_id()))
 				{
+					Objects.Add(Info.object_id(), { FS1ObjectKey{Protocol::OBJECT_TYPE_CREATURE, Protocol::CREATURE_TYPE_PLAYER}, MyPlayer });
 					Players.Add(Info.object_id(), MyPlayer);
+					MyPlayer->SetPosInfo(Info.pos_info());
 				}
 
 				return MyPlayer;
@@ -44,12 +44,11 @@ void US1ObjectManager::Init(UWorld* TWorld)
 			else
 			{
 				auto* Player = W->SpawnActor<AS1Player>(OtherPlayerClass, Loc, Rot);
-				if (Player)
-					Player->SetPosInfo(Info.pos_info());
-
-				if (!Players.Contains(Info.object_id()))
+				if (Player && !Players.Contains(Info.object_id()))
 				{
+					Objects.Add(Info.object_id(), { FS1ObjectKey{Protocol::OBJECT_TYPE_CREATURE, Protocol::CREATURE_TYPE_PLAYER}, Player });
 					Players.Add(Info.object_id(), Player);
+					Player->SetPosInfo(Info.pos_info());
 				}
 
 				return Player;
@@ -61,8 +60,10 @@ void US1ObjectManager::Init(UWorld* TWorld)
 			{
 				if (Players.Contains(Id))
 					Players.Remove(Id);
+				if (Objects.Contains(Id))
+					Objects.Remove(Id);
 
-				World->DestroyActor(Actor);
+				Actor->Destroy();
 			}
 			else
 			{
@@ -82,13 +83,12 @@ void US1ObjectManager::Init(UWorld* TWorld)
 			FRotator Rot(0.f, Info.pos_info().yaw(), 0.f);
 
 			auto* Monster = W->SpawnActor<AS1Monster>(MonsterClass, Loc, Rot);
-			if (Monster)
-				Monster->SetPosInfo(Info.pos_info());
-
-			if (!Monsters.Contains(Info.object_id()))
+			if (Monster && !Monsters.Contains(Info.object_id()))
 			{
+				Objects.Add(Info.object_id(), { FS1ObjectKey{Protocol::OBJECT_TYPE_CREATURE, Protocol::CREATURE_TYPE_MONSTER}, Monster });
 				Monsters.Add(Info.object_id(), Monster);
-			}
+				Monster->SetPosInfo(Info.pos_info());
+			}			
 			
 			return Monster;
 		},
@@ -98,8 +98,48 @@ void US1ObjectManager::Init(UWorld* TWorld)
 			{
 				if (Monsters.Contains(Id))
 					Monsters.Remove(Id);
+				if (Objects.Contains(Id))
+					Objects.Remove(Id);
 
-				World->DestroyActor(Actor);
+				Actor->Destroy();
+			}
+			else
+			{
+				// Log
+			}
+		}
+	);
+
+	// Projectile
+	AddFactory(FS1ObjectKey{ Protocol::OBJECT_TYPE_PROJECTILE, 0 },
+		[this](UWorld* W, const Protocol::ObjectInfo& Info, bool IsMine) -> AActor*
+		{
+			if (!ProjectileClass)
+				return nullptr;
+
+			FVector Loc(Info.pos_info().x(), Info.pos_info().y(), Info.pos_info().z());
+			FRotator Rot(0.f, Info.pos_info().yaw(), 0.f);
+
+			auto* Projectile = W->SpawnActor<AS1Projectile>(ProjectileClass, Loc, Rot);
+			if (Projectile && !Projectiles.Contains(Info.object_id()))
+			{
+				Objects.Add(Info.object_id(), { FS1ObjectKey{Protocol::OBJECT_TYPE_PROJECTILE, 0}, Projectile });
+				Projectiles.Add(Info.object_id(), Projectile);
+				Projectile->SetPosInfo(Info.pos_info());
+			}
+
+			return Projectile;
+		},
+		[this](AActor* Actor, uint64 Id)
+		{
+			if (Actor)
+			{
+				if (Projectiles.Contains(Id))
+					Projectiles.Remove(Id);
+				if (Objects.Contains(Id))
+					Objects.Remove(Id);
+
+				Actor->Destroy();
 			}
 			else
 			{
@@ -113,6 +153,15 @@ void US1ObjectManager::AddFactory(const FS1ObjectKey& Key, CreateFunc Create, De
 {
 	CreateRegistry.Add(Key, Create);
 	DestroyRegistry.Add(Key, Destroy);
+}
+
+AActor* US1ObjectManager::FindObject(uint64 ObjectId)
+{
+	if (FS1ObjectEntry* Found = Objects.Find(ObjectId))
+	{
+		return Found->Actor;
+	}
+	return nullptr;
 }
 
 AActor* US1ObjectManager::SpawnObject(const Protocol::ObjectInfo& Info, bool IsMine)
@@ -165,9 +214,10 @@ FS1ObjectKey US1ObjectManager::MakeKey(const Protocol::ObjectInfo& Info) const
 	return FS1ObjectKey{ mainType, subType };
 }
 
-void US1ObjectManager::SetClasses(TSubclassOf<AS1MyPlayer> InMyPlayerClass, TSubclassOf<AS1Player> InOtherPlayerClass, TSubclassOf<AS1Monster> InMonsterClass)
+void US1ObjectManager::SetClasses(TSubclassOf<AS1MyPlayer> InMyPlayerClass, TSubclassOf<AS1Player> InOtherPlayerClass, TSubclassOf<AS1Monster> InMonsterClass, TSubclassOf<AS1Projectile> InProjectileClass)
 {
 	MyPlayerClass = InMyPlayerClass;
 	OtherPlayerClass = InOtherPlayerClass;
 	MonsterClass = InMonsterClass;
+	ProjectileClass = InProjectileClass;
 }

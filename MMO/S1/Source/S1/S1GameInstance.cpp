@@ -11,27 +11,44 @@
 #include "ClientPacketHandler.h"
 #include "S1MyPlayer.h"
 #include "S1Monster.h"
+//#include "S1PlayerController.h"
 
 void US1GameInstance::Init()
 {
+	if (bInitialized)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("US1GameInstance: Already initialized, skipping."));
+		return;
+	}
+
 	Super::Init();
 
-	ObjectManager = NewObject<US1ObjectManager>(this);
-	if (ObjectManager)
+	// PIE나 Standalone만 초기화
+	if (!GEngine)
+		return;
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	EWorldType::Type WorldType = World->WorldType;
+	if (WorldType == EWorldType::Editor)
 	{
-		ObjectManager->Init(GetWorld());
-		ObjectManager->SetClasses(MyPlayerClass, OtherPlayerClass, MonsterClass);
+		UE_LOG(LogTemp, Warning, TEXT("US1GameInstance::Init() skipped for Editor World"));
+		return;
 	}
 
-	MapManager = NewObject<US1MapManger>(this);
-	if (MapManager)
-	{
-		MapManager->LoadMap(1, 100.f);
-	}
+	UE_LOG(LogTemp, Log, TEXT("US1GameInstance: Init called for world type %d"), (int32)WorldType);
+
+	bInitialized = true;
 }
 
 void US1GameInstance::ConnectToGameServer()
 {
+#if WITH_EDITOR
+	// 에디터에서 PIE 실행 시 서버쪽 인스턴스는 제외
+	if (IsRunningDedicatedServer() || (GetWorld() && GetWorld()->GetNetMode() == NM_DedicatedServer))
+		return;
+
 	Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(TEXT("Stream"), TEXT("Client Socket"));
 	
 	FIPv4Address Ip;
@@ -43,7 +60,7 @@ void US1GameInstance::ConnectToGameServer()
 
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Connecting To Server...")));
 
-	bool Connected = Socket->Connect(*InternetAddr);
+	Connected = Socket->Connect(*InternetAddr);
 
 	if (Connected)
 	{
@@ -52,6 +69,19 @@ void US1GameInstance::ConnectToGameServer()
 		// Session
 		GameServerSession = MakeShared<PacketSession>(Socket);
 		GameServerSession->Run();
+
+		ObjectManager = NewObject<US1ObjectManager>(this);
+		if (ObjectManager)
+		{
+			ObjectManager->Init(GetWorld());
+			ObjectManager->SetClasses(MyPlayerClass, OtherPlayerClass, MonsterClass, ProjectileClass);
+		}
+
+		MapManager = NewObject<US1MapManger>(this);
+		if (MapManager)
+		{
+			MapManager->LoadMap(1, 100.f);
+		}
 
 		// Lobby
 		{
@@ -64,11 +94,12 @@ void US1GameInstance::ConnectToGameServer()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Connection Failed")));
 	}
+#endif
 }
 
 void US1GameInstance::DisconnectFromGameServer()
 {
-	if (Socket == nullptr || GameServerSession == nullptr)
+	if (Connected == false || Socket == nullptr || GameServerSession == nullptr)
 		return;
 
 	Protocol::C_LEAVE_GAME LeavePkt;
@@ -77,7 +108,7 @@ void US1GameInstance::DisconnectFromGameServer()
 
 void US1GameInstance::HandleRecvPackets()
 {
-	if (Socket == nullptr || GameServerSession == nullptr)
+	if (Connected == false || Socket == nullptr || GameServerSession == nullptr)
 		return;
 
 	GameServerSession->HandleRecvPackets();
@@ -107,20 +138,9 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 
 	if (IsMine)
 	{
-		auto* PC = UGameplayStatics::GetPlayerController(this, 0);
-		if (!PC)
-			return;
-
-		APawn* DefaultPawn = PC->GetPawn();
-		if (DefaultPawn)
-			DefaultPawn->Destroy();
-
-		PC->Possess(Cast<APawn>(NewActor));
-
 		MyPlayer = Cast<AS1MyPlayer>(NewActor);
 
-		FRotator SpawnRotation(0.f, ObjectInfo.pos_info().yaw(), 0.f);
-		PC->SetControlRotation(SpawnRotation);
+		OnMyPlayerSpawned.Broadcast(MyPlayer);
 	}
 }
 
@@ -168,27 +188,18 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 
 	const uint64 ObjectId = MovePkt.info().object_id();
 
-	AS1Player** FindActor = Players.Find(ObjectId);
+	AActor* FindActor = ObjectManager->FindObject(ObjectId);
 	if (FindActor == nullptr)
-	{
-		AS1Monster** FindMonster = Monsters.Find(ObjectId);
-		if (FindMonster == nullptr)
-			return;
+		return;
 
-		AS1Monster* Monster = (*FindMonster);
-		Monster->SetPosInfo(MovePkt.info());
-	}
-	else
-	{
-		AS1Player* Player = (*FindActor);
-		if (Player->IsMyPlayer())
-			return;
+	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+	if (Creature == nullptr)
+		return;
 
-		//Player->SetPlayerInfo(MovePkt.info());
-		Player->SetPosInfo(MovePkt.info());
-	}
+	if (MyPlayer == Cast<AS1MyPlayer>(Creature))
+		return;
 
-	UE_LOG(LogTemp, Warning, TEXT("[Anim] S_MOVE Received: speed = %f"), MovePkt.info().speed());
+	Creature->SetPosInfo(MovePkt.info());
 }
 
 void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)

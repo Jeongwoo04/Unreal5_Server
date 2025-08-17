@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Game/S1Player.h"
 #include "InputActionValue.h"
+#include "S1PlayerController.h"
 #include "S1MyPlayer.generated.h"
 
 /**
@@ -31,8 +32,10 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 protected:
-	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
+	void TickServerMove(float DeltaTime) override { }
+
+	void InputMove(const FInputActionValue& Value);
+	void InputLook(const FInputActionValue& Value);
 	void UseSkill();
 
 protected:
@@ -58,6 +61,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SkillAction;
+
+public:
+	void PossessedBy(AController* NewController);
+	void TrySetupInput(AS1PlayerController* PC);
+	UInputMappingContext* GetDefaultMappingContext() const { return DefaultMappingContext; }
+	void SetState(const Protocol::StateMachine& State) { PosInfo.set_state(State); }
 
 protected:
 	const float MOVE_PACKET_SEND_DELAY = 0.2f;

@@ -404,13 +404,14 @@ class ObjectInfo final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kPosInfoFieldNumber = 2,
+    kPosInfoFieldNumber = 3,
     kObjectIdFieldNumber = 1,
-    kObjectTypeFieldNumber = 3,
-    kCreatureTypeFieldNumber = 4,
-    kPlayerTypeFieldNumber = 5,
+    kPlayerIndexFieldNumber = 2,
+    kObjectTypeFieldNumber = 4,
+    kCreatureTypeFieldNumber = 5,
+    kPlayerTypeFieldNumber = 6,
   };
-  // .Protocol.PosInfo pos_info = 2;
+  // .Protocol.PosInfo pos_info = 3;
   bool has_pos_info() const;
   private:
   bool _internal_has_pos_info() const;
@@ -437,7 +438,16 @@ class ObjectInfo final :
   void _internal_set_object_id(uint64_t value);
   public:
 
-  // .Protocol.ObjectType object_type = 3;
+  // int32 playerIndex = 2;
+  void clear_playerindex();
+  int32_t playerindex() const;
+  void set_playerindex(int32_t value);
+  private:
+  int32_t _internal_playerindex() const;
+  void _internal_set_playerindex(int32_t value);
+  public:
+
+  // .Protocol.ObjectType object_type = 4;
   void clear_object_type();
   ::Protocol::ObjectType object_type() const;
   void set_object_type(::Protocol::ObjectType value);
@@ -446,7 +456,7 @@ class ObjectInfo final :
   void _internal_set_object_type(::Protocol::ObjectType value);
   public:
 
-  // .Protocol.CreatureType creature_type = 4;
+  // .Protocol.CreatureType creature_type = 5;
   void clear_creature_type();
   ::Protocol::CreatureType creature_type() const;
   void set_creature_type(::Protocol::CreatureType value);
@@ -455,7 +465,7 @@ class ObjectInfo final :
   void _internal_set_creature_type(::Protocol::CreatureType value);
   public:
 
-  // .Protocol.PlayerType player_type = 5;
+  // .Protocol.PlayerType player_type = 6;
   void clear_player_type();
   ::Protocol::PlayerType player_type() const;
   void set_player_type(::Protocol::PlayerType value);
@@ -474,6 +484,7 @@ class ObjectInfo final :
   struct Impl_ {
     ::Protocol::PosInfo* pos_info_;
     uint64_t object_id_;
+    int32_t playerindex_;
     int object_type_;
     int creature_type_;
     int player_type_;
@@ -1008,7 +1019,27 @@ inline void ObjectInfo::set_object_id(uint64_t value) {
   // @@protoc_insertion_point(field_set:Protocol.ObjectInfo.object_id)
 }
 
-// .Protocol.PosInfo pos_info = 2;
+// int32 playerIndex = 2;
+inline void ObjectInfo::clear_playerindex() {
+  _impl_.playerindex_ = 0;
+}
+inline int32_t ObjectInfo::_internal_playerindex() const {
+  return _impl_.playerindex_;
+}
+inline int32_t ObjectInfo::playerindex() const {
+  // @@protoc_insertion_point(field_get:Protocol.ObjectInfo.playerIndex)
+  return _internal_playerindex();
+}
+inline void ObjectInfo::_internal_set_playerindex(int32_t value) {
+  
+  _impl_.playerindex_ = value;
+}
+inline void ObjectInfo::set_playerindex(int32_t value) {
+  _internal_set_playerindex(value);
+  // @@protoc_insertion_point(field_set:Protocol.ObjectInfo.playerIndex)
+}
+
+// .Protocol.PosInfo pos_info = 3;
 inline bool ObjectInfo::_internal_has_pos_info() const {
   return this != internal_default_instance() && _impl_.pos_info_ != nullptr;
 }
@@ -1098,7 +1129,7 @@ inline void ObjectInfo::set_allocated_pos_info(::Protocol::PosInfo* pos_info) {
   // @@protoc_insertion_point(field_set_allocated:Protocol.ObjectInfo.pos_info)
 }
 
-// .Protocol.ObjectType object_type = 3;
+// .Protocol.ObjectType object_type = 4;
 inline void ObjectInfo::clear_object_type() {
   _impl_.object_type_ = 0;
 }
@@ -1118,7 +1149,7 @@ inline void ObjectInfo::set_object_type(::Protocol::ObjectType value) {
   // @@protoc_insertion_point(field_set:Protocol.ObjectInfo.object_type)
 }
 
-// .Protocol.CreatureType creature_type = 4;
+// .Protocol.CreatureType creature_type = 5;
 inline void ObjectInfo::clear_creature_type() {
   _impl_.creature_type_ = 0;
 }
@@ -1138,7 +1169,7 @@ inline void ObjectInfo::set_creature_type(::Protocol::CreatureType value) {
   // @@protoc_insertion_point(field_set:Protocol.ObjectInfo.creature_type)
 }
 
-// .Protocol.PlayerType player_type = 5;
+// .Protocol.PlayerType player_type = 6;
 inline void ObjectInfo::clear_player_type() {
   _impl_.player_type_ = 0;
 }
