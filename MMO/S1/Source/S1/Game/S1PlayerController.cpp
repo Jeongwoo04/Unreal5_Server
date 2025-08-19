@@ -3,6 +3,7 @@
 
 #include "Game/S1PlayerController.h"
 #include "S1GameInstance.h"
+#include "Blueprint/UserWidget.h"
 #include "S1MyPlayer.h"
 
 void AS1PlayerController::BeginPlay() {
@@ -15,6 +16,16 @@ void AS1PlayerController::BeginPlay() {
 		// 이미 스폰돼 있었다면 즉시 처리
 		if (GI->MyPlayer) HandleMyPlayerSpawned(GI->MyPlayer);
 	}
+
+	if (WBP_SkillBarClass) // TSubclassOf<UUserWidget>
+	{
+		UUserWidget* SkillBar = CreateWidget(this, WBP_SkillBarClass);
+		if (SkillBar)
+		{
+			SkillBar->AddToViewport();
+		}
+	}
+
 	// 2) LocalPlayer가 완전히 붙은 뒤 서버 연결 (다음 틱부터 체크)
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AS1PlayerController::TryConnectAfterLocalReady);
 }
