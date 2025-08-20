@@ -78,5 +78,6 @@ SkillType ToSkillType(const std::string& str)
 {
     if (str == "SkillAuto") return SkillType::SKILL_AUTO;
     if (str == "SkillProjectile") return SkillType::SKILL_PROJECTILE;
+    if (str == "SkillAoeDot") return SkillType::SKILL_AOE_DOT;
     return SkillType::SKILL_NONE;
 }

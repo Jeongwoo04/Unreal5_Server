@@ -28,7 +28,7 @@ public:
 	virtual void SetPosInfo(const Protocol::PosInfo& Info);
 	Protocol::PosInfo GetPosInfo() const { return PosInfo; }
 
-	void SetOwner(AS1Creature* InOwner);
+	void SetCaster(AS1Creature* InOwner);
 
 	virtual void OnHit();
 
@@ -44,5 +44,5 @@ protected:
 
 	Protocol::PosInfo PosInfo;
 
-	TWeakObjectPtr<AS1Creature> Owner;
+	TWeakObjectPtr<AS1Creature> Caster;
 };

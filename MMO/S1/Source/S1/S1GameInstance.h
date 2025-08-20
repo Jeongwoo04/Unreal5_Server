@@ -5,14 +5,14 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "S1.h"
-#include "S1MapManger.h"
-#include "S1ObjectManager.h"
 #include "S1GameInstance.generated.h"
 
 class AS1Player;
 class AS1Monster;
 class AS1MyPlayer;
 class AS1Projectile;
+class US1MapManager;
+class US1ObjectManager;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMyPlayerSpawned, AS1MyPlayer*);
 
@@ -64,25 +64,16 @@ public:
 	TSharedPtr<class PacketSession> GameServerSession;
 
 public:
-	UPROPERTY()
-	US1MapManger* MapManager;
+	UPROPERTY(BlueprintReadOnly)
+	US1MapManager* MapManager;
 
 	UPROPERTY()
 	US1ObjectManager* ObjectManager;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Managers")
+	TSubclassOf<US1ObjectManager> BP_ObjectManagerClass;
+
 public:
-	UPROPERTY(EditAnywhere, Category = "Classes")
-	TSubclassOf<AS1MyPlayer> MyPlayerClass;
-
-	UPROPERTY(EditAnywhere, Category = "Classes")
-	TSubclassOf<AS1Player> OtherPlayerClass;
-
-	UPROPERTY(EditAnywhere, Category = "Classes")
-	TSubclassOf<AS1Monster> MonsterClass;
-
-	UPROPERTY(EditAnywhere, Category = "Classes")
-	TSubclassOf<AS1Projectile> ProjectileClass;
-
 	UPROPERTY(BlueprintReadOnly)
 	AS1MyPlayer* MyPlayer = nullptr;
 

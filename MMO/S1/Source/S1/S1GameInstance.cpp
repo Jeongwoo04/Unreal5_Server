@@ -11,35 +11,41 @@
 #include "ClientPacketHandler.h"
 #include "S1MyPlayer.h"
 #include "S1Monster.h"
-//#include "S1PlayerController.h"
+#include "S1MapManager.h"
+#include "S1ObjectManager.h"
+#include "Data/S1ConfigManager.h"
+#include "Data/S1DataManager.h"
 
 void US1GameInstance::Init()
 {
-	if (bInitialized)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("US1GameInstance: Already initialized, skipping."));
-		return;
-	}
-
 	Super::Init();
 
-	// PIE나 Standalone만 초기화
-	if (!GEngine)
-		return;
-	UWorld* World = GetWorld();
-	if (!World)
-		return;
-
-	EWorldType::Type WorldType = World->WorldType;
-	if (WorldType == EWorldType::Editor)
+#if WITH_EDITOR
+	if (BP_ObjectManagerClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("US1GameInstance::Init() skipped for Editor World"));
-		return;
+		ObjectManager = NewObject<US1ObjectManager>(this, BP_ObjectManagerClass);
+		if (ObjectManager)
+		{
+			ObjectManager->Init(GetWorld());
+		}
+	}	
+
+	MapManager = NewObject<US1MapManager>(this);
+	if (MapManager)
+	{
+		MapManager->LoadMap(1, 100.f);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("US1GameInstance: Init called for world type %d"), (int32)WorldType);
+	FString ConfigPath = FPaths::ProjectDir() / TEXT("Data/config.json");
+	FString DataPath = FPaths::ProjectDir() / TEXT("Data/");
 
-	bInitialized = true;
+	UE_LOG(LogTemp, Warning, TEXT("ConfigPath: %s"), *ConfigPath);
+	UE_LOG(LogTemp, Warning, TEXT("DataPath: %s"), *DataPath);
+
+	S1ConfigManager::Instance().LoadConfig("C:/Users/jeson/Desktop/unreal/MMO/S1/Source/S1/Data/config.json");
+	S1DataManager::Instance().LoadData("C:/Users/jeson/Desktop/unreal/MMO/S1/Source/S1/Data/");
+
+#endif
 }
 
 void US1GameInstance::ConnectToGameServer()
@@ -69,19 +75,6 @@ void US1GameInstance::ConnectToGameServer()
 		// Session
 		GameServerSession = MakeShared<PacketSession>(Socket);
 		GameServerSession->Run();
-
-		ObjectManager = NewObject<US1ObjectManager>(this);
-		if (ObjectManager)
-		{
-			ObjectManager->Init(GetWorld());
-			ObjectManager->SetClasses(MyPlayerClass, OtherPlayerClass, MonsterClass, ProjectileClass);
-		}
-
-		MapManager = NewObject<US1MapManger>(this);
-		if (MapManager)
-		{
-			MapManager->LoadMap(1, 100.f);
-		}
 
 		// Lobby
 		{

@@ -75,9 +75,9 @@ void AS1Projectile::SetPosInfo(const Protocol::PosInfo& Info)
 	Move(Info);
 }
 
-void AS1Projectile::SetOwner(AS1Creature* InOwner)
+void AS1Projectile::SetCaster(AS1Creature* InCaster)
 {
-	Owner = InOwner;
+	Caster = InCaster;
 }
 
 void AS1Projectile::OnHit()

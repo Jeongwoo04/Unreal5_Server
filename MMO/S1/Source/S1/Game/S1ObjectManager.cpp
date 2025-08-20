@@ -213,11 +213,3 @@ FS1ObjectKey US1ObjectManager::MakeKey(const Protocol::ObjectInfo& Info) const
 
 	return FS1ObjectKey{ mainType, subType };
 }
-
-void US1ObjectManager::SetClasses(TSubclassOf<AS1MyPlayer> InMyPlayerClass, TSubclassOf<AS1Player> InOtherPlayerClass, TSubclassOf<AS1Monster> InMonsterClass, TSubclassOf<AS1Projectile> InProjectileClass)
-{
-	MyPlayerClass = InMyPlayerClass;
-	OtherPlayerClass = InOtherPlayerClass;
-	MonsterClass = InMonsterClass;
-	ProjectileClass = InProjectileClass;
-}

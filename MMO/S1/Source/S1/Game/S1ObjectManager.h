@@ -43,7 +43,7 @@ FORCEINLINE uint32 GetTypeHash(const FS1ObjectKey& Key)
 	return HashCombine(::GetTypeHash(Key.MainType), ::GetTypeHash(Key.SubType));
 }
 
-UCLASS()
+UCLASS(Blueprintable)
 class S1_API US1ObjectManager : public UObject
 {
 	GENERATED_BODY()
@@ -78,9 +78,6 @@ public:
 	TMap<uint64, AS1Player*> Players;
 	TMap<uint64, AS1Monster*> Monsters;
 	TMap<uint64, AS1Projectile*> Projectiles;
-
-public:
-	void SetClasses(TSubclassOf<AS1MyPlayer> InMyPlayerClass, TSubclassOf<AS1Player> InOtherPlayerClass, TSubclassOf<AS1Monster> InMonsterClass, TSubclassOf<AS1Projectile> InProjectileClass);
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Classes")

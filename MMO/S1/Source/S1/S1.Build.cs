@@ -23,6 +23,8 @@ public class S1 : ModuleRules
 			"S1/",
 			"S1/Network/",
 			"S1/Game/",
+			"S1/Data/",
+            "C:/Users/jeson/vcpkg/installed/x64-windows/include/"
         });
 
 		// Uncomment if you are using Slate UI
