@@ -8,16 +8,13 @@
 
 void US1SkillSlot::SetSkill(UTexture2D* InIcon, const FText& InKey)
 {
-    CurrentIcon = InIcon;
-    CurrentKey = InKey;
-
-    if (Img_Icon && CurrentIcon)
+    if (Img_Icon && InIcon)
     {
-        Img_Icon->SetBrushFromTexture(CurrentIcon);
+        Img_Icon->SetBrushFromTexture(InIcon);
     }
     if (Txt_Key)
     {
-        Txt_Key->SetText(CurrentKey);
+        Txt_Key->SetText(InKey);
     }
 }
 
@@ -32,6 +29,11 @@ void US1SkillSlot::StartCooldown(float CooldownTime)
         ProgressBar->SetPercent(1.0f);
         ProgressBar->SetVisibility(ESlateVisibility::Visible);
     }
+}
+
+bool US1SkillSlot::CanUseSkill()
+{
+    return !bIsOnCooldown;
 }
 
 void US1SkillSlot::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -56,20 +58,5 @@ void US1SkillSlot::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
                 ProgressBar->SetVisibility(ESlateVisibility::Hidden);
             }
         }
-    }
-}
-
-void US1SkillSlot::NativePreConstruct()
-{
-    Super::NativePreConstruct();
-
-    // ÇÁ¸®ºä¿ë
-    if (PreviewIcon)
-    {
-        Img_Icon->SetBrushFromTexture(PreviewIcon);
-    }
-    if (!PreviewKey.IsEmpty())
-    {
-        Txt_Key->SetText(PreviewKey);
     }
 }

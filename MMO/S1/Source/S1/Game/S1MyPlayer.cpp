@@ -12,7 +12,11 @@
 #include "EnhancedInputSubsystems.h"
 #include "S1.h"
 #include "S1PlayerController.h"
+#include "Data/S1DataManager.h"
 #include "Engine/LocalPlayer.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "S1SkillBar.h"
+#include "S1SkillSlot.h"
 
 AS1MyPlayer::AS1MyPlayer()
 {
@@ -31,6 +35,7 @@ AS1MyPlayer::AS1MyPlayer()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	LoadoutComponent = CreateDefaultSubobject<US1LoadoutComponent>(TEXT("LoadoutComponent"));
 }
 
 void AS1MyPlayer::BeginPlay()
@@ -54,11 +59,10 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::InputLook);
 
 		//Skill
-		EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkill);
-		if (SkillAction == nullptr)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("SkillAction is null!"));
-		}
+		EnhancedInputComponent->BindAction(Skill1Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot1);
+		EnhancedInputComponent->BindAction(Skill2Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot2);
+		EnhancedInputComponent->BindAction(Skill3Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot3);
+		EnhancedInputComponent->BindAction(Skill4Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot4);
 	}
 }
 
@@ -121,19 +125,102 @@ void AS1MyPlayer::InputLook(const FInputActionValue& Value)
 	}
 }
 
-void AS1MyPlayer::UseSkill()
+void AS1MyPlayer::UseSkillSlot(int32 SlotIndex)
 {
-	if (TimeSinceLastSkill < SkillCooldown)
+	int32 SkillID = LoadoutComponent->GetSkillSlot(SlotIndex);
+	if (SkillID <= 0)
 		return;
 
-	DirtyFlag = true;
+	if (SkillBar->CanUseSkill(SlotIndex))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Use Skill ID: %d from Slot %d"), SkillID, SlotIndex);
 
-	Protocol::C_SKILL pkt;
-	pkt.mutable_info()->set_skillid(2);
+		auto SkillIt = S1DataManager::Instance().SkillDict.find(SkillID);
+		if (SkillIt == S1DataManager::Instance().SkillDict.end())
+			return;
 
-	SEND_PACKET(pkt);
+		Skill& SkillData = SkillIt->second;
+		
+		C_SKILL SkillPkt;
+		SkillPkt.mutable_info()->set_skillid(SkillID);
 
-	TimeSinceLastSkill = 0.f;
+		SEND_PACKET(SkillPkt);
+		// TODO : 애니메이션 & S_Skill 패킷 받으면 SkillBar에 Cooldown 적용
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Skill Is Cooldown. ID: %d from Slot %d"), SkillID, SlotIndex);
+	}
+}
+
+void AS1MyPlayer::UseSkillSlot1()
+{
+	UseSkillSlot(0);
+}
+
+void AS1MyPlayer::UseSkillSlot2()
+{
+	UseSkillSlot(1);
+}
+
+void AS1MyPlayer::UseSkillSlot3()
+{
+	UseSkillSlot(2);
+}
+
+void AS1MyPlayer::UseSkillSlot4()
+{
+	UseSkillSlot(3);
+}
+
+void AS1MyPlayer::InitSkillBar()
+{
+	if (!LoadoutComponent)
+		return;
+
+	TMap<int32, int32> DefaultSlotMap;
+	const int32 MaxSlots = 4;
+	for (int32 i = 0; i < MaxSlots; i++)
+	{
+		int32 SkillId = i + 1;
+
+		if (S1DataManager::Instance().SkillDict.find(SkillId) != S1DataManager::Instance().SkillDict.end())
+		{
+			DefaultSlotMap.Add(i, SkillId);
+		}
+	}
+
+	LoadoutComponent->InitializeDefaultSkills(DefaultSlotMap);
+
+	for (int32 i = 0; i < MaxSlots; i++)
+	{
+		int32 SkillId = LoadoutComponent->GetSkillSlot(i);
+		if (SkillId <= 0)
+			continue;
+
+		auto SkillIt = S1DataManager::Instance().SkillDict.find(SkillId);
+		if (SkillIt == S1DataManager::Instance().SkillDict.end())
+			continue;
+
+		auto& Skill = SkillIt->second;
+
+		UTexture2D* IconTexture = nullptr;
+		if (!Skill.iconPath.empty())
+		{
+			FString IconPathFStr(Skill.iconPath.c_str());
+			FString FullPath = FPaths::Combine(FPaths::ProjectContentDir(), IconPathFStr);
+			IconTexture = UKismetRenderingLibrary::ImportFileAsTexture2D(GetWorld(), FullPath);
+		}
+
+		// 입력키 세팅: 1~4, 별도 InputMapping에서 가져올 수도 있음
+		FText KeyText = FText::AsNumber(i + 1);
+		SkillBar->SetSkillSlot(i, IconTexture, KeyText);
+	}
+}
+
+void AS1MyPlayer::BindSkillBar(US1SkillBar* InSkillBar)
+{
+	SkillBar = InSkillBar;
 }
 
 void AS1MyPlayer::PossessedBy(AController* NewController)

@@ -17,20 +17,14 @@ class S1_API US1SkillBar : public UUserWidget
 	GENERATED_BODY()
 
 protected:
-    /** 접근하기 쉽게 배열로 묶음 */
     virtual void NativeConstruct() override;
 
 public:
-    /** 특정 슬롯에 스킬 세팅 */
-    UFUNCTION(BlueprintCallable, Category = "Skill")
     void SetSkillSlot(int32 SlotIndex, UTexture2D* InIcon, const FText& InKey);
-
-    /** 특정 슬롯 쿨타임 시작 */
-    UFUNCTION(BlueprintCallable, Category = "Skill")
+    bool CanUseSkill(int32 SlotIndex);
     void StartSlotCooldown(int32 SlotIndex, float CooldownTime);
 
-protected:
-    /** 디자이너에 있는 4개 슬롯 바인딩 */
+private:
     UPROPERTY(meta = (BindWidget))
     US1SkillSlot* WBP_SkillSlot_0;
 

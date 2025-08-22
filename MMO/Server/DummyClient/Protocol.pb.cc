@@ -165,6 +165,7 @@ PROTOBUF_CONSTEXPR S_SKILL::S_SKILL(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.skill_info_)*/nullptr
   , /*decltype(_impl_.object_id_)*/uint64_t{0u}
+  , /*decltype(_impl_.success_)*/false
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct S_SKILLDefaultTypeInternal {
   PROTOBUF_CONSTEXPR S_SKILLDefaultTypeInternal()
@@ -320,6 +321,7 @@ const uint32_t TableStruct_Protocol_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL, _impl_.object_id_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL, _impl_.skill_info_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL, _impl_.success_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_CHANGE_HP, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -365,10 +367,10 @@ static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protode
   { 62, -1, -1, sizeof(::Protocol::S_MOVE)},
   { 69, -1, -1, sizeof(::Protocol::C_SKILL)},
   { 76, -1, -1, sizeof(::Protocol::S_SKILL)},
-  { 84, -1, -1, sizeof(::Protocol::S_CHANGE_HP)},
-  { 92, -1, -1, sizeof(::Protocol::S_DIE)},
-  { 100, -1, -1, sizeof(::Protocol::C_CHAT)},
-  { 107, -1, -1, sizeof(::Protocol::S_CHAT)},
+  { 85, -1, -1, sizeof(::Protocol::S_CHANGE_HP)},
+  { 93, -1, -1, sizeof(::Protocol::S_DIE)},
+  { 101, -1, -1, sizeof(::Protocol::C_CHAT)},
+  { 108, -1, -1, sizeof(::Protocol::S_CHAT)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -403,13 +405,13 @@ const char descriptor_table_protodef_Protocol_2eproto[] PROTOBUF_SECTION_VARIABL
   "OVE\022\037\n\004info\030\001 \001(\0132\021.Protocol.PosInfo\")\n\006"
   "S_MOVE\022\037\n\004info\030\001 \001(\0132\021.Protocol.PosInfo\""
   ",\n\007C_SKILL\022!\n\004info\030\001 \001(\0132\023.Protocol.Skil"
-  "lInfo\"E\n\007S_SKILL\022\021\n\tobject_id\030\001 \001(\004\022\'\n\ns"
-  "kill_info\030\002 \001(\0132\023.Protocol.SkillInfo\",\n\013"
-  "S_CHANGE_HP\022\021\n\tobject_id\030\001 \001(\004\022\n\n\002hp\030\002 \001"
-  "(\005\"/\n\005S_DIE\022\021\n\tobject_id\030\001 \001(\004\022\023\n\013attack"
-  "er_id\030\002 \001(\004\"\025\n\006C_CHAT\022\013\n\003msg\030\001 \001(\t\"\'\n\006S_"
-  "CHAT\022\020\n\010playerId\030\001 \001(\004\022\013\n\003msg\030\002 \001(\tb\006pro"
-  "to3"
+  "lInfo\"V\n\007S_SKILL\022\021\n\tobject_id\030\001 \001(\004\022\'\n\ns"
+  "kill_info\030\002 \001(\0132\023.Protocol.SkillInfo\022\017\n\007"
+  "success\030\003 \001(\010\",\n\013S_CHANGE_HP\022\021\n\tobject_i"
+  "d\030\001 \001(\004\022\n\n\002hp\030\002 \001(\005\"/\n\005S_DIE\022\021\n\tobject_i"
+  "d\030\001 \001(\004\022\023\n\013attacker_id\030\002 \001(\004\"\025\n\006C_CHAT\022\013"
+  "\n\003msg\030\001 \001(\t\"\'\n\006S_CHAT\022\020\n\010playerId\030\001 \001(\004\022"
+  "\013\n\003msg\030\002 \001(\tb\006proto3"
   ;
 static const ::_pbi::DescriptorTable* const descriptor_table_Protocol_2eproto_deps[2] = {
   &::descriptor_table_Enum_2eproto,
@@ -417,7 +419,7 @@ static const ::_pbi::DescriptorTable* const descriptor_table_Protocol_2eproto_de
 };
 static ::_pbi::once_flag descriptor_table_Protocol_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Protocol_2eproto = {
-    false, false, 723, descriptor_table_protodef_Protocol_2eproto,
+    false, false, 740, descriptor_table_protodef_Protocol_2eproto,
     "Protocol.proto",
     &descriptor_table_Protocol_2eproto_once, descriptor_table_Protocol_2eproto_deps, 2, 16,
     schemas, file_default_instances, TableStruct_Protocol_2eproto::offsets,
@@ -2182,13 +2184,16 @@ S_SKILL::S_SKILL(const S_SKILL& from)
   new (&_impl_) Impl_{
       decltype(_impl_.skill_info_){nullptr}
     , decltype(_impl_.object_id_){}
+    , decltype(_impl_.success_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   if (from._internal_has_skill_info()) {
     _this->_impl_.skill_info_ = new ::Protocol::SkillInfo(*from._impl_.skill_info_);
   }
-  _this->_impl_.object_id_ = from._impl_.object_id_;
+  ::memcpy(&_impl_.object_id_, &from._impl_.object_id_,
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.success_) -
+    reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.success_));
   // @@protoc_insertion_point(copy_constructor:Protocol.S_SKILL)
 }
 
@@ -2199,6 +2204,7 @@ inline void S_SKILL::SharedCtor(
   new (&_impl_) Impl_{
       decltype(_impl_.skill_info_){nullptr}
     , decltype(_impl_.object_id_){uint64_t{0u}}
+    , decltype(_impl_.success_){false}
     , /*decltype(_impl_._cached_size_)*/{}
   };
 }
@@ -2231,7 +2237,9 @@ void S_SKILL::Clear() {
     delete _impl_.skill_info_;
   }
   _impl_.skill_info_ = nullptr;
-  _impl_.object_id_ = uint64_t{0u};
+  ::memset(&_impl_.object_id_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&_impl_.success_) -
+      reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.success_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -2253,6 +2261,14 @@ const char* S_SKILL::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) 
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
           ptr = ctx->ParseMessage(_internal_mutable_skill_info(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // bool success = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.success_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -2299,6 +2315,12 @@ uint8_t* S_SKILL::_InternalSerialize(
         _Internal::skill_info(this).GetCachedSize(), target, stream);
   }
 
+  // bool success = 3;
+  if (this->_internal_success() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(3, this->_internal_success(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -2327,6 +2349,11 @@ size_t S_SKILL::ByteSizeLong() const {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_object_id());
   }
 
+  // bool success = 3;
+  if (this->_internal_success() != 0) {
+    total_size += 1 + 1;
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -2352,6 +2379,9 @@ void S_SKILL::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOB
   if (from._internal_object_id() != 0) {
     _this->_internal_set_object_id(from._internal_object_id());
   }
+  if (from._internal_success() != 0) {
+    _this->_internal_set_success(from._internal_success());
+  }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -2370,8 +2400,8 @@ void S_SKILL::InternalSwap(S_SKILL* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(S_SKILL, _impl_.object_id_)
-      + sizeof(S_SKILL::_impl_.object_id_)
+      PROTOBUF_FIELD_OFFSET(S_SKILL, _impl_.success_)
+      + sizeof(S_SKILL::_impl_.success_)
       - PROTOBUF_FIELD_OFFSET(S_SKILL, _impl_.skill_info_)>(
           reinterpret_cast<char*>(&_impl_.skill_info_),
           reinterpret_cast<char*>(&other->_impl_.skill_info_));

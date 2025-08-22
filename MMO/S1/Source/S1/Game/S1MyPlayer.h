@@ -6,11 +6,15 @@
 #include "Game/S1Player.h"
 #include "InputActionValue.h"
 #include "S1PlayerController.h"
+#include "S1LoadoutComponent.h"
 #include "S1MyPlayer.generated.h"
 
 /**
  * 
  */
+struct Skill;
+class US1SkillBar;
+
 UCLASS()
 class S1_API AS1MyPlayer : public AS1Player
 {
@@ -36,7 +40,13 @@ protected:
 
 	void InputMove(const FInputActionValue& Value);
 	void InputLook(const FInputActionValue& Value);
-	void UseSkill();
+
+	void UseSkillSlot(int32 SlotIndex);
+
+	void UseSkillSlot1();
+	void UseSkillSlot2();
+	void UseSkillSlot3();
+	void UseSkillSlot4();
 
 protected:
 	/** Camera boom positioning the camera behind the character */
@@ -59,10 +69,27 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SkillAction;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	US1LoadoutComponent* LoadoutComponent;
+
+	UPROPERTY()
+	US1SkillBar* SkillBar;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* Skill1Action;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* Skill2Action;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* Skill3Action;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* Skill4Action;
 
 public:
+	void InitSkillBar();
+	void BindSkillBar(US1SkillBar* InSkillBar);
 	void PossessedBy(AController* NewController);
 	void TrySetupInput(AS1PlayerController* PC);
 	UInputMappingContext* GetDefaultMappingContext() const { return DefaultMappingContext; }
@@ -80,7 +107,7 @@ protected:
 	float MoveSendInterval = 0.1f;
 	float TimeSinceLastSend = 0.f;
 
-	float SkillCooldown = 0.5f; // TODO : skill data 贸府
+	float SkillCooldown = 0.f; // TODO : skill data 贸府
 	float TimeSinceLastSkill = 0.f;
 
 	void SendMovePacket();

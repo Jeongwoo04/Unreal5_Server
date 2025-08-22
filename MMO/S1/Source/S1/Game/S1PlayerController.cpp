@@ -3,8 +3,8 @@
 
 #include "Game/S1PlayerController.h"
 #include "S1GameInstance.h"
-#include "Blueprint/UserWidget.h"
 #include "S1MyPlayer.h"
+#include "S1SkillBar.h"
 
 void AS1PlayerController::BeginPlay() {
 	Super::BeginPlay();
@@ -14,15 +14,9 @@ void AS1PlayerController::BeginPlay() {
 	{
 		GI->OnMyPlayerSpawned.AddUObject(this, &AS1PlayerController::HandleMyPlayerSpawned);
 		// 이미 스폰돼 있었다면 즉시 처리
-		if (GI->MyPlayer) HandleMyPlayerSpawned(GI->MyPlayer);
-	}
-
-	if (WBP_SkillBarClass) // TSubclassOf<UUserWidget>
-	{
-		UUserWidget* SkillBar = CreateWidget(this, WBP_SkillBarClass);
-		if (SkillBar)
+		if (GI->MyPlayer)
 		{
-			SkillBar->AddToViewport();
+			HandleMyPlayerSpawned(GI->MyPlayer);
 		}
 	}
 
@@ -51,7 +45,20 @@ void AS1PlayerController::HandleMyPlayerSpawned(AS1MyPlayer* SpawnedMyPlayer)
 	if (!SpawnedMyPlayer->GetController())
 	{
 		Possess(SpawnedMyPlayer);
-		// (선택) 카메라 초기 회전 맞추고 싶으면 여기서 SetControlRotation 등 처리
-		// SetControlRotation(...)
+		CreateSkillBarWidget();
+		SpawnedMyPlayer->BindSkillBar(Cast<US1SkillBar>(SkillBarWidget));
+		SpawnedMyPlayer->InitSkillBar();
+	}
+}
+
+void AS1PlayerController::CreateSkillBarWidget()
+{
+	if (WBP_SkillBarClass) // TSubclassOf<UUserWidget>
+	{
+		SkillBarWidget = CreateWidget(this, WBP_SkillBarClass);
+		if (SkillBarWidget)
+		{
+			SkillBarWidget->AddToViewport();
+		}
 	}
 }

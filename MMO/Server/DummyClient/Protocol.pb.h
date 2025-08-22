@@ -1870,6 +1870,7 @@ class S_SKILL final :
   enum : int {
     kSkillInfoFieldNumber = 2,
     kObjectIdFieldNumber = 1,
+    kSuccessFieldNumber = 3,
   };
   // .Protocol.SkillInfo skill_info = 2;
   bool has_skill_info() const;
@@ -1898,6 +1899,15 @@ class S_SKILL final :
   void _internal_set_object_id(uint64_t value);
   public:
 
+  // bool success = 3;
+  void clear_success();
+  bool success() const;
+  void set_success(bool value);
+  private:
+  bool _internal_success() const;
+  void _internal_set_success(bool value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.S_SKILL)
  private:
   class _Internal;
@@ -1908,6 +1918,7 @@ class S_SKILL final :
   struct Impl_ {
     ::Protocol::SkillInfo* skill_info_;
     uint64_t object_id_;
+    bool success_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -3227,6 +3238,26 @@ inline void S_SKILL::set_allocated_skill_info(::Protocol::SkillInfo* skill_info)
   }
   _impl_.skill_info_ = skill_info;
   // @@protoc_insertion_point(field_set_allocated:Protocol.S_SKILL.skill_info)
+}
+
+// bool success = 3;
+inline void S_SKILL::clear_success() {
+  _impl_.success_ = false;
+}
+inline bool S_SKILL::_internal_success() const {
+  return _impl_.success_;
+}
+inline bool S_SKILL::success() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_SKILL.success)
+  return _internal_success();
+}
+inline void S_SKILL::_internal_set_success(bool value) {
+  
+  _impl_.success_ = value;
+}
+inline void S_SKILL::set_success(bool value) {
+  _internal_set_success(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_SKILL.success)
 }
 
 // -------------------------------------------------------------------

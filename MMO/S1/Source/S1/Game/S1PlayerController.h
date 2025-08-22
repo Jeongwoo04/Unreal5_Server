@@ -6,10 +6,11 @@
 #include "GameFramework/PlayerController.h"
 #include "S1PlayerController.generated.h"
 
-class AS1MyPlayer;
 /**
  * 
  */
+class AS1MyPlayer;
+
 UCLASS()
 class S1_API AS1PlayerController : public APlayerController
 {
@@ -18,11 +19,15 @@ class S1_API AS1PlayerController : public APlayerController
 protected:
 	virtual void BeginPlay() override;
 
-	// WBP_SkillBar를 지정할 수 있도록 BlueprintReadWrite 로 노출
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUserWidget> WBP_SkillBarClass;
+
+	UPROPERTY()
+	UUserWidget* SkillBarWidget;
 
 public:
 	void TryConnectAfterLocalReady();
 	void HandleMyPlayerSpawned(AS1MyPlayer* SpawnedMyPlayer);
+
+	void CreateSkillBarWidget();
 };
