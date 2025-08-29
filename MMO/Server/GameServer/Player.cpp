@@ -5,14 +5,6 @@ Player::Player()
 {
 	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_PLAYER);
 
-	auto it = DataManager::Instance().StatDict.find(1);
-	if (it == DataManager::Instance().StatDict.end())
-	{
-		delete this;
-		return;
-	}
-
-	_statInfo.CopyFrom(it->second);
 	_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
 }
 

@@ -1,55 +1,32 @@
 #pragma once
 #include "Object.h"
-#include "Player.h"
 #include "Projectile.h"
-#include "Arrow.h"
-#include "Monster.h"
+#include "Protocol.pb.h"
 
 using namespace Protocol;
+
+class Player;
+class Monster;
+class Projectile;
 
 class ObjectManager
 {
 public:
-	static ObjectManager& Instance()
-	{
-		static ObjectManager instance;
-		return instance;
-	}
+	using createFunc = function<ObjectRef()>;
 
-	static ObjectType GetObjectTypeById(int32 id)
-	{
-		int32 type = (id >> 24) & 0x7F;
-		return static_cast<ObjectType>(type);
-	}
+public:
+	void Init();
 
 	int32 GenerateId(ObjectType type);
 
-	template<typename T>
-	shared_ptr<T> Add()
-	{
-		shared_ptr<T> gameObject = make_shared<T>();
-		{
-			WRITE_LOCK;
-			
-			gameObject->SetId(GenerateId(gameObject->_objectInfo.object_type()));
+	int32 FactoryHash(int32 mainType, int32 subType);
+	void AddFactory(int32 hash, createFunc func);
 
-			if constexpr (std::is_same_v<T, Player>)
-			{
-				_players[gameObject->_objectInfo.object_id()] = static_pointer_cast<Player>(gameObject);
-			}
-		}
-
-		return gameObject;
-	}
-
-	bool Remove(int32 objectId);
-	PlayerRef Find(int32 objectId);
+	ObjectRef Spawn(const string& templateName = "");
 
 private:
-	ObjectManager() = default;
-
-private:
-	USE_LOCK;
-	unordered_map<uint64, PlayerRef> _players;
 	int32 _counter = 0;
+
+	unordered_map<int32, createFunc> _createRegistry;
+	unordered_map<uint64, ObjectRef> _objects;
 };

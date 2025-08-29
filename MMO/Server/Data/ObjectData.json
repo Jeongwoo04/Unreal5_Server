@@ -1,0 +1,46 @@
+{
+  "Object": [
+    {
+      "name": "Knight",
+      "mainType": 1,
+      "subType": 1,
+      "statId": 10101
+    },
+    {
+      "name": "Archer",
+      "mainType": 1,
+      "subType": 1,
+      "statId": 10102
+    },
+    {
+      "name": "Mage",
+      "mainType": 1,
+      "subType": 1,
+      "statId": 10103
+    },
+    {
+      "name": "Skeleton",
+      "mainType": 1,
+      "subType": 2,
+      "statId": 10201
+    },
+    {
+      "name": "Goblin",
+      "mainType": 1,
+      "subType": 2,
+      "statId": 10202
+    },
+    {
+      "name": "Arrow",
+      "mainType": 2,
+      "subType": 0,
+      "projectileId": 1
+    },
+    {
+      "name": "Fireball",
+      "mainType": 2,
+      "subType": 0,
+      "projectileId": 2
+    }
+  ]
+} 

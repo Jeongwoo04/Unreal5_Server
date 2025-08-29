@@ -43,7 +43,7 @@ protected:
 
 	Skill skillData;
 
-	float _skillRange;
+	float _skillRange = 10.f;
 
 	uint64 _nextPathUpdateTick = 0;
 	uint64 _nextLOSCheckTick = 0;

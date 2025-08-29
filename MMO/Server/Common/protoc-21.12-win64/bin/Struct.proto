@@ -26,12 +26,21 @@ message ObjectInfo
 
 message StatInfo
 {
-	int32 level = 1;
-	int32 hp = 2;
-	int32 maxHp = 3;
-	int32 attack = 4;
-	float speed = 5;
-	uint32 totalExp = 6;
+	int32 statId = 1;
+	int32 level = 2;
+	int32 hp = 3;
+	int32 maxHp = 4;
+	int32 attack = 5;
+	float speed = 6;
+	uint32 totalExp = 7;
+}
+
+message ProjectileInfo
+{
+	int32 projectileId = 1;
+    string name = 2;
+    float speed = 3;
+    int32 range = 4;
 }
 
 message SkillInfo

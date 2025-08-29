@@ -1,8 +1,10 @@
 #pragma once
 #include "pch.h"
 #include "SpatialHashGrid.h"
+#include "ObjectManager.h"
 
 using GameMapRef = shared_ptr<class GameMap>;
+using ObjectManagerRef = shared_ptr<class ObjectManager>;
 using RoomRef = shared_ptr<class Room>;
 using MonsterRef = shared_ptr<class Monster>;
 using ProjectileRef = shared_ptr<class Projectile>;
@@ -29,7 +31,7 @@ public:
 	bool EnterRoom(ObjectRef object, bool randPos = true);
 	bool LeaveRoom(ObjectRef object);
 
-	bool HandleEnterPlayer(PlayerRef player);
+	bool HandleEnterPlayer(GameSessionRef gameSession);
 	bool HandleLeavePlayer(PlayerRef player);
 	void HandleMove(Protocol::C_MOVE pkt);
 	void HandleSkill(PlayerRef player, Protocol::C_SKILL pkt);
@@ -58,6 +60,8 @@ public:
 	SpatialHashGrid<MonsterRef> _monsterGrid;
 
 private:
+	ObjectManagerRef _objectManager;
+
 	unordered_map<uint64, PlayerRef> _players;
 	unordered_map<uint64, MonsterRef> _monsters;
 	unordered_map<uint64, ProjectileRef> _projectiles;

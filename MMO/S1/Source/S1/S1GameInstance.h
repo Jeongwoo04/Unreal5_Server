@@ -78,5 +78,4 @@ public:
 	AS1MyPlayer* MyPlayer = nullptr;
 
 	bool Connected = false;
-	bool bInitialized = false;
 };

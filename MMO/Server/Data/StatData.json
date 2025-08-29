@@ -1,25 +1,44 @@
 {
-  "stats": [
+  "Stat": [
     {
+      "statId": 10101,
       "level": 1,
-      "maxHp": 200,
+      "maxHp": 500,
       "attack": 20,
-      "speed": 300.0,
+      "speed": 500.0,
       "totalExp": 0
     },
     {
-      "level": 2,
-      "maxHp": 250,
-      "attack": 25,
-      "speed": 400.0,
-      "totalExp": 10
+      "statId": 10102,
+      "level": 1,
+      "maxHp": 300,
+      "attack": 15,
+      "speed": 600.0,
+      "totalExp": 0
     },
     {
-      "level": 3,
+      "statId": 10103,
+      "level": 1,
+      "maxHp": 400,
+      "attack": 10,
+      "speed": 400.0,
+      "totalExp": 0
+    },
+    {
+      "statId": 10201,
+      "level": 1,
+      "maxHp": 500,
+      "attack": 20,
+      "speed": 200.0,
+      "totalExp": 0
+    },
+    {
+      "statId": 10202,
+      "level": 1,
       "maxHp": 300,
-      "attack": 30,
-      "speed": 500.0,
-      "totalExp": 20
+      "attack": 10,
+      "speed": 300.0,
+      "totalExp": 0
     }
   ]
-} 
+}

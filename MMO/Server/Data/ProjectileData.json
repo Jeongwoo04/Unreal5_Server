@@ -1,0 +1,16 @@
+{
+  "Projectile": [
+    {
+      "projectileId": 1,
+      "name": "Arrow",
+      "speed": 600.0,
+      "range": 1.0
+    },
+    {
+      "projectileId": 1,
+      "name": "Fireball",
+      "speed": 300.0,
+      "range": 3.0
+    }
+  ]
+} 

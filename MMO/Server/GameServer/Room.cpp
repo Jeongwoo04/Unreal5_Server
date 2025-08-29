@@ -1,12 +1,15 @@
 #include "pch.h"
 #include "Room.h"
 #include "Player.h"
+#include "Arrow.h"
 #include "ObjectManager.h"
 #include "GameSessionManager.h"
 
 Room::Room()
 {
 	_gameMap = make_shared<GameMap>();
+	_objectManager = make_shared<ObjectManager>();
+	_objectManager->Init();
 }
 
 Room::~Room()
@@ -50,7 +53,7 @@ void Room::SpawnMonster()
 	{
 		for (int32 i = 0; i < requireCount; i++)
 		{
-			MonsterRef monster = ObjectManager::Instance().Add<Monster>();
+			MonsterRef monster = static_pointer_cast<Monster>(_objectManager->Spawn("Goblin"));
 			EnterRoom(monster, true);
 		}
 	}
@@ -141,8 +144,15 @@ bool Room::LeaveRoom(ObjectRef object)
 	return success;
 }
 
-bool Room::HandleEnterPlayer(PlayerRef player)
-{	
+bool Room::HandleEnterPlayer(GameSessionRef gameSession)
+{
+	PlayerRef player = static_pointer_cast<Player>(_objectManager->Spawn("Knight"));
+	if (player == nullptr)
+		return false;
+
+	gameSession->_player = player;
+	player->SetSession(gameSession);
+
 	return EnterRoom(player, true);
 }
 
@@ -155,16 +165,25 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 {
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
+	{
+		cout << "Can't find player" << endl;
 		return;
+	}
 	
 	PlayerRef& player = _players[objectId];
 	if (player == nullptr || player->GetRoom() == nullptr || player->GetRoom()->GetGameMap() == nullptr)
+	{
+		cout << "Invalid player" << endl;
 		return;
+	}
 
 	Vector2Int destPos = Vector2Int(pkt.info());
 
 	if (!_gameMap->CanGo(destPos, false))
+	{
+		cout << "Can't move there" << endl;
 		return;
+	}
 
 	_playerGrid.ApplyMove(player, player->_gridPos, destPos);
 
@@ -255,24 +274,24 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		break;
 	case Protocol::SKILL_PROJECTILE:
 	{
-		ArrowRef arrow = ObjectManager::Instance().Add<Arrow>();
-		if (arrow == nullptr)
+		ProjectileRef proj = static_pointer_cast<Projectile>(_objectManager->Spawn("Arrow"));
+		if (proj == nullptr)
 			return;
 
-		arrow->SetOwner(player);
-		arrow->SetData(skillData);
+		proj->SetOwner(player);
+		proj->SetData(skillData);
 
-		arrow->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-		arrow->_posInfo.set_yaw(player->_posInfo.yaw());
-		arrow->_posInfo.set_x(player->_posInfo.x());
-		arrow->_posInfo.set_y(player->_posInfo.y());
-		arrow->_posInfo.set_z(player->_posInfo.z());
-		arrow->_statInfo.set_speed(skillData.projectile.speed);
+		proj->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+		proj->_posInfo.set_yaw(player->_posInfo.yaw());
+		proj->_posInfo.set_x(player->_posInfo.x());
+		proj->_posInfo.set_y(player->_posInfo.y());
+		proj->_posInfo.set_z(player->_posInfo.z());
+		proj->_statInfo.set_speed(proj->_projectileInfo.speed());
 
-		arrow->_gridPos = Vector2Int(arrow->_posInfo);
-		arrow->_worldPos = Vector3(arrow->_posInfo);
+		proj->_gridPos = Vector2Int(proj->_posInfo);
+		proj->_worldPos = Vector3(proj->_posInfo);
 
-		EnterRoom(static_pointer_cast<Object>(arrow), false);
+		EnterRoom(static_pointer_cast<Object>(proj), false);
 	}
 		break;
 	case Protocol::SKILL_AOE_DOT:

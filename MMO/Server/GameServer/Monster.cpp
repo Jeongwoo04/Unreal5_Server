@@ -6,14 +6,6 @@ Monster::Monster()
 {
 	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_MONSTER);
 
-	// TODO : Stat
-    auto statIt = DataManager::Instance().StatDict.find(1);
-    if (statIt == DataManager::Instance().StatDict.end())
-    {
-        delete this;
-        return;
-    }
-
     // 스킬 데이터 가져오기 (ID 1 고정)
     auto skillIt = DataManager::Instance().SkillDict.find(2);
     if (skillIt == DataManager::Instance().SkillDict.end())
@@ -21,8 +13,7 @@ Monster::Monster()
 
     skillData = skillIt->second;
 
-    _statInfo.CopyFrom(statIt->second);
-    _skillRange = skillData.projectile.range;
+    _skillRange = static_cast<float>(skillData.distance);
     _coolTick = skillData.cooldown;
 
     _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);

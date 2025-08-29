@@ -6,18 +6,9 @@
 #include <vector>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include "Protocol.pb.h"
 
 using json = nlohmann::json;
 using namespace Protocol;
-
-// ProjectileInfo 구조체
-struct ProjectileInfo
-{
-    string name;
-    float speed = 0;
-    int32 range = 0;
-};
 
 // Skill 구조체
 struct Skill
@@ -27,10 +18,20 @@ struct Skill
     float cooldown = 0;
     int32 damage = 0;
     SkillType skillType = SkillType::SKILL_AUTO;
-    ProjectileInfo projectile; // optional
+    float distance = 0.f;
+    int32 projectileId;
 };
 
 SkillType ToSkillType(const string& str);
+
+struct ObjectTemplate
+{
+    string name = "";
+    int32 mainType = 0;
+    int32 subType = 0;
+    int32 statId = -1;
+    int32 projectileId = -1;
+};
 
 // 템플릿 인터페이스
 template<typename Key, typename Value>
@@ -39,6 +40,16 @@ class ILoader
 public:
     virtual unordered_map<Key, Value> MakeDict() = 0;
     virtual ~ILoader() = default;
+};
+
+class ObjectData : public ILoader<string, ObjectTemplate>
+{
+public:
+    vector<ObjectTemplate> objectTemplates;
+
+    unordered_map<string, ObjectTemplate> MakeDict() override;
+
+    static ObjectData LoadFromJson(const string& path);
 };
 
 // StatData
@@ -50,6 +61,17 @@ public:
     unordered_map<int32, StatInfo> MakeDict() override;
 
     static StatData LoadFromJson(const string& path);
+};
+
+// ProjectileData
+class ProjectileData : public ILoader<int32, ProjectileInfo>
+{
+public:
+    vector<ProjectileInfo> projectiles;
+
+    unordered_map<int32, ProjectileInfo> MakeDict() override;
+
+    static ProjectileData LoadFromJsonFile(const string& path); // 이름 다르게!
 };
 
 // SkillData

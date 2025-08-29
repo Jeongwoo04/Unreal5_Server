@@ -15,6 +15,9 @@ public:
 	void SetData(const Skill& data) { _data = data; }
 	Skill GetData() { return _data; }
 
+public:
+	ProjectileInfo _projectileInfo;
+
 protected:
 	weak_ptr<Object> _owner;
 

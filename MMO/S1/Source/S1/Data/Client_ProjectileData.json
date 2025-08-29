@@ -1,0 +1,12 @@
+{
+  "Projectile": [
+    {
+      "projectileId": 1,
+      "name": "Arrow"
+    },
+    {
+      "projectileId": 1,
+      "name": "Fireball"
+    }
+  ]
+} 

@@ -42,15 +42,9 @@ bool Handle_C_LOGIN(PacketSessionRef& session, Protocol::C_LOGIN& pkt)
 
 bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 {
-	// 플레이어 생성
-	PlayerRef player = ObjectManager::Instance().Add<Player>();
-
 	auto gameSession = static_pointer_cast<GameSession>(session);
 	if (gameSession == nullptr)
 		return false;
-
-	gameSession->_player = player;
-	player->SetSession(gameSession);
 
 	RoomRef room = nullptr;
 
@@ -62,7 +56,7 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 		room = RoomManager::Instance().Find(1);
 
 	// 입장
-	room->DoAsync(&Room::HandleEnterPlayer, player);
+	room->DoAsync(&Room::HandleEnterPlayer, gameSession);
 
 	return true;
 }

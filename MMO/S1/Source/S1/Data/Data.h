@@ -12,14 +12,6 @@ using namespace Protocol;
 using namespace std;
 using int32 = __int32;
 
-// ProjectileInfo 구조체
-struct ProjectileInfo
-{
-    string name;
-    float speed = 0;
-    int32 range = 0;
-};
-
 // Skill 구조체
 struct Skill
 {
@@ -27,9 +19,8 @@ struct Skill
     string name;
     string iconPath;
     float cooldown = 0;
-    int32 damage = 0;
     SkillType skillType = SkillType::SKILL_AUTO;
-    ProjectileInfo projectile; // optional
+    int32 projectileId;
 };
 
 SkillType ToSkillType(const string& str);
@@ -52,6 +43,17 @@ public:
     unordered_map<int32, StatInfo> MakeDict() override;
 
     static StatData LoadFromJson(const string& path);
+};
+
+// ProjectileData
+class ProjectileData : public ILoader<int32, ProjectileInfo>
+{
+public:
+    vector<ProjectileInfo> projectiles;
+
+    unordered_map<int32, ProjectileInfo> MakeDict() override;
+
+    static ProjectileData LoadFromJsonFile(const string& path); // 이름 다르게!
 };
 
 // SkillData

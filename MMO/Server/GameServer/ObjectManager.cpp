@@ -1,27 +1,81 @@
 #include "pch.h"
 #include "ObjectManager.h"
+#include "Object.h"
+#include "Projectile.h"
+#include "Player.h"
+#include "Monster.h"
+#include "DataManager.h"
+
+void ObjectManager::Init()
+{
+    _createRegistry.clear();
+    _objects.clear();
+
+	AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_PLAYER),
+        []() -> ObjectRef { return make_shared<Player>(); }
+	);
+
+    AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_MONSTER),
+        []() -> ObjectRef { return make_shared<Monster>(); }
+    );
+
+    AddFactory(FactoryHash(OBJECT_TYPE_PROJECTILE, 0),
+        []() -> ObjectRef { return make_shared<Projectile>(); }
+    );
+}
 
 int32 ObjectManager::GenerateId(ObjectType type)
 {
     return (static_cast<int32>(type) << 24) | (_counter++);
 }
 
-bool ObjectManager::Remove(int32 objectId)
+int32 ObjectManager::FactoryHash(int32 mainType, int32 subType)
 {
-	ObjectType type = GetObjectTypeById(objectId);
-
-	if (type != Protocol::OBJECT_TYPE_CREATURE)
-		return false;
-
-	WRITE_LOCK;
-	return _players.erase(objectId) > 0;
+	return (mainType << 16) | (subType & 0xFFFF);
 }
 
-PlayerRef ObjectManager::Find(int32 objectId)
+void ObjectManager::AddFactory(int32 hash, createFunc func)
 {
-	WRITE_LOCK;
-	auto it = _players.find(objectId);
-	if (it != _players.end())
-		return it->second;
-	return nullptr;
+    _createRegistry[hash] = func;
+}
+
+ObjectRef ObjectManager::Spawn(const string& templateName)
+{
+    auto it = DataManager::Instance().ObjectDict.find(templateName);
+
+    if (it == DataManager::Instance().ObjectDict.end())
+        return nullptr;
+
+    auto objTemplate = it->second;
+
+    int32 hash = FactoryHash(objTemplate.mainType, objTemplate.subType);
+
+    auto funcIt = _createRegistry.find(hash);
+    if (funcIt == _createRegistry.end())
+        return nullptr;
+
+    auto newObject = funcIt->second();
+    newObject->SetId(GenerateId(static_cast<ObjectType>(objTemplate.mainType)));
+
+    if (objTemplate.statId != -1)
+    {
+        auto statIt = DataManager::Instance().StatDict.find(objTemplate.statId);
+        if (statIt != DataManager::Instance().StatDict.end())
+        {
+            newObject->_statInfo.CopyFrom(statIt->second);
+        }
+    }
+    if (objTemplate.projectileId != -1)
+    {
+        if (auto proj = dynamic_pointer_cast<Projectile>(newObject))
+        {
+            auto projectileIt = DataManager::Instance().ProjectileDict.find(objTemplate.projectileId);
+            if (projectileIt != DataManager::Instance().ProjectileDict.end())
+            {
+                proj->_projectileInfo = projectileIt->second;
+            }
+        }        
+    }
+
+    return newObject;
 }

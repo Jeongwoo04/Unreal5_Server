@@ -17,8 +17,9 @@ public:
         return instance;
     }
 
-    void LoadData(const std::string& basePath);
+    void LoadData(const string& basePath);
 
-    std::unordered_map<int32, Protocol::StatInfo> StatDict;
-    std::unordered_map<int32, Skill> SkillDict;
+    unordered_map<int32, StatInfo> StatDict;
+    unordered_map<int32, Skill> SkillDict;
+    unordered_map<int32, ProjectileInfo> ProjectileDict;
 };

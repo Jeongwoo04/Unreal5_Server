@@ -37,6 +37,35 @@ StatData StatData::LoadFromJson(const string& path)
     return data;
 }
 
+unordered_map<int32, ProjectileInfo> ProjectileData::MakeDict()
+{
+    unordered_map<int32, ProjectileInfo> dict;
+    for (auto& projectile : projectiles)
+    {
+        dict[projectile.projectileid()] = projectile;
+    }
+    return dict;
+}
+
+ProjectileData ProjectileData::LoadFromJsonFile(const string& path)
+{
+    std::ifstream file(path);
+    json j;
+    file >> j;
+
+    auto data = ProjectileData();
+    for (auto& element : j["Projectile"])
+    {
+        auto projectile = ProjectileInfo();
+        projectile.set_projectileid(element["projectileId"].get<int32>());
+        projectile.set_name(element["name"].get<string>());
+        // 렌더링 , 애니메이션 등등
+
+        data.projectiles.push_back(projectile);
+    }
+    return data;
+}
+
 unordered_map<int32, Skill> SkillData::MakeDict()
 {
     unordered_map<int32, Skill> dict;
@@ -47,7 +76,7 @@ unordered_map<int32, Skill> SkillData::MakeDict()
     return dict;
 }
 
-SkillData SkillData::LoadFromJsonFile(const std::string& path)
+SkillData SkillData::LoadFromJsonFile(const string& path)
 {
     std::ifstream file(path);
     if (!file.is_open())
@@ -63,19 +92,14 @@ SkillData SkillData::LoadFromJsonFile(const std::string& path)
     {
         auto skill = Skill();
         skill.id = element["id"].get<int32>();
-        skill.name = element["name"].get<std::string>();
-        skill.iconPath = element["iconPath"].get<std::string>();
+        skill.name = element["name"].get<string>();
+        skill.iconPath = element["iconPath"].get<string>();
         skill.cooldown = element["cooldown"].get<float>();
-        skill.damage = element["damage"].get<int32>();
-        skill.skillType = ToSkillType(element["skillType"].get<std::string>());
+        skill.skillType = ToSkillType(element["skillType"].get<string>());
 
-        if (element.contains("projectile"))
+        if (element.contains("projectileId"))
         {
-            auto proj = ProjectileInfo();
-            proj.name = element["projectile"]["name"].get<std::string>();
-            proj.speed = element["projectile"]["speed"].get<float>();
-            proj.range = element["projectile"]["range"].get<int32>();
-            skill.projectile = proj;
+            skill.projectileId = element["projectileId"].get<int32>();
         }
 
         data.skills.push_back(skill);
@@ -83,7 +107,7 @@ SkillData SkillData::LoadFromJsonFile(const std::string& path)
     return data;
 }
 
-SkillType ToSkillType(const std::string& str)
+SkillType ToSkillType(const string& str)
 {
     if (str == "SkillAuto") return SkillType::SKILL_AUTO;
     if (str == "SkillProjectile") return SkillType::SKILL_PROJECTILE;

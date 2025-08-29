@@ -2,50 +2,35 @@
   "skills": [
     {
       "id": 1,
-      "name": "평타",
+      "name": "Melee",
       "iconPath": "UI/Skill_Auto.png",
-      "cooldown": 0.5,
-      "damage": 10,
-      "skillType": "SkillAuto"
+      "skillType": "SkillAuto",
+      "cooldown": 0.5
     },
     {
       "id": 2,
-      "name": "화살공격",
+      "name": "Arrow",
       "iconPath": "UI/Skill_Arrow.png",
       "cooldown": 0.5,
-      "damage": 5,
       "skillType": "SkillProjectile",
-      "projectile": {
-        "name": "화살",
-        "speed": 500.0,
-        "range": 6
-      }
+      "projectileId": 1
     },
     {
       "id": 3,
-      "name": "마법공격",
+      "name": "Fireball",
       "iconPath": "UI/Skill_Fireball.png",
       "cooldown": 3,
-      "damage": 5,
       "skillType": "SkillProjectile",
-      "projectile": {
-        "name": "파이어볼",
-        "speed": 400.0,
-        "range": 8
-      }
+      "projectileId": 2
     },
     {
       "id": 4,
-      "name": "마법공격",
+      "name": "Blizard",
       "iconPath": "UI/Skill_Blizard.png",
       "cooldown": 8,
       "damage": 5,
       "skillType": "SkillAoeDot",
-      "projectile": {
-        "name": "블리자드",
-        "speed": 500.0,
-        "range": 10
-      }
+      "projectileId": 3
     }
   ]
 } 

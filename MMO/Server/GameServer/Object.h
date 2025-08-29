@@ -26,7 +26,7 @@ public:
 	Protocol::StateMachine GetState() const { return _posInfo.state(); }
 
 	void SetId(uint64 id);
-	uint64 GetId() { return _posInfo.object_id(); }
+	uint64 GetId() { return _objectInfo.object_id(); }
 
 	void SetRoom(RoomRef room) { _room = room; }
 	RoomRef GetRoom() const { return _room.lock(); }

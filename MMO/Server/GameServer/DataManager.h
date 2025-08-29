@@ -17,6 +17,8 @@ public:
 
     void LoadData(const string& basePath);
 
+    unordered_map<string, ObjectTemplate> ObjectDict;
     unordered_map<int32, Protocol::StatInfo> StatDict;
     unordered_map<int32, Skill> SkillDict;
+    unordered_map<int32, ProjectileInfo> ProjectileDict;
 };
