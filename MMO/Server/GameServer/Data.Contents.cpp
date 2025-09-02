@@ -2,12 +2,12 @@
 #include "Data.Contents.h"
 #include <fstream>
 
-unordered_map<string, ObjectTemplate> ObjectData::MakeDict()
+unordered_map<int32, ObjectTemplate> ObjectData::MakeDict()
 {
-    unordered_map<string, ObjectTemplate> dict;
+    unordered_map<int32, ObjectTemplate> dict;
     for (auto& objectTemplate : objectTemplates)
     {
-        dict[objectTemplate.name] = objectTemplate;
+        dict[objectTemplate.dataId] = objectTemplate;
     }
     return dict;
 }
@@ -18,17 +18,14 @@ ObjectData ObjectData::LoadFromJson(const string& path)
     json j;
     file >> j;
 
-    auto data = ObjectData();
+    ObjectData data;
     for (auto& element : j["Object"])
     {
-        auto objTemplate = ObjectTemplate();
+        ObjectTemplate objTemplate;
+        objTemplate.dataId = element["dataId"].get<int32>();
         objTemplate.name = element["name"].get<string>();
         objTemplate.mainType = element["mainType"].get<int32>();
         objTemplate.subType = element["subType"].get<int32>();
-        if (element.contains("statId"))
-            objTemplate.statId = element["statId"].get<int32>();
-        if (element.contains("projectileId"))
-            objTemplate.projectileId = element["projectileId"].get<int32>();
 
         data.objectTemplates.push_back(objTemplate);
     }
@@ -42,7 +39,7 @@ unordered_map<int32, StatInfo> StatData::MakeDict()
     for (auto& stat : stats)
     {
         stat.set_hp(stat.maxhp()); // 초기 HP 세팅
-        dict[stat.statid()] = stat;
+        dict[stat.dataid()] = stat;
     }
     return dict;
 }
@@ -53,11 +50,11 @@ StatData StatData::LoadFromJson(const string& path)
     json j;
     file >> j;
 
-    auto data = StatData();
+    StatData data;
     for (auto& element : j["Stat"])
     {
-        auto stat = StatInfo();
-        stat.set_statid(element["statId"].get<int32>());
+        StatInfo stat;
+        stat.set_dataid(element["dataId"].get<int32>());
         stat.set_level(element["level"].get<int32>());
         stat.set_maxhp(element["maxHp"].get<int32>());
         stat.set_attack(element["attack"].get<int32>());
@@ -74,7 +71,7 @@ unordered_map<int32, ProjectileInfo> ProjectileData::MakeDict()
     unordered_map<int32, ProjectileInfo> dict;
     for (auto& projectile : projectiles)
     {
-        dict[projectile.projectileid()] = projectile;
+        dict[projectile.dataid()] = projectile;
     }
     return dict;
 }
@@ -85,11 +82,11 @@ ProjectileData ProjectileData::LoadFromJsonFile(const string& path)
     json j;
     file >> j;
 
-    auto data = ProjectileData();
+    ProjectileData data;
     for (auto& element : j["Projectile"])
     {
-        auto projectile = ProjectileInfo();
-        projectile.set_projectileid(element["projectileId"].get<int32>());
+        ProjectileInfo projectile;
+        projectile.set_dataid(element["dataId"].get<int32>());
         projectile.set_name(element["name"].get<string>());
         projectile.set_speed(element["speed"].get<float>());
         projectile.set_range(element["range"].get<int32>());
@@ -115,10 +112,10 @@ SkillData SkillData::LoadFromJsonFile(const std::string& path)
     json j;
     file >> j;
 
-    auto data = SkillData();
+    SkillData data;
     for (auto& element : j["skills"])
     {
-        auto skill = Skill();
+        Skill skill;
         skill.id = element["id"].get<int32>();
         skill.name = element["name"].get<std::string>();
         skill.cooldown = element["cooldown"].get<float>();
@@ -126,9 +123,9 @@ SkillData SkillData::LoadFromJsonFile(const std::string& path)
         skill.skillType = ToSkillType(element["skillType"].get<string>());
         skill.distance = element["distance"].get<float>();
 
-        if (element.contains("projectileId"))
+        if (element.contains("dataId"))
         {
-            skill.projectileId = element["projectileId"].get<int32>();
+            skill.dataId = element["dataId"].get<int32>();
         }
 
         data.skills.push_back(skill);
@@ -142,4 +139,51 @@ SkillType ToSkillType(const std::string& str)
     if (str == "SkillProjectile") return SkillType::SKILL_PROJECTILE;
     if (str == "SkillAoeDot") return SkillType::SKILL_AOE_DOT;
     return SkillType::SKILL_NONE;
+}
+
+unordered_map<int32, MapInfo> MapData::MakeDict()
+{
+    unordered_map<int32, MapInfo> dict;
+    for (auto& map : maps)
+    {
+        dict[map.mapId] = map;
+    }
+
+    return dict;
+}
+
+MapData MapData::LoadFromJsonFile(const string& path)
+{
+    ifstream file(path);
+    json j;
+    file >> j;
+
+    MapData data;
+    for (auto& element : j["Map"])
+    {
+        MapInfo map;
+        map.mapId = element["mapId"].get<int32>();
+        map.mapName = element["mapName"].get<string>();
+        map.filePath = element["filePath"].get<string>();
+
+        for (auto& spawnElement : element["spawns"])
+        {
+            SpawnTable spawn;
+            spawn.spawnId = spawnElement["spawnId"].get<int32>();
+            spawn.dataId = spawnElement["dataId"].get<int32>();
+
+            spawn.spawnPos._x = spawnElement["position"]["x"].get<float>();
+            spawn.spawnPos._y = spawnElement["position"]["y"].get<float>();
+            spawn.spawnPos._z = spawnElement["position"]["z"].get<float>();
+
+            spawn.respawnInterval = spawnElement["respawnInterval"].get<int32>();
+            spawn.count = spawnElement["count"].get<int32>();
+
+            map.spawnTables[spawn.spawnId] = spawn;
+        }
+
+        data.maps.push_back(map);
+    }
+
+    return data;
 }

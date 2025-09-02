@@ -38,7 +38,7 @@ class GameMap : public std::enable_shared_from_this<GameMap>
 public:
     bool CanGo(Vector2Int cell, bool checkObjects = true);
 
-    void LoadGameMap(int32 mapId, string pathPrefix = "../Common/CollisionMap");
+    void LoadGameMap(string path);
 
     vector<Vector2Int> FindPath(Vector2Int startCellPos, Vector2Int destCellPos, bool checkObjects = true);
     vector<Vector3> SimplifyPathRaycast(Vector3& start, vector<Vector2Int>& path);

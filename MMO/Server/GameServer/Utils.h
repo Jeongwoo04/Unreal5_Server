@@ -76,54 +76,60 @@ struct Vector2Int
 
 struct Vector3
 {
-    float _x, _y;
+    float _x, _y, _z;
     Vector3() { };
-    Vector3(float x, float y) : _x(x), _y(y) { }
-    Vector3(const Protocol::PosInfo& pos) { _x = pos.x(); _y = pos.y(); }
+    Vector3(float x, float y, float z) : _x(x), _y(y), _z(z) { }
+    Vector3(const Protocol::PosInfo& pos) { _x = pos.x(); _y = pos.y(); _z = pos.z(); }
 
     Vector3 operator-(const Vector3& other)
     {
-        return Vector3(_x - other._x, _y - other._y);
+        return Vector3(_x - other._x, _y - other._y, _z - other._z);
     }
 
     Vector3 operator+(const Vector3& other) const
     {
-        return Vector3(_x + other._x, _y + other._y);
+        return Vector3(_x + other._x, _y + other._y, _z + other._z);
     }
 
     Vector3& operator+=(const Vector3& other)
     {
         _x += other._x;
         _y += other._y;
+        _z += other._z;
         return *this;
+    }
+
+    Vector3 operator+(float scalar) const
+    {
+        return Vector3(_x + scalar, _y + scalar, _z + scalar);
     }
 
     Vector3 operator*(float scalar) const
     {
-        return Vector3(_x * scalar, _y * scalar);
+        return Vector3(_x * scalar, _y * scalar, _z * scalar);
     }
 
     Vector3 operator/(float scalar) const
     {
-        return Vector3(_x / scalar, _y / scalar);
+        return Vector3(_x / scalar, _y / scalar, _z / scalar);
     }
 
     float Length() const
     {
-        return sqrtf(_x * _x + _y * _y);
+        return sqrtf(_x * _x + _y * _y + _z * _z);
     }
 
     float LengthSquared() const
     {
-        return _x * _x + _y * _y;
+        return _x * _x + _y * _y + _z * _z;
     }
 
     Vector3 Normalized() const
     {
-        float len = sqrtf(_x * _x + _y * _y);
+        float len = sqrtf(_x * _x + _y * _y + _z * _z);
         if (len == 0)
-            return Vector3{ 0, 0 };
-        return Vector3{ _x / len, _y / len };
+            return Vector3{ 0, 0, 0 };
+        return Vector3{ _x / len, _y / len, _z / len };
     }
 
     static Vector3 YawToDir(float yaw)
@@ -132,7 +138,7 @@ struct Vector3
         float x = cosf(radians);
         float y = sinf(radians);
 
-        return Vector3(x, y).Normalized();
+        return Vector3(x, y, 0).Normalized();
     }
 
     static float Dot(const Vector3& a, const Vector3& b)
@@ -150,7 +156,7 @@ static Vector2Int WorldToGrid(const Vector3& vec, float CELL_SIZE = 100.f)
 }
 static Vector3 GridToWorld(const Vector2Int& vec)
 {
-    return Vector3(vec._x * CELL_SIZE, vec._y * CELL_SIZE);
+    return Vector3(vec._x * CELL_SIZE, vec._y * CELL_SIZE, 0);
 }
 
 struct Vector2IntHash

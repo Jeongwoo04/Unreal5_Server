@@ -1,13 +1,13 @@
 {
   "Projectile": [
     {
-      "projectileId": 1,
+      "dataId": 30101,
       "name": "Arrow",
       "speed": 600.0,
       "range": 1.0
     },
     {
-      "projectileId": 1,
+      "dataId": 30102,
       "name": "Fireball",
       "speed": 300.0,
       "range": 3.0

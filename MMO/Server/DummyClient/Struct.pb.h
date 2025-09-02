@@ -620,7 +620,7 @@ class StatInfo final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kStatIdFieldNumber = 1,
+    kDataIdFieldNumber = 1,
     kLevelFieldNumber = 2,
     kHpFieldNumber = 3,
     kMaxHpFieldNumber = 4,
@@ -628,13 +628,13 @@ class StatInfo final :
     kSpeedFieldNumber = 6,
     kTotalExpFieldNumber = 7,
   };
-  // int32 statId = 1;
-  void clear_statid();
-  int32_t statid() const;
-  void set_statid(int32_t value);
+  // int32 dataId = 1;
+  void clear_dataid();
+  int32_t dataid() const;
+  void set_dataid(int32_t value);
   private:
-  int32_t _internal_statid() const;
-  void _internal_set_statid(int32_t value);
+  int32_t _internal_dataid() const;
+  void _internal_set_dataid(int32_t value);
   public:
 
   // int32 level = 2;
@@ -699,7 +699,7 @@ class StatInfo final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
-    int32_t statid_;
+    int32_t dataid_;
     int32_t level_;
     int32_t hp_;
     int32_t maxhp_;
@@ -835,7 +835,7 @@ class ProjectileInfo final :
 
   enum : int {
     kNameFieldNumber = 2,
-    kProjectileIdFieldNumber = 1,
+    kDataIdFieldNumber = 1,
     kSpeedFieldNumber = 3,
     kRangeFieldNumber = 4,
   };
@@ -853,13 +853,13 @@ class ProjectileInfo final :
   std::string* _internal_mutable_name();
   public:
 
-  // int32 projectileId = 1;
-  void clear_projectileid();
-  int32_t projectileid() const;
-  void set_projectileid(int32_t value);
+  // int32 dataId = 1;
+  void clear_dataid();
+  int32_t dataid() const;
+  void set_dataid(int32_t value);
   private:
-  int32_t _internal_projectileid() const;
-  void _internal_set_projectileid(int32_t value);
+  int32_t _internal_dataid() const;
+  void _internal_set_dataid(int32_t value);
   public:
 
   // float speed = 3;
@@ -889,7 +889,7 @@ class ProjectileInfo final :
   typedef void DestructorSkippable_;
   struct Impl_ {
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
-    int32_t projectileid_;
+    int32_t dataid_;
     float speed_;
     int32_t range_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -1394,24 +1394,24 @@ inline void ObjectInfo::set_player_type(::Protocol::PlayerType value) {
 
 // StatInfo
 
-// int32 statId = 1;
-inline void StatInfo::clear_statid() {
-  _impl_.statid_ = 0;
+// int32 dataId = 1;
+inline void StatInfo::clear_dataid() {
+  _impl_.dataid_ = 0;
 }
-inline int32_t StatInfo::_internal_statid() const {
-  return _impl_.statid_;
+inline int32_t StatInfo::_internal_dataid() const {
+  return _impl_.dataid_;
 }
-inline int32_t StatInfo::statid() const {
-  // @@protoc_insertion_point(field_get:Protocol.StatInfo.statId)
-  return _internal_statid();
+inline int32_t StatInfo::dataid() const {
+  // @@protoc_insertion_point(field_get:Protocol.StatInfo.dataId)
+  return _internal_dataid();
 }
-inline void StatInfo::_internal_set_statid(int32_t value) {
+inline void StatInfo::_internal_set_dataid(int32_t value) {
   
-  _impl_.statid_ = value;
+  _impl_.dataid_ = value;
 }
-inline void StatInfo::set_statid(int32_t value) {
-  _internal_set_statid(value);
-  // @@protoc_insertion_point(field_set:Protocol.StatInfo.statId)
+inline void StatInfo::set_dataid(int32_t value) {
+  _internal_set_dataid(value);
+  // @@protoc_insertion_point(field_set:Protocol.StatInfo.dataId)
 }
 
 // int32 level = 2;
@@ -1538,24 +1538,24 @@ inline void StatInfo::set_totalexp(uint32_t value) {
 
 // ProjectileInfo
 
-// int32 projectileId = 1;
-inline void ProjectileInfo::clear_projectileid() {
-  _impl_.projectileid_ = 0;
+// int32 dataId = 1;
+inline void ProjectileInfo::clear_dataid() {
+  _impl_.dataid_ = 0;
 }
-inline int32_t ProjectileInfo::_internal_projectileid() const {
-  return _impl_.projectileid_;
+inline int32_t ProjectileInfo::_internal_dataid() const {
+  return _impl_.dataid_;
 }
-inline int32_t ProjectileInfo::projectileid() const {
-  // @@protoc_insertion_point(field_get:Protocol.ProjectileInfo.projectileId)
-  return _internal_projectileid();
+inline int32_t ProjectileInfo::dataid() const {
+  // @@protoc_insertion_point(field_get:Protocol.ProjectileInfo.dataId)
+  return _internal_dataid();
 }
-inline void ProjectileInfo::_internal_set_projectileid(int32_t value) {
+inline void ProjectileInfo::_internal_set_dataid(int32_t value) {
   
-  _impl_.projectileid_ = value;
+  _impl_.dataid_ = value;
 }
-inline void ProjectileInfo::set_projectileid(int32_t value) {
-  _internal_set_projectileid(value);
-  // @@protoc_insertion_point(field_set:Protocol.ProjectileInfo.projectileId)
+inline void ProjectileInfo::set_dataid(int32_t value) {
+  _internal_set_dataid(value);
+  // @@protoc_insertion_point(field_set:Protocol.ProjectileInfo.dataId)
 }
 
 // string name = 2;

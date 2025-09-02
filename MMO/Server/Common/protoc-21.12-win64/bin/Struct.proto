@@ -26,7 +26,7 @@ message ObjectInfo
 
 message StatInfo
 {
-	int32 statId = 1;
+	int32 dataId = 1;
 	int32 level = 2;
 	int32 hp = 3;
 	int32 maxHp = 4;
@@ -37,7 +37,7 @@ message StatInfo
 
 message ProjectileInfo
 {
-	int32 projectileId = 1;
+	int32 dataId = 1;
     string name = 2;
     float speed = 3;
     int32 range = 4;

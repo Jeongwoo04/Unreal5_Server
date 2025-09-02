@@ -123,7 +123,7 @@ void Monster::UpdateMoving()
         _gridPos = WorldToGrid(_worldPos);
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-        ApplyPos();
+        ApplyVectorPos();
         GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;
@@ -181,7 +181,7 @@ void Monster::UpdateMoving()
         }
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-        ApplyPos();
+        ApplyVectorPos();
         GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;
@@ -306,5 +306,6 @@ void Monster::OnDead(ObjectRef attacker)
     auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
     room->Broadcast(sendBuffer);
 
+    room->DoTimer(room->GetSpawnTable(_spTableId)->respawnInterval, &Room::SpawnMonster, _spTableId);
     room->AddRemoveList(shared_from_this());
 }

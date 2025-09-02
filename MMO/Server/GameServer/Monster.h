@@ -51,6 +51,8 @@ protected:
 	uint64 _nextMoveTick = 0;
 	uint64 _coolTick = 0;
 
-	Vector3 _lastTargetPos = Vector3(-99999, -99999);
+	Vector3 _lastTargetPos = Vector3(-99999, -99999, -99999);
+
+	weak_ptr<Player> _targetPlayer;
 };
 

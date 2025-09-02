@@ -1,11 +1,11 @@
 {
   "Projectile": [
     {
-      "projectileId": 1,
+      "dataId": 1,
       "name": "Arrow"
     },
     {
-      "projectileId": 1,
+      "dataId": 1,
       "name": "Fireball"
     }
   ]

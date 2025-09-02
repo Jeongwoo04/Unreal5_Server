@@ -1,0 +1,33 @@
+{
+  "Map": [
+    {
+      "mapId": 1,
+      "mapName": "Map_001",
+      "filePath": "../Common/CollisionMap/Map_001.txt",
+      "spawns": [
+        {
+          "spawnId": 0,
+          "dataId": 10201,
+          "position": {
+            "x": 2000,
+            "y": 2000,
+            "z": 100
+          },
+          "respawnInterval": 5000,
+          "count": 1
+        },
+        {
+          "spawnId": 1,
+          "dataId": 10202,
+          "position": {
+            "x": -2000,
+            "y": -2000,
+            "z": 100
+          },
+          "respawnInterval": 10000,
+          "count": 1
+        }
+      ]
+    }
+  ]
+} 

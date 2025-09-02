@@ -24,11 +24,11 @@ public:
 	void Init(int32 mapId);
 	void UpdateTick();
 
-	void SpawnMonster();
-	void AssignRandomPos(ObjectRef object);
+	void SpawnInit();
+	void SpawnMonster(int32 spTableId);
 
 public:
-	bool EnterRoom(ObjectRef object, bool randPos = true);
+	bool EnterRoom(ObjectRef object);
 	bool LeaveRoom(ObjectRef object);
 
 	bool HandleEnterPlayer(GameSessionRef gameSession);
@@ -37,9 +37,9 @@ public:
 	void HandleSkill(PlayerRef player, Protocol::C_SKILL pkt);
 
 public:
-
 	RoomRef GetRoomRef();
 	void BroadcastMove(SendBufferRef sendBuffer, uint64 exceptId = 0);
+	const SpawnTable* GetSpawnTable(int32 spawnId) const;
 
 private:
 	bool AddObject(ObjectRef object);
@@ -70,5 +70,6 @@ private:
 
 	//SpatialHashGrid<ProjectileRef> _projectileGrid;
 
+	MapInfo _mapInfo;
 	int32 _roomId = 0;
 };

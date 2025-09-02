@@ -22,7 +22,11 @@ public:
 	int32 FactoryHash(int32 mainType, int32 subType);
 	void AddFactory(int32 hash, createFunc func);
 
-	ObjectRef Spawn(const string& templateName = "");
+	ObjectRef Spawn(int32 dataId, const PosInfo& posInfo);
+	ObjectRef Spawn(int32 dataId, bool randPos, const Vector3& pos, float yaw = 0.f);
+
+	void Despawn(ObjectRef obj);
+	void Despawn(uint64 objId);
 
 private:
 	int32 _counter = 0;

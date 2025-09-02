@@ -42,7 +42,7 @@ unordered_map<int32, ProjectileInfo> ProjectileData::MakeDict()
     unordered_map<int32, ProjectileInfo> dict;
     for (auto& projectile : projectiles)
     {
-        dict[projectile.projectileid()] = projectile;
+        dict[projectile.dataid()] = projectile;
     }
     return dict;
 }
@@ -57,7 +57,7 @@ ProjectileData ProjectileData::LoadFromJsonFile(const string& path)
     for (auto& element : j["Projectile"])
     {
         auto projectile = ProjectileInfo();
-        projectile.set_projectileid(element["projectileId"].get<int32>());
+        projectile.set_dataid(element["dataId"].get<int32>());
         projectile.set_name(element["name"].get<string>());
         // 렌더링 , 애니메이션 등등
 

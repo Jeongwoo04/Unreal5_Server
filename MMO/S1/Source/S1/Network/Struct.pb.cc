@@ -60,7 +60,7 @@ struct ObjectInfoDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ObjectInfoDefaultTypeInternal _ObjectInfo_default_instance_;
 PROTOBUF_CONSTEXPR StatInfo::StatInfo(
     ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.statid_)*/0
+    /*decltype(_impl_.dataid_)*/0
   , /*decltype(_impl_.level_)*/0
   , /*decltype(_impl_.hp_)*/0
   , /*decltype(_impl_.maxhp_)*/0
@@ -80,7 +80,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORIT
 PROTOBUF_CONSTEXPR ProjectileInfo::ProjectileInfo(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.name_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
-  , /*decltype(_impl_.projectileid_)*/0
+  , /*decltype(_impl_.dataid_)*/0
   , /*decltype(_impl_.speed_)*/0
   , /*decltype(_impl_.range_)*/0
   , /*decltype(_impl_._cached_size_)*/{}} {}
@@ -143,7 +143,7 @@ const uint32_t TableStruct_Struct_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::Protocol::StatInfo, _impl_.statid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::StatInfo, _impl_.dataid_),
   PROTOBUF_FIELD_OFFSET(::Protocol::StatInfo, _impl_.level_),
   PROTOBUF_FIELD_OFFSET(::Protocol::StatInfo, _impl_.hp_),
   PROTOBUF_FIELD_OFFSET(::Protocol::StatInfo, _impl_.maxhp_),
@@ -156,7 +156,7 @@ const uint32_t TableStruct_Struct_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::Protocol::ProjectileInfo, _impl_.projectileid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::ProjectileInfo, _impl_.dataid_),
   PROTOBUF_FIELD_OFFSET(::Protocol::ProjectileInfo, _impl_.name_),
   PROTOBUF_FIELD_OFFSET(::Protocol::ProjectileInfo, _impl_.speed_),
   PROTOBUF_FIELD_OFFSET(::Protocol::ProjectileInfo, _impl_.range_),
@@ -195,19 +195,19 @@ const char descriptor_table_protodef_Struct_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "2\024.Protocol.ObjectType\022-\n\rcreature_type\030"
   "\005 \001(\0162\026.Protocol.CreatureType\022)\n\013player_"
   "type\030\006 \001(\0162\024.Protocol.PlayerType\"u\n\010Stat"
-  "Info\022\016\n\006statId\030\001 \001(\005\022\r\n\005level\030\002 \001(\005\022\n\n\002h"
+  "Info\022\016\n\006dataId\030\001 \001(\005\022\r\n\005level\030\002 \001(\005\022\n\n\002h"
   "p\030\003 \001(\005\022\r\n\005maxHp\030\004 \001(\005\022\016\n\006attack\030\005 \001(\005\022\r"
-  "\n\005speed\030\006 \001(\002\022\020\n\010totalExp\030\007 \001(\r\"R\n\016Proje"
-  "ctileInfo\022\024\n\014projectileId\030\001 \001(\005\022\014\n\004name\030"
-  "\002 \001(\t\022\r\n\005speed\030\003 \001(\002\022\r\n\005range\030\004 \001(\005\"\034\n\tS"
-  "killInfo\022\017\n\007skillId\030\001 \001(\005b\006proto3"
+  "\n\005speed\030\006 \001(\002\022\020\n\010totalExp\030\007 \001(\r\"L\n\016Proje"
+  "ctileInfo\022\016\n\006dataId\030\001 \001(\005\022\014\n\004name\030\002 \001(\t\022"
+  "\r\n\005speed\030\003 \001(\002\022\r\n\005range\030\004 \001(\005\"\034\n\tSkillIn"
+  "fo\022\017\n\007skillId\030\001 \001(\005b\006proto3"
   ;
 static const ::_pbi::DescriptorTable* const descriptor_table_Struct_2eproto_deps[1] = {
   &::descriptor_table_Enum_2eproto,
 };
 static ::_pbi::once_flag descriptor_table_Struct_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Struct_2eproto = {
-    false, false, 633, descriptor_table_protodef_Struct_2eproto,
+    false, false, 627, descriptor_table_protodef_Struct_2eproto,
     "Struct.proto",
     &descriptor_table_Struct_2eproto_once, descriptor_table_Struct_2eproto_deps, 1, 5,
     schemas, file_default_instances, TableStruct_Struct_2eproto::offsets,
@@ -965,7 +965,7 @@ StatInfo::StatInfo(const StatInfo& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   StatInfo* const _this = this; (void)_this;
   new (&_impl_) Impl_{
-      decltype(_impl_.statid_){}
+      decltype(_impl_.dataid_){}
     , decltype(_impl_.level_){}
     , decltype(_impl_.hp_){}
     , decltype(_impl_.maxhp_){}
@@ -975,9 +975,9 @@ StatInfo::StatInfo(const StatInfo& from)
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  ::memcpy(&_impl_.statid_, &from._impl_.statid_,
+  ::memcpy(&_impl_.dataid_, &from._impl_.dataid_,
     static_cast<size_t>(reinterpret_cast<char*>(&_impl_.totalexp_) -
-    reinterpret_cast<char*>(&_impl_.statid_)) + sizeof(_impl_.totalexp_));
+    reinterpret_cast<char*>(&_impl_.dataid_)) + sizeof(_impl_.totalexp_));
   // @@protoc_insertion_point(copy_constructor:Protocol.StatInfo)
 }
 
@@ -986,7 +986,7 @@ inline void StatInfo::SharedCtor(
   (void)arena;
   (void)is_message_owned;
   new (&_impl_) Impl_{
-      decltype(_impl_.statid_){0}
+      decltype(_impl_.dataid_){0}
     , decltype(_impl_.level_){0}
     , decltype(_impl_.hp_){0}
     , decltype(_impl_.maxhp_){0}
@@ -1020,9 +1020,9 @@ void StatInfo::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.statid_, 0, static_cast<size_t>(
+  ::memset(&_impl_.dataid_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&_impl_.totalexp_) -
-      reinterpret_cast<char*>(&_impl_.statid_)) + sizeof(_impl_.totalexp_));
+      reinterpret_cast<char*>(&_impl_.dataid_)) + sizeof(_impl_.totalexp_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -1032,10 +1032,10 @@ const char* StatInfo::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx)
     uint32_t tag;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // int32 statId = 1;
+      // int32 dataId = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
-          _impl_.statid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          _impl_.dataid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -1117,10 +1117,10 @@ uint8_t* StatInfo::_InternalSerialize(
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // int32 statId = 1;
-  if (this->_internal_statid() != 0) {
+  // int32 dataId = 1;
+  if (this->_internal_dataid() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_statid(), target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_dataid(), target);
   }
 
   // int32 level = 2;
@@ -1179,9 +1179,9 @@ size_t StatInfo::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // int32 statId = 1;
-  if (this->_internal_statid() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_statid());
+  // int32 dataId = 1;
+  if (this->_internal_dataid() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_dataid());
   }
 
   // int32 level = 2;
@@ -1236,8 +1236,8 @@ void StatInfo::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTO
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_statid() != 0) {
-    _this->_internal_set_statid(from._internal_statid());
+  if (from._internal_dataid() != 0) {
+    _this->_internal_set_dataid(from._internal_dataid());
   }
   if (from._internal_level() != 0) {
     _this->_internal_set_level(from._internal_level());
@@ -1281,9 +1281,9 @@ void StatInfo::InternalSwap(StatInfo* other) {
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(StatInfo, _impl_.totalexp_)
       + sizeof(StatInfo::_impl_.totalexp_)
-      - PROTOBUF_FIELD_OFFSET(StatInfo, _impl_.statid_)>(
-          reinterpret_cast<char*>(&_impl_.statid_),
-          reinterpret_cast<char*>(&other->_impl_.statid_));
+      - PROTOBUF_FIELD_OFFSET(StatInfo, _impl_.dataid_)>(
+          reinterpret_cast<char*>(&_impl_.dataid_),
+          reinterpret_cast<char*>(&other->_impl_.dataid_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata StatInfo::GetMetadata() const {
@@ -1309,7 +1309,7 @@ ProjectileInfo::ProjectileInfo(const ProjectileInfo& from)
   ProjectileInfo* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.name_){}
-    , decltype(_impl_.projectileid_){}
+    , decltype(_impl_.dataid_){}
     , decltype(_impl_.speed_){}
     , decltype(_impl_.range_){}
     , /*decltype(_impl_._cached_size_)*/{}};
@@ -1323,9 +1323,9 @@ ProjectileInfo::ProjectileInfo(const ProjectileInfo& from)
     _this->_impl_.name_.Set(from._internal_name(), 
       _this->GetArenaForAllocation());
   }
-  ::memcpy(&_impl_.projectileid_, &from._impl_.projectileid_,
+  ::memcpy(&_impl_.dataid_, &from._impl_.dataid_,
     static_cast<size_t>(reinterpret_cast<char*>(&_impl_.range_) -
-    reinterpret_cast<char*>(&_impl_.projectileid_)) + sizeof(_impl_.range_));
+    reinterpret_cast<char*>(&_impl_.dataid_)) + sizeof(_impl_.range_));
   // @@protoc_insertion_point(copy_constructor:Protocol.ProjectileInfo)
 }
 
@@ -1335,7 +1335,7 @@ inline void ProjectileInfo::SharedCtor(
   (void)is_message_owned;
   new (&_impl_) Impl_{
       decltype(_impl_.name_){}
-    , decltype(_impl_.projectileid_){0}
+    , decltype(_impl_.dataid_){0}
     , decltype(_impl_.speed_){0}
     , decltype(_impl_.range_){0}
     , /*decltype(_impl_._cached_size_)*/{}
@@ -1371,9 +1371,9 @@ void ProjectileInfo::Clear() {
   (void) cached_has_bits;
 
   _impl_.name_.ClearToEmpty();
-  ::memset(&_impl_.projectileid_, 0, static_cast<size_t>(
+  ::memset(&_impl_.dataid_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&_impl_.range_) -
-      reinterpret_cast<char*>(&_impl_.projectileid_)) + sizeof(_impl_.range_));
+      reinterpret_cast<char*>(&_impl_.dataid_)) + sizeof(_impl_.range_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -1383,10 +1383,10 @@ const char* ProjectileInfo::_InternalParse(const char* ptr, ::_pbi::ParseContext
     uint32_t tag;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // int32 projectileId = 1;
+      // int32 dataId = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
-          _impl_.projectileid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          _impl_.dataid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -1446,10 +1446,10 @@ uint8_t* ProjectileInfo::_InternalSerialize(
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // int32 projectileId = 1;
-  if (this->_internal_projectileid() != 0) {
+  // int32 dataId = 1;
+  if (this->_internal_dataid() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_projectileid(), target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_dataid(), target);
   }
 
   // string name = 2;
@@ -1501,9 +1501,9 @@ size_t ProjectileInfo::ByteSizeLong() const {
         this->_internal_name());
   }
 
-  // int32 projectileId = 1;
-  if (this->_internal_projectileid() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_projectileid());
+  // int32 dataId = 1;
+  if (this->_internal_dataid() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_dataid());
   }
 
   // float speed = 3;
@@ -1541,8 +1541,8 @@ void ProjectileInfo::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const :
   if (!from._internal_name().empty()) {
     _this->_internal_set_name(from._internal_name());
   }
-  if (from._internal_projectileid() != 0) {
-    _this->_internal_set_projectileid(from._internal_projectileid());
+  if (from._internal_dataid() != 0) {
+    _this->_internal_set_dataid(from._internal_dataid());
   }
   static_assert(sizeof(uint32_t) == sizeof(float), "Code assumes uint32_t and float are the same size.");
   float tmp_speed = from._internal_speed();
@@ -1580,9 +1580,9 @@ void ProjectileInfo::InternalSwap(ProjectileInfo* other) {
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ProjectileInfo, _impl_.range_)
       + sizeof(ProjectileInfo::_impl_.range_)
-      - PROTOBUF_FIELD_OFFSET(ProjectileInfo, _impl_.projectileid_)>(
-          reinterpret_cast<char*>(&_impl_.projectileid_),
-          reinterpret_cast<char*>(&other->_impl_.projectileid_));
+      - PROTOBUF_FIELD_OFFSET(ProjectileInfo, _impl_.dataid_)>(
+          reinterpret_cast<char*>(&_impl_.dataid_),
+          reinterpret_cast<char*>(&other->_impl_.dataid_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ProjectileInfo::GetMetadata() const {

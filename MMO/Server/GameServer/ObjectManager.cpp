@@ -39,9 +39,14 @@ void ObjectManager::AddFactory(int32 hash, createFunc func)
     _createRegistry[hash] = func;
 }
 
-ObjectRef ObjectManager::Spawn(const string& templateName)
+ObjectRef ObjectManager::Spawn(int32 dataId, const PosInfo& posInfo)
 {
-    auto it = DataManager::Instance().ObjectDict.find(templateName);
+    return Spawn(dataId, false, Vector3(posInfo), posInfo.yaw());
+}
+
+ObjectRef ObjectManager::Spawn(int32 dataId, bool randPos, const Vector3& pos, float yaw)
+{
+    auto it = DataManager::Instance().ObjectDict.find(dataId);
 
     if (it == DataManager::Instance().ObjectDict.end())
         return nullptr;
@@ -57,25 +62,35 @@ ObjectRef ObjectManager::Spawn(const string& templateName)
     auto newObject = funcIt->second();
     newObject->SetId(GenerateId(static_cast<ObjectType>(objTemplate.mainType)));
 
-    if (objTemplate.statId != -1)
+    auto statIt = DataManager::Instance().StatDict.find(objTemplate.dataId);
+    if (statIt != DataManager::Instance().StatDict.end())
     {
-        auto statIt = DataManager::Instance().StatDict.find(objTemplate.statId);
-        if (statIt != DataManager::Instance().StatDict.end())
-        {
-            newObject->_statInfo.CopyFrom(statIt->second);
-        }
-    }
-    if (objTemplate.projectileId != -1)
-    {
-        if (auto proj = dynamic_pointer_cast<Projectile>(newObject))
-        {
-            auto projectileIt = DataManager::Instance().ProjectileDict.find(objTemplate.projectileId);
-            if (projectileIt != DataManager::Instance().ProjectileDict.end())
-            {
-                proj->_projectileInfo = projectileIt->second;
-            }
-        }        
+        newObject->_statInfo.CopyFrom(statIt->second);
     }
 
+    if (auto proj = dynamic_pointer_cast<Projectile>(newObject))
+    {
+        auto projectileIt = DataManager::Instance().ProjectileDict.find(objTemplate.dataId);
+        if (projectileIt != DataManager::Instance().ProjectileDict.end())
+        {
+            proj->_projectileInfo = projectileIt->second;
+        }
+    }
+
+    if (randPos)
+        newObject->SetSpawnRandomPos(pos, yaw);
+    else
+        newObject->SetSpawnPos(pos, yaw);
+
     return newObject;
+}
+
+void ObjectManager::Despawn(ObjectRef obj)
+{
+    Despawn(obj->GetId());
+}
+
+void ObjectManager::Despawn(uint64 objId)
+{
+    _objects.erase(objId);
 }

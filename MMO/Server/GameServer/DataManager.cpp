@@ -14,4 +14,7 @@ void DataManager::LoadData(const std::string& basePath)
 
     auto projectileData = ProjectileData::LoadFromJsonFile(basePath + "/ProjectileData.json");
     ProjectileDict = projectileData.MakeDict();
+
+    auto MapData = MapData::LoadFromJsonFile(basePath + "/MapData.json");
+    MapDataDict = MapData.MakeDict();
 }

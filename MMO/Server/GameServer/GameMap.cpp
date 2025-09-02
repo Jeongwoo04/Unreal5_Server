@@ -3,12 +3,10 @@
 #include "Object.h"
 #include "Room.h"
 
-void GameMap::LoadGameMap(int32 mapId, string pathPrefix)
+void GameMap::LoadGameMap(string path)
 {
-    stringstream ss;
-    ss << pathPrefix << "/Map_" << setfill('0') << setw(3) << mapId << ".txt";
     // Collision file data load
-    ifstream inFile(ss.str());
+    ifstream inFile(path);
     if (!inFile.is_open())
         return;
 

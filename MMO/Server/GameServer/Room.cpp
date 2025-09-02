@@ -19,9 +19,14 @@ Room::~Room()
 
 void Room::Init(int32 mapId)
 {
-	_gameMap->LoadGameMap(mapId);
+	auto mapIt = DataManager::Instance().MapDataDict.find(mapId);
+	if (mapIt == DataManager::Instance().MapDataDict.end())
+		return;
 
-	SpawnMonster();
+	_mapInfo = mapIt->second;
+	_gameMap->LoadGameMap(_mapInfo.filePath);
+
+	SpawnInit();
 
 	UpdateTick();
 }
@@ -38,73 +43,39 @@ void Room::UpdateTick()
 	}
 	ClearRemoveList();
 
-	SpawnMonster();
-
 	DoTimer(100, &Room::UpdateTick);
 }
 
-void Room::SpawnMonster()
+void Room::SpawnInit()
 {
-	int32 maxMonsterGen = 1;
-	int32 requireCount = 0;
-
-	requireCount = maxMonsterGen - static_cast<int32>(_monsters.size());
-	if (requireCount > 0)
+	for (auto& spawnIt : _mapInfo.spawnTables)
 	{
-		for (int32 i = 0; i < requireCount; i++)
+		for (int32 i = 0; i < spawnIt.second.count; i++)
 		{
-			MonsterRef monster = static_pointer_cast<Monster>(_objectManager->Spawn("Goblin"));
-			EnterRoom(monster, true);
+			SpawnMonster(spawnIt.second.spawnId);
 		}
 	}
 }
 
-void Room::AssignRandomPos(ObjectRef object)
+void Room::SpawnMonster(int32 spTableId)
 {
-	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
-	{
-		object->_posInfo.set_x(Utils::GetRandom(0.f, 100.f));
-		object->_posInfo.set_y(Utils::GetRandom(0.f, 100.f));
-		object->_posInfo.set_z(100.f);
-		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
-		object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
-		object->_gridPos = Vector2Int(object->_posInfo);
-		object->_worldPos = Vector3(object->_posInfo);
+	auto spTableData = _mapInfo.spawnTables.find(spTableId)->second;
 
-		PlayerRef player = static_pointer_cast<Player>(object);
-		if (player->GetRoom() == nullptr)
-			return;
+	auto obj = _objectManager->Spawn(spTableData.dataId, true, spTableData.spawnPos);
+	if (!obj)
+		return;
 
-		_playerGrid.ApplyAdd(player, player->_gridPos);
-	}
-	else if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
-	{
-		object->_posInfo.set_x(Utils::GetRandom(2000.f, 3000.f));
-		object->_posInfo.set_y(Utils::GetRandom(2000.f, 3000.f));
-		object->_posInfo.set_z(100.f);
-		object->_posInfo.set_yaw(Utils::GetRandom(0.f, 100.f));
-		object->_objectInfo.mutable_pos_info()->CopyFrom(object->_posInfo);
-		object->_gridPos = Vector2Int(object->_posInfo);
-		object->_worldPos = Vector3(object->_posInfo);
+	obj->_spTableId = spTableId;
 
-		MonsterRef monster = static_pointer_cast<Monster>(object);
-		if (monster->GetRoom() == nullptr)
-			return;
-
-		_monsterGrid.ApplyAdd(monster, monster->_gridPos);
-	}
+	EnterRoom(obj);
 }
 
-bool Room::EnterRoom(ObjectRef object, bool randPos /*= true*/)
+bool Room::EnterRoom(ObjectRef object)
 {
 	if (object == nullptr)
 		return false;
 
 	bool success = AddObject(object);
-
-	// 랜덤 spawn
-	if (randPos)
-		AssignRandomPos(object);
 
 	NotifySpawn(object, success);
 
@@ -118,42 +89,23 @@ bool Room::LeaveRoom(ObjectRef object)
 
 	const uint64 objectId = object->_objectInfo.object_id();
 
-	//_gameMap->RemoveObject(object);
-	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
-	{
-		PlayerRef player = static_pointer_cast<Player>(object);
-		if (player->GetRoom() == nullptr)
-			return false;
-
-		_playerGrid.ApplyRemove(player, player->_gridPos);
-	}
-	else if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_MONSTER)
-	{
-		MonsterRef monster = static_pointer_cast<Monster>(object);
-		if (monster->GetRoom() == nullptr)
-			return false;
-
-		_monsterGrid.ApplyRemove(monster, monster->_gridPos);
-	}
-
 	bool success = RemoveObject(object, objectId);
 
 	NotifyDespawn(object, objectId);
-	// TODO : GameMap에서 지워야하는 애들 처리
 
 	return success;
 }
 
 bool Room::HandleEnterPlayer(GameSessionRef gameSession)
 {
-	PlayerRef player = static_pointer_cast<Player>(_objectManager->Spawn("Knight"));
+	PlayerRef player = static_pointer_cast<Player>(_objectManager->Spawn(10101, true, {0, 0, 0}));
 	if (player == nullptr)
 		return false;
 
 	gameSession->_player = player;
 	player->SetSession(gameSession);
 
-	return EnterRoom(player, true);
+	return EnterRoom(player);
 }
 
 bool Room::HandleLeavePlayer(PlayerRef player)
@@ -166,14 +118,12 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
 	{
-		cout << "Can't find player" << endl;
 		return;
 	}
 	
 	PlayerRef& player = _players[objectId];
 	if (player == nullptr || player->GetRoom() == nullptr || player->GetRoom()->GetGameMap() == nullptr)
 	{
-		cout << "Invalid player" << endl;
 		return;
 	}
 
@@ -181,15 +131,12 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 
 	if (!_gameMap->CanGo(destPos, false))
 	{
-		cout << "Can't move there" << endl;
 		return;
 	}
 
 	_playerGrid.ApplyMove(player, player->_gridPos, destPos);
 
-	player->_posInfo.CopyFrom(pkt.info());
-	player->_gridPos = destPos;
-	player->_worldPos = { pkt.info().x(), pkt.info().y() };
+	player->SetPosInfo(pkt.info());
 
 	{
 		Protocol::S_MOVE movePkt;
@@ -243,7 +190,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		const Vector3 attWorldPos = Vector3(player->_posInfo);
 		const float yaw = player->_posInfo.yaw();
 
-		const Vector3 forward(cosf(yaw), sinf(yaw)); // _x, _y 사용, _z는 무시
+		const Vector3 forward(cosf(yaw), sinf(yaw), player->_posInfo.z()); // _x, _y 사용, _z는 무시
 
 		const int32 gridRadius = static_cast<int32>(ceil(totalRadius / CELL_SIZE));
 		const Vector2Int attGridPos(player->_posInfo);
@@ -274,7 +221,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		break;
 	case Protocol::SKILL_PROJECTILE:
 	{
-		ProjectileRef proj = static_pointer_cast<Projectile>(_objectManager->Spawn("Arrow"));
+		ProjectileRef proj = static_pointer_cast<Projectile>(_objectManager->Spawn(30101, false, player->_posInfo));
 		if (proj == nullptr)
 			return;
 
@@ -282,16 +229,9 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		proj->SetData(skillData);
 
 		proj->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-		proj->_posInfo.set_yaw(player->_posInfo.yaw());
-		proj->_posInfo.set_x(player->_posInfo.x());
-		proj->_posInfo.set_y(player->_posInfo.y());
-		proj->_posInfo.set_z(player->_posInfo.z());
 		proj->_statInfo.set_speed(proj->_projectileInfo.speed());
 
-		proj->_gridPos = Vector2Int(proj->_posInfo);
-		proj->_worldPos = Vector3(proj->_posInfo);
-
-		EnterRoom(static_pointer_cast<Object>(proj), false);
+		EnterRoom(static_pointer_cast<Object>(proj));
 	}
 		break;
 	case Protocol::SKILL_AOE_DOT:
@@ -315,6 +255,14 @@ void Room::BroadcastMove(SendBufferRef sendBuffer, uint64 exceptId)
 	Broadcast(sendBuffer, exceptId);
 }
 
+const SpawnTable* Room::GetSpawnTable(int32 spawnId) const
+{
+	auto it = _mapInfo.spawnTables.find(spawnId);
+	if (it != _mapInfo.spawnTables.end())
+		return &it->second;
+	return nullptr;
+}
+
 bool Room::AddObject(ObjectRef object)
 {
 	if (object == nullptr)
@@ -328,18 +276,26 @@ bool Room::AddObject(ObjectRef object)
 		switch (object->GetCreatureType())
 		{
 		case CREATURE_TYPE_PLAYER:
-			_players[object->GetId()] = static_pointer_cast<Player>(object);
-			break;
+		{
+			auto player = static_pointer_cast<Player>(object);
+			_players[player->GetId()] = player;
+			_playerGrid.ApplyAdd(player, player->_gridPos);
+		}	break;
 		case CREATURE_TYPE_MONSTER:
-			_monsters[object->GetId()] = static_pointer_cast<Monster>(object);
-			break;
+		{
+			auto monster = static_pointer_cast<Monster>(object);
+			_monsters[monster->GetId()] = monster;
+			_monsterGrid.ApplyAdd(monster, monster->_gridPos);
+		}	break;
 		default:
 			break;
 		}
 		break;
 	case OBJECT_TYPE_PROJECTILE:
-		_projectiles[object->GetId()] = static_pointer_cast<Projectile>(object);
-		break;
+	{
+		auto proj = static_pointer_cast<Projectile>(object);
+		_projectiles[proj->GetId()] = proj;
+	}	break;
 	default:
 		break;
 	}
@@ -362,13 +318,22 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 		switch (object->GetCreatureType())
 		{
 		case CREATURE_TYPE_PLAYER:
-			eraseCount = static_cast<int32>(_players.erase(objectId));
-			break;
+			{
+				eraseCount = static_cast<int32>(_players.erase(objectId));
+				auto player = static_pointer_cast<Player>(object);
+				_playerGrid.ApplyRemove(player, player->_gridPos);
+				break;
+			}
 		case CREATURE_TYPE_MONSTER:
-			eraseCount = static_cast<int32>(_monsters.erase(objectId));
+			{
+				eraseCount = static_cast<int32>(_monsters.erase(objectId));
+				auto monster = static_pointer_cast<Monster>(object);
+				_monsterGrid.ApplyRemove(monster, monster->_gridPos);
+				break;
+			}
+		default:
 			break;
 		}
-		break;
 	case OBJECT_TYPE_PROJECTILE:
 		eraseCount = static_cast<int32>(_projectiles.erase(objectId));
 		break;
