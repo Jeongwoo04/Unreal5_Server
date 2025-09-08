@@ -119,26 +119,47 @@ SkillData SkillData::LoadFromJsonFile(const std::string& path)
         skill.id = element["id"].get<int32>();
         skill.name = element["name"].get<std::string>();
         skill.cooldown = element["cooldown"].get<float>();
-        skill.damage = element["damage"].get<int32>();
         skill.skillType = ToSkillType(element["skillType"].get<string>());
-        skill.distance = element["distance"].get<float>();
 
-        if (element.contains("dataId"))
+        if (element.contains("actions"))
         {
-            skill.dataId = element["dataId"].get<int32>();
+            for (auto& actionElem : element["actions"])
+            {
+                ActionData action;
+
+                // type → enum
+                string typeStr = actionElem["type"].get<string>();
+                action.type = ToActionType(typeStr);
+
+                // 공통 필드
+                if (actionElem.contains("value"))
+                    action.value = actionElem["value"].get<float>();
+                if (actionElem.contains("radius"))
+                    action.radius = actionElem["radius"].get<float>();
+                if (actionElem.contains("angle"))
+                    action.angle = actionElem["angle"].get<float>();
+                if (actionElem.contains("duration"))
+                    action.duration = actionElem["duration"].get<float>();
+
+                // Attack
+                if (actionElem.contains("damage"))
+                    action.damage = actionElem["damage"].get<float>();
+
+                // Projectile / Field
+                if (actionElem.contains("dataId"))
+                    action.dataId = actionElem["dataId"].get<int>();
+
+                // Status
+                if (actionElem.contains("statusId"))
+                    action.statusId = actionElem["statusId"].get<int>();
+
+                skill.actions.push_back(action);
+            }
         }
 
         data.skills.push_back(skill);
     }
     return data;
-}
-
-SkillType ToSkillType(const std::string& str)
-{
-    if (str == "SkillAuto") return SkillType::SKILL_AUTO;
-    if (str == "SkillProjectile") return SkillType::SKILL_PROJECTILE;
-    if (str == "SkillAoeDot") return SkillType::SKILL_AOE_DOT;
-    return SkillType::SKILL_NONE;
 }
 
 unordered_map<int32, MapInfo> MapData::MakeDict()
@@ -186,4 +207,23 @@ MapData MapData::LoadFromJsonFile(const string& path)
     }
 
     return data;
+}
+
+SkillType ToSkillType(const std::string& str)
+{
+    if (str == "SkillAuto") return SkillType::SKILL_AUTO;
+    if (str == "SkillProjectile") return SkillType::SKILL_PROJECTILE;
+    if (str == "SkillAoeDot") return SkillType::SKILL_AOE_DOT;
+    return SkillType::SKILL_NONE;
+}
+
+ActionType ToActionType(const std::string& str)
+{
+    if (str == "Move") return ActionType::Move;
+    if (str == "Attack") return ActionType::Attack;
+    if (str == "SpawnProjectile") return ActionType::SpawnProjectile;
+    if (str == "SpawnField") return ActionType::SpawnField;
+    if (str == "ApplyStatus") return ActionType::ApplyStatus;
+    if (str == "React") return ActionType::React;
+    throw std::runtime_error("Unknown ActionType: " + str);
 }

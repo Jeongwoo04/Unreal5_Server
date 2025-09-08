@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "ObjectManager.h"
-#include "Object.h"
 #include "Projectile.h"
 #include "Player.h"
 #include "Monster.h"
@@ -47,11 +46,10 @@ ObjectRef ObjectManager::Spawn(int32 dataId, const PosInfo& posInfo)
 ObjectRef ObjectManager::Spawn(int32 dataId, bool randPos, const Vector3& pos, float yaw)
 {
     auto it = DataManager::Instance().ObjectDict.find(dataId);
-
     if (it == DataManager::Instance().ObjectDict.end())
         return nullptr;
 
-    auto objTemplate = it->second;
+    auto& objTemplate = it->second;
 
     int32 hash = FactoryHash(objTemplate.mainType, objTemplate.subType);
 

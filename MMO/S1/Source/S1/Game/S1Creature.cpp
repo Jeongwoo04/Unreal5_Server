@@ -5,12 +5,13 @@
 #include "Components//CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "S1Monster.h"
+#include "S1MyPlayer.h"
 
 AS1Creature::AS1Creature()
 {
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCharacterMovement()->bOrientRotationToMovement = false;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 100.f, 0.f);
 }
 
 AS1Creature::~AS1Creature()
@@ -51,7 +52,8 @@ void AS1Creature::TickServerMove(float DeltaTime)
 		FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 10.f);
 		SetActorRotation(NewRot);
 
-		if (FVector::DistSquared(NewLocation, TargetPos) < FMath::Square(1.f)) // 1cm 이내
+		// Square 오차범위가 크면. Moving 초반에 애니메이션 동기화 깨짐
+		if (FVector::DistSquared(NewLocation, TargetPos) < FMath::Square(5.f)) // 1cm 이내
 		{
 			MoveFlag = false;
 			SetActorLocation(TargetPos);

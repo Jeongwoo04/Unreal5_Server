@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 #include "SpatialHashGrid.h"
-#include "ObjectManager.h"
 
 using GameMapRef = shared_ptr<class GameMap>;
 using ObjectManagerRef = shared_ptr<class ObjectManager>;
@@ -26,6 +25,8 @@ public:
 
 	void SpawnInit();
 	void SpawnMonster(int32 spTableId);
+	void SpawnProjectile(int32 dataId, const Vector3& pos);
+	void SpawnField(int32 dataId, const Vector3& pos);
 
 public:
 	bool EnterRoom(ObjectRef object);
@@ -33,12 +34,11 @@ public:
 
 	bool HandleEnterPlayer(GameSessionRef gameSession);
 	bool HandleLeavePlayer(PlayerRef player);
-	void HandleMove(Protocol::C_MOVE pkt);
+	void HandleMovePlayer(Protocol::C_MOVE pkt);
 	void HandleSkill(PlayerRef player, Protocol::C_SKILL pkt);
 
 public:
 	RoomRef GetRoomRef();
-	void BroadcastMove(SendBufferRef sendBuffer, uint64 exceptId = 0);
 	const SpawnTable* GetSpawnTable(int32 spawnId) const;
 
 private:
@@ -47,6 +47,8 @@ private:
 
 public:
 	void Broadcast(SendBufferRef sendBuffer, uint64 exceptId = 0);
+	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 objectId = 0);
+
 	void NotifySpawn(ObjectRef object, bool success);
 	void NotifyDespawn(ObjectRef object, uint64 objectId);
 

@@ -90,7 +90,7 @@ bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt)
 	if (room == nullptr)
 		return false;
 
-	room->DoAsync(&Room::HandleMove, pkt);
+	room->DoAsync(&Room::HandleMovePlayer, pkt);
 
 	return true;
 }

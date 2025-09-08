@@ -1,13 +1,8 @@
 #pragma once
 #include "Object.h"
-#include "Projectile.h"
 #include "Protocol.pb.h"
 
 using namespace Protocol;
-
-class Player;
-class Monster;
-class Projectile;
 
 class ObjectManager
 {
@@ -24,7 +19,7 @@ public:
 
 	ObjectRef Spawn(int32 dataId, const PosInfo& posInfo);
 	ObjectRef Spawn(int32 dataId, bool randPos, const Vector3& pos, float yaw = 0.f);
-
+	
 	void Despawn(ObjectRef obj);
 	void Despawn(uint64 objId);
 

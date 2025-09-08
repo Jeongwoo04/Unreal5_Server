@@ -36,10 +36,8 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 protected:
-	void TickServerMove(float DeltaTime) override { }
-
-	void InputMove(const FInputActionValue& Value);
-	void InputLook(const FInputActionValue& Value);
+	void InputRightClickMove(const FInputActionValue& value);
+	void SpawnClickFX(const FVector& Location);
 
 	void UseSkillSlot(int32 SlotIndex);
 
@@ -49,6 +47,9 @@ protected:
 	void UseSkillSlot4();
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	USceneComponent* CameraRoot;
+
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -57,6 +58,18 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* RightClickMoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ClickFX")
+	UMaterialInterface* ClickMarkerMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ClickFX")
+	FVector ClickMarkerSize = FVector(16.f, 16.f, 16.f); // 기존 대비 1/4
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ClickFX")
+	float ClickMarkerLifeTime = 0.8f; // 생존 시간
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -64,10 +77,6 @@ protected:
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
-
-	/** Look Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	US1LoadoutComponent* LoadoutComponent;
@@ -87,6 +96,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* Skill4Action;
 
+	UPROPERTY()
+	TArray<UDecalComponent*> ActiveClickMarkers;
+
 public:
 	void InitSkillBar();
 	void BindSkillBar(US1SkillBar* InSkillBar);
@@ -99,9 +111,7 @@ protected:
 	const float MOVE_PACKET_SEND_DELAY = 0.2f;
 	float MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;
 
-	// Cache
-	FVector2D CacheVector;
-	FVector2D InputVector;
+	FVector ClickTargetLocation;
 
 	bool DirtyFlag = false;
 	float MoveSendInterval = 0.1f;

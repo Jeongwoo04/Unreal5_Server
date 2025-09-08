@@ -60,7 +60,7 @@ void Projectile::Update()
 
     if (target)
     {
-        target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data.damage);
+        //target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data.damage);
         room->AddRemoveList(shared_from_this());
         return;
     }
@@ -85,6 +85,6 @@ void Projectile::Update()
     movePkt.mutable_info()->CopyFrom(_posInfo);
     {
         auto sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
-        room->BroadcastMove(sendBuffer);
+        room->Broadcast(sendBuffer);
     }
 }

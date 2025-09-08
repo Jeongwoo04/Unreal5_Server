@@ -33,11 +33,10 @@ public:
 
 	bool IsDead() { return GetState() == Protocol::STATE_MACHINE_DEAD; }
 
+	void SetPos(const Vector3& pos);
 	void SetPosInfo(const PosInfo& posInfo);
 	void SetSpawnPos(const Vector3& pos, float yaw = 0.f);
 	void SetSpawnRandomPos(Vector3 pos, float yaw = 0.f);
-
-	void ApplyVectorPos();
 
 public: 
 	Protocol::ObjectInfo _objectInfo;

@@ -3,7 +3,6 @@
 #include "Player.h"
 #include "Arrow.h"
 #include "ObjectManager.h"
-#include "GameSessionManager.h"
 
 Room::Room()
 {
@@ -70,6 +69,25 @@ void Room::SpawnMonster(int32 spTableId)
 	EnterRoom(obj);
 }
 
+void Room::SpawnProjectile(int32 dataId, const Vector3& pos)
+{
+	auto obj = _objectManager->Spawn(dataId, false, pos);
+	if (!obj)
+		return;
+
+	EnterRoom(obj);
+}
+
+void Room::SpawnField(int32 dataId, const Vector3& pos)
+{
+	// TODO : EnterRoom switch¹® Ãß°¡
+	auto obj = _objectManager->Spawn(dataId, false, pos);
+	if (!obj)
+		return;
+
+	EnterRoom(obj);
+}
+
 bool Room::EnterRoom(ObjectRef object)
 {
 	if (object == nullptr)
@@ -113,7 +131,7 @@ bool Room::HandleLeavePlayer(PlayerRef player)
 	return LeaveRoom(player);
 }
 
-void Room::HandleMove(Protocol::C_MOVE pkt)
+void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 {
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
@@ -131,21 +149,14 @@ void Room::HandleMove(Protocol::C_MOVE pkt)
 
 	if (!_gameMap->CanGo(destPos, false))
 	{
+		BroadcastMove(player->_posInfo);
 		return;
 	}
 
 	_playerGrid.ApplyMove(player, player->_gridPos, destPos);
 
 	player->SetPosInfo(pkt.info());
-
-	{
-		Protocol::S_MOVE movePkt;
-		
-		movePkt.mutable_info()->CopyFrom(pkt.info());
-
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
-		Broadcast(sendBuffer);
-	}
+	BroadcastMove(player->_posInfo, player->GetId());
 }
 
 void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
@@ -214,7 +225,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 
 			if (dot >= cosThreshold)
 			{
-				monster->OnDamaged(player, player->_statInfo.attack() + skillData.damage);
+				//monster->OnDamaged(player, player->_statInfo.attack() + skillData.damage);
 			}
 		}
 	}
@@ -242,17 +253,12 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	S_MOVE movePkt;
 	movePkt.mutable_info()->CopyFrom(player->_posInfo);
 	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
-	BroadcastMove(sendBuffer);
+	Broadcast(sendBuffer);
 }
 
 RoomRef Room::GetRoomRef()
 {
 	return static_pointer_cast<Room>(shared_from_this());
-}
-
-void Room::BroadcastMove(SendBufferRef sendBuffer, uint64 exceptId)
-{
-	Broadcast(sendBuffer, exceptId);
 }
 
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const
@@ -339,6 +345,8 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 		break;
 	}
 
+	_objectManager->Despawn(object);
+
 	return eraseCount > 0 ? true : false;
 }
 
@@ -353,6 +361,16 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 		if (auto session = player->GetSession())
 			session->Send(sendBuffer);
 	}
+}
+
+void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 objectId)
+{
+	Protocol::S_MOVE movePkt;
+
+	movePkt.mutable_info()->CopyFrom(posInfo);
+
+	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
+	Broadcast(sendBuffer, objectId);
 }
 
 void Room::NotifySpawn(ObjectRef object, bool success)

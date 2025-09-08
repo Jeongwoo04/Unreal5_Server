@@ -189,9 +189,6 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	if (Creature == nullptr)
 		return;
 
-	if (MyPlayer == Cast<AS1MyPlayer>(Creature))
-		return;
-
 	Creature->SetPosInfo(MovePkt.info());
 }
 

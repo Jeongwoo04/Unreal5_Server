@@ -5,6 +5,8 @@
 
 static const float CELL_SIZE = 100.f;
 
+struct Vector3;
+
 struct Vector2Int
 {
     int32 _x = 0;
@@ -17,6 +19,11 @@ struct Vector2Int
         _x = static_cast<int32>(round(pos.x() / CELL_SIZE));
         _y = static_cast<int32>(round(pos.y() / CELL_SIZE));
     }
+    //Vector2Int(const Vector3& vec)
+    //{
+    //    _x = static_cast<int32>(round(vec._x / CELL_SIZE));
+    //    _y = static_cast<int32>(round(vec._y / CELL_SIZE));
+    //}
 
     Vector2Int& operator=(const Vector2Int& other)
     {

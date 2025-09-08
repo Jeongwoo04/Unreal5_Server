@@ -11,19 +11,50 @@
 using json = nlohmann::json;
 using namespace Protocol;
 
+enum class ActionType
+{
+    Move,
+    Attack,
+    SpawnProjectile,
+    SpawnField,
+    ApplyStatus,
+    React
+};
+
+struct ActionData
+{
+    ActionType type;
+
+    // 공통
+    float value = 0;
+    float radius = 0;
+    float angle = 0;
+    float duration = 0;
+
+    // Attack 전용
+    float damage = 0;
+
+    // Projectile / Field 전용
+    int32 dataId = 0;
+
+    // Status 전용
+    int32 statusId;
+};
+
 // Skill 구조체
 struct Skill
 {
     int32 id = 0;
     string name;
     float cooldown = 0;
-    int32 damage = 0;
     SkillType skillType = SkillType::SKILL_AUTO;
-    float distance = 0.f;
-    int32 dataId;
+    vector<ActionData> actions;
 };
 
+
+
 SkillType ToSkillType(const string& str);
+ActionType ToActionType(const std::string& str);
 
 struct ObjectTemplate
 {

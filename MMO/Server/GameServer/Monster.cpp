@@ -13,7 +13,7 @@ Monster::Monster()
 
     skillData = skillIt->second;
 
-    _skillRange = static_cast<float>(skillData.distance);
+    //_skillRange = static_cast<float>(skillData.distance);
     _coolTick = skillData.cooldown;
 
     _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
@@ -123,7 +123,7 @@ void Monster::UpdateMoving()
         _gridPos = WorldToGrid(_worldPos);
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-        ApplyVectorPos();
+        SetPos(_worldPos);
         GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;
@@ -181,7 +181,7 @@ void Monster::UpdateMoving()
         }
 
         _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-        ApplyVectorPos();
+        SetPos(_worldPos);
         GetRoom()->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), WorldToGrid(myPos), _gridPos);
         BroadcastMove();
         return;

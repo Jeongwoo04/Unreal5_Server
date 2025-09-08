@@ -32,6 +32,13 @@ void Object::SetId(uint64 id)
 	_posInfo.set_object_id(id);
 }
 
+void Object::SetPos(const Vector3& pos)
+{
+	_posInfo.set_x(pos._x);
+	_posInfo.set_y(pos._y);
+	//_posInfo.set_z(pos._z);
+}
+
 void Object::SetPosInfo(const PosInfo& posInfo)
 {
 	_posInfo.CopyFrom(posInfo);
@@ -55,11 +62,4 @@ void Object::SetSpawnRandomPos(Vector3 pos, float yaw)
 {
 	pos = pos + Utils::GetRandom(0.f, 500.f);
 	SetSpawnPos(pos, yaw);
-}
-
-void Object::ApplyVectorPos()
-{
-	_gridPos = WorldToGrid(_worldPos);
-	_posInfo.set_x(_worldPos._x);
-	_posInfo.set_y(_worldPos._y);
 }

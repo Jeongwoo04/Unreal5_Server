@@ -48,6 +48,8 @@ void AS1PlayerController::HandleMyPlayerSpawned(AS1MyPlayer* SpawnedMyPlayer)
 		CreateSkillBarWidget();
 		SpawnedMyPlayer->BindSkillBar(Cast<US1SkillBar>(SkillBarWidget));
 		SpawnedMyPlayer->InitSkillBar();
+
+		bShowMouseCursor = true;
 	}
 }
 

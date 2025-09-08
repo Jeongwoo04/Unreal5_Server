@@ -15,23 +15,41 @@
 #include "Data/S1DataManager.h"
 #include "Engine/LocalPlayer.h"
 #include "Kismet/KismetRenderingLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "S1SkillBar.h"
 #include "S1SkillSlot.h"
+#include <NavigationSystem.h>
+#include "Components/DecalComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 AS1MyPlayer::AS1MyPlayer()
 {
+	CameraRoot = CreateDefaultSubobject<USceneComponent>(TEXT("CameraRoot"));
+	CameraRoot->SetupAttachment(RootComponent);
+	
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	CameraBoom->SetupAttachment(CameraRoot);
+	CameraBoom->TargetArmLength = 800.0f; // The camera follows at this distance behind the character	
+	CameraBoom->SetRelativeRotation(FRotator(-50.f, 0.f, 0.f));
+
+	CameraBoom->bDoCollisionTest = false;
+
+	CameraBoom->bUsePawnControlRotation = false;   // Pawn 회전 무시
+	CameraBoom->bInheritPitch = false;             // 부모 회전 무시
+	CameraBoom->bInheritYaw = false;
+	CameraBoom->bInheritRoll = false;
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
+
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -52,11 +70,7 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 
 		//Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::InputMove);
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &AS1MyPlayer::InputMove);
-
-		//Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AS1MyPlayer::InputLook);
+		EnhancedInputComponent->BindAction(RightClickMoveAction, ETriggerEvent::Started, this, &AS1MyPlayer::InputRightClickMove);
 
 		//Skill
 		EnhancedInputComponent->BindAction(Skill1Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot1);
@@ -71,58 +85,151 @@ void AS1MyPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!InputVector.IsNearlyZero())
+	if (DirtyFlag == false)
+		return;
+
+	FVector Dir = FVector::ZeroVector;
+	
+	if (!ClickTargetLocation.IsZero())
 	{
-		FVector Dir = GetActorForwardVector() * InputVector.Y + GetActorRightVector() * InputVector.X;
-		AddMovementInput(Dir.GetSafeNormal());
+		FVector ToTarget = ClickTargetLocation - GetActorLocation();
+		FVector2D ToTarget2D(ToTarget.X, ToTarget.Y);
+		
+		float Dist = ToTarget2D.Size();
+		const float ArrivalThreshold = 10.0f; // 허용 오차
+		
+		if (Dist > ArrivalThreshold)
+		{
+			Dir = ToTarget.GetSafeNormal();
+			AddMovementInput(Dir);
+		}
+		else
+		{
+			ClickTargetLocation = FVector::ZeroVector; // 도착
+		}
 	}
 
-	// 입력값 변화 확인
-	if (InputVector != CacheVector)
+	if (!Dir.IsNearlyZero())
 	{
 		DirtyFlag = true;
-		CacheVector = InputVector;
-	}
 
-	// 이동 중이면 일정 주기로 위치 패킷 전송
-	TimeSinceLastSend += DeltaTime;
-	if (!InputVector.IsNearlyZero() && TimeSinceLastSend >= MoveSendInterval)
-	{
-		SetState(Protocol::STATE_MACHINE_MOVING);
-		SendMovePacket();
-		TimeSinceLastSend = 0.f;
-	}
+		TimeSinceLastSend += DeltaTime;
 
-	// 멈춘 직후 한번 전송 (Idle 처리)
-	if (DirtyFlag && InputVector.IsNearlyZero())
+		if (TimeSinceLastSend >= MoveSendInterval)
+		{
+			SetState(Protocol::STATE_MACHINE_MOVING);
+			SendMovePacket();
+			TimeSinceLastSend = 0.f;
+		}
+	}
+	else
 	{
-		SetState(Protocol::STATE_MACHINE_IDLE);
-		SendMovePacket();
-		DirtyFlag = false;
-		TimeSinceLastSend = 0.f;
+		if (DirtyFlag) // 멈춘 직후 Idle 패킷
+		{
+			SetState(Protocol::STATE_MACHINE_IDLE);
+			SendMovePacket();
+			DirtyFlag = false;
+			TimeSinceLastSend = 0.f;
+		}
+
 	}
 
 	TimeSinceLastSkill += DeltaTime;
 }
 
-void AS1MyPlayer::InputMove(const FInputActionValue& Value)
+void AS1MyPlayer::InputRightClickMove(const FInputActionValue& value)
 {
-	// input is a Vector2D
-	CacheVector = InputVector;
-	InputVector = Value.Get<FVector2D>();
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+		return;
+
+	FHitResult Hit;
+	if (PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+	{
+		UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
+		if (NavSys)
+		{
+			FNavLocation ResultLocation; // NavMesh 위에서 가장 가까운 위치 찾기
+			if (NavSys->ProjectPointToNavigation(Hit.Location, ResultLocation, FVector(50.f, 50.f, 50.f)))
+			{
+				SpawnClickFX(ResultLocation.Location);
+
+				ClickTargetLocation = ResultLocation.Location;
+				DirtyFlag = true;
+				FVector Direction = (ClickTargetLocation - GetActorLocation());
+				Direction.Z = 0;
+				// 수직 성분 제거
+				if (!Direction.IsNearlyZero())
+				{
+					FRotator NewRot = Direction.Rotation();
+					SetActorRotation(NewRot); // PosInfo에도 Yaw 저장
+					PosInfo.set_yaw(NewRot.Yaw);
+				}
+				// 이동 시작하면 서버로 패킷 전송
+				SetState(Protocol::STATE_MACHINE_MOVING);
+				SendMovePacket();
+			}
+		}
+	}
 }
 
-void AS1MyPlayer::InputLook(const FInputActionValue& Value)
+void AS1MyPlayer::SpawnClickFX(const FVector& Location)
 {
-	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	if (!ClickMarkerMaterial)
+		return;
 
-	if (Controller != nullptr)
+	// 1. 이전 마커 즉시 제거
+	for (UDecalComponent* Decal : ActiveClickMarkers)
 	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		if (Decal)
+			Decal->DestroyComponent();
 	}
+	ActiveClickMarkers.Empty();
+
+	// 2. 새 Decal 스폰
+	UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(
+		GetWorld(),
+		ClickMarkerMaterial,
+		ClickMarkerSize,
+		Location + FVector(0, 0, 2.f), // 바닥에 살짝 띄우기
+		FRotator(-90.f, 0, 0),
+		0.0f // LifeTime는 Timer로 처리
+	);
+
+	if (!Decal)
+		return;
+
+	ActiveClickMarkers.Add(Decal);
+
+	// 3. Dynamic Material 생성
+	UMaterialInstanceDynamic* DynMat = Decal->CreateDynamicMaterialInstance();
+	if (DynMat)
+	{
+		DynMat->SetScalarParameterValue("Fade", 1.f);
+	}
+
+	// 4. Timer로 독립 Fade 처리
+	FTimerHandle FadeTimer;
+	float TickInterval = 0.02f;
+	float TotalLifeTime = ClickMarkerLifeTime;
+	float* Elapsed = new float(0.f); // Lambda 안에서 값 유지
+
+	FTimerDelegate FadeDelegate;
+	FadeDelegate.BindLambda([DynMat, Decal, TotalLifeTime, Elapsed, TickInterval]()
+		{
+			*Elapsed += TickInterval;
+			float Alpha = FMath::Clamp(1.f - *Elapsed / TotalLifeTime, 0.f, 1.f);
+
+			if (DynMat)
+				DynMat->SetScalarParameterValue("Fade", Alpha);
+
+			if (Alpha <= 0.f && Decal)
+			{
+				Decal->DestroyComponent();
+			}
+		});
+
+	GetWorld()->GetTimerManager().SetTimer(FadeTimer, FadeDelegate, TickInterval, true);
 }
 
 void AS1MyPlayer::UseSkillSlot(int32 SlotIndex)
@@ -134,6 +241,13 @@ void AS1MyPlayer::UseSkillSlot(int32 SlotIndex)
 	if (SkillBar->CanUseSkill(SlotIndex))
 	{
 		UE_LOG(LogTemp, Log, TEXT("Use Skill ID: %d from Slot %d"), SkillID, SlotIndex);
+
+		{
+			// 즉발 스킬인경우
+			SetState(STATE_MACHINE_IDLE);
+			SendMovePacket();
+			DirtyFlag = false;
+		}
 
 		auto SkillIt = S1DataManager::Instance().SkillDict.find(SkillID);
 		if (SkillIt == S1DataManager::Instance().SkillDict.end())
@@ -284,6 +398,4 @@ void AS1MyPlayer::SendMovePacket()
 	Info->CopyFrom(PosInfo);
 
 	SEND_PACKET(MovePkt);
-
-	DirtyFlag = false;
 }
