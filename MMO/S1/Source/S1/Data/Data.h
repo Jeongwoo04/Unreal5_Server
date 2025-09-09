@@ -21,6 +21,9 @@ struct Skill
     float cooldown = 0;
     SkillType skillType = SkillType::SKILL_AUTO;
     int32 projectileId;
+    // Temp 
+    float distance = 0.f;
+    float range = 0.f;
 };
 
 SkillType ToSkillType(const string& str);

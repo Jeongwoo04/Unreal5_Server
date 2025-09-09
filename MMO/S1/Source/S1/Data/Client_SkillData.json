@@ -13,7 +13,9 @@
       "iconPath": "UI/Skill_Arrow.png",
       "cooldown": 0.5,
       "skillType": "SkillProjectile",
-      "projectileId": 1
+      "projectileId": 1,
+      "distance": 800.0,
+      "range": 250.0
     },
     {
       "id": 3,

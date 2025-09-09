@@ -3,8 +3,6 @@
 
 #include "Game/S1SkillBar.h"
 #include "Game/S1SkillSlot.h"
-#include "Data/S1DataManager.h"
-#include <Kismet/KismetRenderingLibrary.h>
 
 
 void US1SkillBar::NativeConstruct()

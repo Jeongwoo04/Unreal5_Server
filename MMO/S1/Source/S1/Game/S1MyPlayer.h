@@ -5,15 +5,17 @@
 #include "CoreMinimal.h"
 #include "Game/S1Player.h"
 #include "InputActionValue.h"
-#include "S1PlayerController.h"
-#include "S1LoadoutComponent.h"
 #include "S1MyPlayer.generated.h"
 
 /**
  * 
  */
-struct Skill;
+class US1LoadoutComponent;
+class US1SkillComponent;
 class US1SkillBar;
+class AS1MarkerActor;
+class AS1PlayerController;
+class UInputAction;
 
 UCLASS()
 class S1_API AS1MyPlayer : public AS1Player
@@ -39,12 +41,18 @@ protected:
 	void InputRightClickMove(const FInputActionValue& value);
 	void SpawnClickFX(const FVector& Location);
 
-	void UseSkillSlot(int32 SlotIndex);
+	void OnSkillSlotPressed(int32 SlotIndex);
+	void OnSkillSlotReleased(int32 SlotIndex);
 
-	void UseSkillSlot1();
-	void UseSkillSlot2();
-	void UseSkillSlot3();
-	void UseSkillSlot4();
+	void OnSkillSlot1Pressed();
+	void OnSkillSlot2Pressed();
+	void OnSkillSlot3Pressed();
+	void OnSkillSlot4Pressed();
+
+	void OnSkillSlot1Released();
+	void OnSkillSlot2Released();
+	void OnSkillSlot3Released();
+	void OnSkillSlot4Released();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -61,15 +69,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* RightClickMoveAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ClickFX")
-	UMaterialInterface* ClickMarkerMaterial;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ClickFX")
-	FVector ClickMarkerSize = FVector(16.f, 16.f, 16.f); // 기존 대비 1/4
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ClickFX")
-	float ClickMarkerLifeTime = 0.8f; // 생존 시간
-
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -80,6 +79,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	US1LoadoutComponent* LoadoutComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	US1SkillComponent* SkillComponent;
 
 	UPROPERTY()
 	US1SkillBar* SkillBar;
@@ -96,8 +98,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* Skill4Action;
 
+protected:
+	// 클릭 마커
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Marker")
+	UMaterialInterface* ClickMarkerMaterial;
+
 	UPROPERTY()
-	TArray<UDecalComponent*> ActiveClickMarkers;
+	AS1MarkerActor* ClickMarker;
+
+public:
+	// 클릭 마커
+	void SpawnClickMarker(const FVector& Location);
 
 public:
 	void InitSkillBar();

@@ -3,24 +3,20 @@
 
 #include "Game/S1MyPlayer.h"
 #include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "S1.h"
+
 #include "S1PlayerController.h"
-#include "Data/S1DataManager.h"
-#include "Engine/LocalPlayer.h"
-#include "Kismet/KismetRenderingLibrary.h"
-#include "Kismet/GameplayStatics.h"
+#include "S1LoadoutComponent.h"
+#include "S1MarkerActor.h"
+#include "S1SkillComponent.h"
 #include "S1SkillBar.h"
-#include "S1SkillSlot.h"
+#include "Data/S1DataManager.h"
+
 #include <NavigationSystem.h>
-#include "Components/DecalComponent.h"
-#include "Materials/MaterialInstanceDynamic.h"
+#include "Kismet/KismetRenderingLibrary.h"
 
 AS1MyPlayer::AS1MyPlayer()
 {
@@ -54,6 +50,7 @@ AS1MyPlayer::AS1MyPlayer()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 	LoadoutComponent = CreateDefaultSubobject<US1LoadoutComponent>(TEXT("LoadoutComponent"));
+	SkillComponent = CreateDefaultSubobject<US1SkillComponent>(TEXT("SkillComponent"));
 }
 
 void AS1MyPlayer::BeginPlay()
@@ -71,12 +68,16 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 
 		//Moving
 		EnhancedInputComponent->BindAction(RightClickMoveAction, ETriggerEvent::Started, this, &AS1MyPlayer::InputRightClickMove);
-
+		
 		//Skill
-		EnhancedInputComponent->BindAction(Skill1Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot1);
-		EnhancedInputComponent->BindAction(Skill2Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot2);
-		EnhancedInputComponent->BindAction(Skill3Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot3);
-		EnhancedInputComponent->BindAction(Skill4Action, ETriggerEvent::Started, this, &AS1MyPlayer::UseSkillSlot4);
+		EnhancedInputComponent->BindAction(Skill1Action, ETriggerEvent::Started, this, &AS1MyPlayer::OnSkillSlot1Pressed);
+		EnhancedInputComponent->BindAction(Skill1Action, ETriggerEvent::Completed, this, &AS1MyPlayer::OnSkillSlot1Released);
+		EnhancedInputComponent->BindAction(Skill2Action, ETriggerEvent::Started, this, &AS1MyPlayer::OnSkillSlot2Pressed);
+		EnhancedInputComponent->BindAction(Skill2Action, ETriggerEvent::Completed, this, &AS1MyPlayer::OnSkillSlot2Released);
+		EnhancedInputComponent->BindAction(Skill3Action, ETriggerEvent::Started, this, &AS1MyPlayer::OnSkillSlot3Pressed);
+		EnhancedInputComponent->BindAction(Skill3Action, ETriggerEvent::Completed, this, &AS1MyPlayer::OnSkillSlot3Released);
+		EnhancedInputComponent->BindAction(Skill4Action, ETriggerEvent::Started, this, &AS1MyPlayer::OnSkillSlot4Pressed);
+		EnhancedInputComponent->BindAction(Skill4Action, ETriggerEvent::Completed, this, &AS1MyPlayer::OnSkillSlot4Released);
 	}
 }
 
@@ -178,61 +179,23 @@ void AS1MyPlayer::SpawnClickFX(const FVector& Location)
 	if (!ClickMarkerMaterial)
 		return;
 
-	// 1. 이전 마커 즉시 제거
-	for (UDecalComponent* Decal : ActiveClickMarkers)
+	if (ClickMarker)
 	{
-		if (Decal)
-			Decal->DestroyComponent();
+		ClickMarker->Destroy();
+		ClickMarker = nullptr;
 	}
-	ActiveClickMarkers.Empty();
 
-	// 2. 새 Decal 스폰
-	UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(
-		GetWorld(),
-		ClickMarkerMaterial,
-		ClickMarkerSize,
-		Location + FVector(0, 0, 2.f), // 바닥에 살짝 띄우기
-		FRotator(-90.f, 0, 0),
-		0.0f // LifeTime는 Timer로 처리
+	ClickMarker = GetWorld()->SpawnActor<AS1MarkerActor>(
+		AS1MarkerActor::StaticClass(),
+		Location + FVector(0, 0, 2.f),
+		FRotator::ZeroRotator
 	);
 
-	if (!Decal)
-		return;
-
-	ActiveClickMarkers.Add(Decal);
-
-	// 3. Dynamic Material 생성
-	UMaterialInstanceDynamic* DynMat = Decal->CreateDynamicMaterialInstance();
-	if (DynMat)
-	{
-		DynMat->SetScalarParameterValue("Fade", 1.f);
-	}
-
-	// 4. Timer로 독립 Fade 처리
-	FTimerHandle FadeTimer;
-	float TickInterval = 0.02f;
-	float TotalLifeTime = ClickMarkerLifeTime;
-	float* Elapsed = new float(0.f); // Lambda 안에서 값 유지
-
-	FTimerDelegate FadeDelegate;
-	FadeDelegate.BindLambda([DynMat, Decal, TotalLifeTime, Elapsed, TickInterval]()
-		{
-			*Elapsed += TickInterval;
-			float Alpha = FMath::Clamp(1.f - *Elapsed / TotalLifeTime, 0.f, 1.f);
-
-			if (DynMat)
-				DynMat->SetScalarParameterValue("Fade", Alpha);
-
-			if (Alpha <= 0.f && Decal)
-			{
-				Decal->DestroyComponent();
-			}
-		});
-
-	GetWorld()->GetTimerManager().SetTimer(FadeTimer, FadeDelegate, TickInterval, true);
+	if (ClickMarker)
+		ClickMarker->Init(ClickMarkerMaterial, FVector(16.f, 16.f, 16.f), 0.8f);
 }
 
-void AS1MyPlayer::UseSkillSlot(int32 SlotIndex)
+void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 {
 	int32 SkillID = LoadoutComponent->GetSkillSlot(SlotIndex);
 	if (SkillID <= 0)
@@ -240,26 +203,21 @@ void AS1MyPlayer::UseSkillSlot(int32 SlotIndex)
 
 	if (SkillBar->CanUseSkill(SlotIndex))
 	{
-		UE_LOG(LogTemp, Log, TEXT("Use Skill ID: %d from Slot %d"), SkillID, SlotIndex);
-
-		{
-			// 즉발 스킬인경우
-			SetState(STATE_MACHINE_IDLE);
-			SendMovePacket();
-			DirtyFlag = false;
-		}
-
 		auto SkillIt = S1DataManager::Instance().SkillDict.find(SkillID);
 		if (SkillIt == S1DataManager::Instance().SkillDict.end())
 			return;
 
 		Skill& SkillData = SkillIt->second;
-		
+
+		SkillComponent->BeginSkillTargeting(SkillID, SkillData.distance, SkillData.range);
+
+		/*
 		C_SKILL SkillPkt;
 		SkillPkt.mutable_info()->set_skillid(SkillID);
 
 		SEND_PACKET(SkillPkt);
 		// TODO : 애니메이션 & S_Skill 패킷 받으면 SkillBar에 Cooldown 적용
+		*/
 	}
 	else
 	{
@@ -267,24 +225,43 @@ void AS1MyPlayer::UseSkillSlot(int32 SlotIndex)
 	}
 }
 
-void AS1MyPlayer::UseSkillSlot1()
+void AS1MyPlayer::OnSkillSlotReleased(int32 SlotIndex)
 {
-	UseSkillSlot(0);
+	if (SkillComponent && SkillComponent->IsSkillTargeting())
+	{
+		SkillComponent->ConfirmSkillTargeting();
+	}
 }
 
-void AS1MyPlayer::UseSkillSlot2()
-{
-	UseSkillSlot(1);
-}
+void AS1MyPlayer::OnSkillSlot1Pressed() { OnSkillSlotPressed(0); }
+void AS1MyPlayer::OnSkillSlot2Pressed() { OnSkillSlotPressed(1); }
+void AS1MyPlayer::OnSkillSlot3Pressed() { OnSkillSlotPressed(2); }
+void AS1MyPlayer::OnSkillSlot4Pressed() { OnSkillSlotPressed(3); }
 
-void AS1MyPlayer::UseSkillSlot3()
-{
-	UseSkillSlot(2);
-}
+void AS1MyPlayer::OnSkillSlot1Released() { OnSkillSlotReleased(0); }
+void AS1MyPlayer::OnSkillSlot2Released() { OnSkillSlotReleased(1); }
+void AS1MyPlayer::OnSkillSlot3Released() { OnSkillSlotReleased(2); }
+void AS1MyPlayer::OnSkillSlot4Released() { OnSkillSlotReleased(3); }
 
-void AS1MyPlayer::UseSkillSlot4()
+void AS1MyPlayer::SpawnClickMarker(const FVector& Location)
 {
-	UseSkillSlot(3);
+	if (!ClickMarkerMaterial)
+		return;
+
+	if (ClickMarker)
+	{
+		ClickMarker->Destroy();
+		ClickMarker = nullptr;
+	}
+
+	ClickMarker = GetWorld()->SpawnActor<AS1MarkerActor>(
+		AS1MarkerActor::StaticClass(),
+		Location + FVector(0, 0, 2.f),
+		FRotator::ZeroRotator
+	);
+
+	if (ClickMarker)
+		ClickMarker->Init(ClickMarkerMaterial, FVector(16.f, 16.f, 16.f), 0.8f);
 }
 
 void AS1MyPlayer::InitSkillBar()

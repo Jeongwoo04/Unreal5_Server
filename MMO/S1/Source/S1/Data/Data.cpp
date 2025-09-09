@@ -101,6 +101,14 @@ SkillData SkillData::LoadFromJsonFile(const string& path)
         {
             skill.projectileId = element["projectileId"].get<int32>();
         }
+        if (element.contains("distance"))
+        {
+            skill.distance = element["distance"].get<float>();
+        }
+        if (element.contains("range"))
+        {
+            skill.range = element["range"].get<float>();
+        }
 
         data.skills.push_back(skill);
     }
