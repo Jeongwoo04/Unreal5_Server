@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
+#include "S1.h"
 #include "S1PlayerController.h"
 #include "S1LoadoutComponent.h"
 #include "S1MarkerActor.h"
@@ -56,6 +57,8 @@ AS1MyPlayer::AS1MyPlayer()
 void AS1MyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	NextMoveLocation = GetActorLocation();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -91,9 +94,9 @@ void AS1MyPlayer::Tick(float DeltaTime)
 
 	FVector Dir = FVector::ZeroVector;
 	
-	if (!ClickTargetLocation.IsZero())
+	if (!TargetLocation.IsZero())
 	{
-		FVector ToTarget = ClickTargetLocation - GetActorLocation();
+		FVector ToTarget = TargetLocation - GetActorLocation();
 		FVector2D ToTarget2D(ToTarget.X, ToTarget.Y);
 		
 		float Dist = ToTarget2D.Size();
@@ -103,10 +106,12 @@ void AS1MyPlayer::Tick(float DeltaTime)
 		{
 			Dir = ToTarget.GetSafeNormal();
 			AddMovementInput(Dir);
+
+			NextMoveLocation = GetActorLocation() + Dir * GetVelocity().Size() * DeltaTime;
 		}
 		else
 		{
-			ClickTargetLocation = FVector::ZeroVector; // 도착
+			NextMoveLocation = GetActorLocation(); // 도착
 		}
 	}
 
@@ -118,7 +123,7 @@ void AS1MyPlayer::Tick(float DeltaTime)
 
 		if (TimeSinceLastSend >= MoveSendInterval)
 		{
-			SetState(Protocol::STATE_MACHINE_MOVING);
+			ChangeState(Protocol::STATE_MACHINE_MOVING);
 			SendMovePacket();
 			TimeSinceLastSend = 0.f;
 		}
@@ -127,15 +132,12 @@ void AS1MyPlayer::Tick(float DeltaTime)
 	{
 		if (DirtyFlag) // 멈춘 직후 Idle 패킷
 		{
-			SetState(Protocol::STATE_MACHINE_IDLE);
+			ChangeState(Protocol::STATE_MACHINE_IDLE);
 			SendMovePacket();
 			DirtyFlag = false;
 			TimeSinceLastSend = 0.f;
 		}
-
 	}
-
-	TimeSinceLastSkill += DeltaTime;
 }
 
 void AS1MyPlayer::InputRightClickMove(const FInputActionValue& value)
@@ -153,11 +155,11 @@ void AS1MyPlayer::InputRightClickMove(const FInputActionValue& value)
 			FNavLocation ResultLocation; // NavMesh 위에서 가장 가까운 위치 찾기
 			if (NavSys->ProjectPointToNavigation(Hit.Location, ResultLocation, FVector(50.f, 50.f, 50.f)))
 			{
-				SpawnClickFX(ResultLocation.Location);
+				SpawnClickMarker(ResultLocation.Location);
 
-				ClickTargetLocation = ResultLocation.Location;
+				TargetLocation = ResultLocation.Location;
 				DirtyFlag = true;
-				FVector Direction = (ClickTargetLocation - GetActorLocation());
+				FVector Direction = (TargetLocation - GetActorLocation());
 				Direction.Z = 0;
 				// 수직 성분 제거
 				if (!Direction.IsNearlyZero())
@@ -167,32 +169,11 @@ void AS1MyPlayer::InputRightClickMove(const FInputActionValue& value)
 					PosInfo.set_yaw(NewRot.Yaw);
 				}
 				// 이동 시작하면 서버로 패킷 전송
-				SetState(Protocol::STATE_MACHINE_MOVING);
+				ChangeState(Protocol::STATE_MACHINE_MOVING);
 				SendMovePacket();
 			}
 		}
 	}
-}
-
-void AS1MyPlayer::SpawnClickFX(const FVector& Location)
-{
-	if (!ClickMarkerMaterial)
-		return;
-
-	if (ClickMarker)
-	{
-		ClickMarker->Destroy();
-		ClickMarker = nullptr;
-	}
-
-	ClickMarker = GetWorld()->SpawnActor<AS1MarkerActor>(
-		AS1MarkerActor::StaticClass(),
-		Location + FVector(0, 0, 2.f),
-		FRotator::ZeroRotator
-	);
-
-	if (ClickMarker)
-		ClickMarker->Init(ClickMarkerMaterial, FVector(16.f, 16.f, 16.f), 0.8f);
 }
 
 void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
@@ -210,6 +191,9 @@ void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 		Skill& SkillData = SkillIt->second;
 
 		SkillComponent->BeginSkillTargeting(SkillID, SkillData.distance, SkillData.range);
+
+		//ChangeState(Protocol::STATE_MACHINE_CASTING); -> confirm skill 안으로
+		//SendMovePacket();
 
 		/*
 		C_SKILL SkillPkt;
@@ -357,16 +341,15 @@ void AS1MyPlayer::TrySetupInput(AS1PlayerController* PC)
 
 void AS1MyPlayer::SendMovePacket()
 {
-	FVector Loc = GetActorLocation();
 	FRotator Rot = GetActorRotation();
 
 	Protocol::C_MOVE MovePkt;
 	auto Info = MovePkt.mutable_info();
 
 	PosInfo.set_object_id(PosInfo.object_id()); // 기존 ID 유지
-	PosInfo.set_x(Loc.X);
-	PosInfo.set_y(Loc.Y);
-	PosInfo.set_z(Loc.Z);
+	PosInfo.set_x(NextMoveLocation.X);
+	PosInfo.set_y(NextMoveLocation.Y);
+	PosInfo.set_z(NextMoveLocation.Z);
 	PosInfo.set_yaw(Rot.Yaw);
 
 	float Speed = GetVelocity().Size();
@@ -375,4 +358,5 @@ void AS1MyPlayer::SendMovePacket()
 	Info->CopyFrom(PosInfo);
 
 	SEND_PACKET(MovePkt);
+	UE_LOG(LogTemp, Log, TEXT("SendMovePacket Loc: %s"), *NextMoveLocation.ToString());
 }

@@ -25,7 +25,7 @@
     <Filter Include="Game\Data">
       <UniqueIdentifier>{6c2ef249-9e15-407a-82e5-aace883ce117}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Game\Skill">
+    <Filter Include="Game\System">
       <UniqueIdentifier>{38b3eecd-d7ce-40dc-ab0f-a875bba84b14}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -100,7 +100,16 @@
       <Filter>Game\Room</Filter>
     </ClCompile>
     <ClCompile Include="CombatSystem.cpp">
-      <Filter>Game\Skill</Filter>
+      <Filter>Game\System</Filter>
+    </ClCompile>
+    <ClCompile Include="GeometryUtil.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="BuffSystem.cpp">
+      <Filter>Game\System</Filter>
+    </ClCompile>
+    <ClCompile Include="SkillSystem.cpp">
+      <Filter>Game\System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -171,7 +180,16 @@
       <Filter>Game\Room</Filter>
     </ClInclude>
     <ClInclude Include="CombatSystem.h">
-      <Filter>Game\Skill</Filter>
+      <Filter>Game\System</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryUtil.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="BuffSystem.h">
+      <Filter>Game\System</Filter>
+    </ClInclude>
+    <ClInclude Include="SkillSystem.h">
+      <Filter>Game\System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

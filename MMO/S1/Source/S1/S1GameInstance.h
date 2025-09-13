@@ -10,6 +10,7 @@
 class AS1Player;
 class AS1Monster;
 class AS1MyPlayer;
+
 class AS1Projectile;
 class US1MapManager;
 class US1ObjectManager;

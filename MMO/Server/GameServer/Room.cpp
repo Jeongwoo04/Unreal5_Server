@@ -156,7 +156,7 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 	_playerGrid.ApplyMove(player, player->_gridPos, destPos);
 
 	player->SetPosInfo(pkt.info());
-	BroadcastMove(player->_posInfo, player->GetId());
+	BroadcastMove(player->_posInfo);
 }
 
 void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
@@ -185,69 +185,69 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 
 	const Skill& skillData = it->second;
 
-	switch (skillData.skillType)
-	{
-	case Protocol::SKILL_NONE:
-		break;
-	case Protocol::SKILL_AUTO:
-	{
-		const float attackRange = 1.f * CELL_SIZE;     // 평타 사거리
-		const float monsterRadius = 42.f;              // 몬스터 반지름
-		const float totalRadius = attackRange + monsterRadius;
+	//switch (skillData.skillType)
+	//{
+	//case Protocol::SKILL_NONE:
+	//	break;
+	//case Protocol::SKILL_AUTO:
+	//{
+	//	const float attackRange = 1.f * CELL_SIZE;     // 평타 사거리
+	//	const float monsterRadius = 42.f;              // 몬스터 반지름
+	//	const float totalRadius = attackRange + monsterRadius;
 
-		const float halfDegree = 45.f;
-		const float cosThreshold = cosf(halfDegree * (PI / 180.f));
+	//	const float halfDegree = 45.f;
+	//	const float cosThreshold = cosf(halfDegree * (PI / 180.f));
 
-		const Vector3 attWorldPos = Vector3(player->_posInfo);
-		const float yaw = player->_posInfo.yaw();
+	//	const Vector3 attWorldPos = Vector3(player->_posInfo);
+	//	const float yaw = player->_posInfo.yaw();
 
-		const Vector3 forward(cosf(yaw), sinf(yaw), player->_posInfo.z()); // _x, _y 사용, _z는 무시
+	//	const Vector3 forward(cosf(yaw), sinf(yaw), player->_posInfo.z()); // _x, _y 사용, _z는 무시
 
-		const int32 gridRadius = static_cast<int32>(ceil(totalRadius / CELL_SIZE));
-		const Vector2Int attGridPos(player->_posInfo);
+	//	const int32 gridRadius = static_cast<int32>(ceil(totalRadius / CELL_SIZE));
+	//	const Vector2Int attGridPos(player->_posInfo);
 
-		vector<MonsterRef> candidates = _monsterGrid.FindAround(attGridPos, gridRadius);
+	//	vector<MonsterRef> candidates = _monsterGrid.FindAround(attGridPos, gridRadius);
 
-		for (MonsterRef monster : candidates)
-		{
-			if (monster == nullptr)
-				continue;
+	//	for (MonsterRef monster : candidates)
+	//	{
+	//		if (monster == nullptr)
+	//			continue;
 
-			Vector3 targetWorldPos = Vector3(monster->_posInfo);
-			Vector3 targetDir = targetWorldPos - attWorldPos;
+	//		Vector3 targetWorldPos = Vector3(monster->_posInfo);
+	//		Vector3 targetDir = targetWorldPos - attWorldPos;
 
-			float distSq = targetDir.LengthSquared();  // _x, _y만 사용한 길이
-			if (distSq > totalRadius * totalRadius)
-				continue;
+	//		float distSq = targetDir.LengthSquared2D();  // _x, _y만 사용한 길이
+	//		if (distSq > totalRadius * totalRadius)
+	//			continue;
 
-			Vector3 dir = targetDir.Normalized(); // _x, _y만 정규화
-			float dot = Vector3::Dot(dir, forward);
+	//		Vector3 dir = targetDir.Normalized2D(); // _x, _y만 정규화
+	//		float dot = dir.Dot2D(forward);
 
-			if (dot >= cosThreshold)
-			{
-				//monster->OnDamaged(player, player->_statInfo.attack() + skillData.damage);
-			}
-		}
-	}
-		break;
-	case Protocol::SKILL_PROJECTILE:
-	{
-		ProjectileRef proj = static_pointer_cast<Projectile>(_objectManager->Spawn(30101, false, player->_posInfo));
-		if (proj == nullptr)
-			return;
+	//		if (dot >= cosThreshold)
+	//		{
+	//			//monster->OnDamaged(player, player->_statInfo.attack() + skillData.damage);
+	//		}
+	//	}
+	//}
+	//	break;
+	//case Protocol::SKILL_PROJECTILE:
+	//{
+	//	ProjectileRef proj = static_pointer_cast<Projectile>(_objectManager->Spawn(30101, false, player->_posInfo));
+	//	if (proj == nullptr)
+	//		return;
 
-		proj->SetOwner(player);
-		proj->SetData(skillData);
+	//	proj->SetOwner(player);
+	//	proj->SetData(skillData);
 
-		proj->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-		proj->_statInfo.set_speed(proj->_projectileInfo.speed());
+	//	proj->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+	//	proj->_statInfo.set_speed(proj->_projectileInfo.speed());
 
-		EnterRoom(static_pointer_cast<Object>(proj));
-	}
-		break;
-	case Protocol::SKILL_AOE_DOT:
-		break;
-	}
+	//	EnterRoom(static_pointer_cast<Object>(proj));
+	//}
+	//	break;
+	//case Protocol::SKILL_AOE_DOT:
+	//	break;
+	//}
 
 	player->SetState(Protocol::STATE_MACHINE_IDLE);
 	S_MOVE movePkt;

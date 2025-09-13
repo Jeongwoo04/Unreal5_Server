@@ -11,6 +11,7 @@
 #include "ClientPacketHandler.h"
 #include "S1MyPlayer.h"
 #include "S1Monster.h"
+#include "S1Projectile.h"
 #include "S1MapManager.h"
 #include "S1ObjectManager.h"
 #include "Data/S1ConfigManager.h"
@@ -185,11 +186,17 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	if (FindActor == nullptr)
 		return;
 
-	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
-	if (Creature == nullptr)
-		return;
+	AS1Projectile* Projectile = Cast<AS1Projectile>(FindActor);
+	if (Projectile)
+	{
+		Projectile->SetPosInfo(MovePkt.info());
+	}
 
-	Creature->SetPosInfo(MovePkt.info());
+	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+	if (Creature)
+	{
+		Creature->SetPosInfo(MovePkt.info());
+	}	
 }
 
 void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)

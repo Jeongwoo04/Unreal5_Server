@@ -13,7 +13,7 @@ Projectile::~Projectile()
 
 void Projectile::Update()
 {
-    if (GetData().id == 0 || GetData().skillType != SKILL_PROJECTILE || GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
+    if (GetData().id == 0 || GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
         return;
 
     const uint64 tick = GetTickCount64();
@@ -35,7 +35,7 @@ void Projectile::Update()
         return;
     }
 
-    Vector3 dir = Vector3::YawToDir(_posInfo.yaw());
+    Vector3 dir = Vector3::YawToDir2D(_posInfo.yaw());
     Vector3 move = dir * _statInfo.speed() * deltaTime;
     _destPos = _worldPos + move;
 

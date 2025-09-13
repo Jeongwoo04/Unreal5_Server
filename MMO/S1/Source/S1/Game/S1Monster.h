@@ -16,4 +16,6 @@ class S1_API AS1Monster : public AS1Creature
 public:
 	AS1Monster();
 	virtual ~AS1Monster();
+
+	virtual void Tick(float DeltaTime) override;
 };

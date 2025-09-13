@@ -871,13 +871,13 @@ class ProjectileInfo final :
   void _internal_set_speed(float value);
   public:
 
-  // int32 range = 4;
+  // float range = 4;
   void clear_range();
-  int32_t range() const;
-  void set_range(int32_t value);
+  float range() const;
+  void set_range(float value);
   private:
-  int32_t _internal_range() const;
-  void _internal_set_range(int32_t value);
+  float _internal_range() const;
+  void _internal_set_range(float value);
   public:
 
   // @@protoc_insertion_point(class_scope:Protocol.ProjectileInfo)
@@ -891,7 +891,7 @@ class ProjectileInfo final :
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
     int32_t dataid_;
     float speed_;
-    int32_t range_;
+    float range_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -1628,22 +1628,22 @@ inline void ProjectileInfo::set_speed(float value) {
   // @@protoc_insertion_point(field_set:Protocol.ProjectileInfo.speed)
 }
 
-// int32 range = 4;
+// float range = 4;
 inline void ProjectileInfo::clear_range() {
   _impl_.range_ = 0;
 }
-inline int32_t ProjectileInfo::_internal_range() const {
+inline float ProjectileInfo::_internal_range() const {
   return _impl_.range_;
 }
-inline int32_t ProjectileInfo::range() const {
+inline float ProjectileInfo::range() const {
   // @@protoc_insertion_point(field_get:Protocol.ProjectileInfo.range)
   return _internal_range();
 }
-inline void ProjectileInfo::_internal_set_range(int32_t value) {
+inline void ProjectileInfo::_internal_set_range(float value) {
   
   _impl_.range_ = value;
 }
-inline void ProjectileInfo::set_range(int32_t value) {
+inline void ProjectileInfo::set_range(float value) {
   _internal_set_range(value);
   // @@protoc_insertion_point(field_set:Protocol.ProjectileInfo.range)
 }

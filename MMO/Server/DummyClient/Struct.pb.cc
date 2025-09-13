@@ -199,7 +199,7 @@ const char descriptor_table_protodef_Struct_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "p\030\003 \001(\005\022\r\n\005maxHp\030\004 \001(\005\022\016\n\006attack\030\005 \001(\005\022\r"
   "\n\005speed\030\006 \001(\002\022\020\n\010totalExp\030\007 \001(\r\"L\n\016Proje"
   "ctileInfo\022\016\n\006dataId\030\001 \001(\005\022\014\n\004name\030\002 \001(\t\022"
-  "\r\n\005speed\030\003 \001(\002\022\r\n\005range\030\004 \001(\005\"\034\n\tSkillIn"
+  "\r\n\005speed\030\003 \001(\002\022\r\n\005range\030\004 \001(\002\"\034\n\tSkillIn"
   "fo\022\017\n\007skillId\030\001 \001(\005b\006proto3"
   ;
 static const ::_pbi::DescriptorTable* const descriptor_table_Struct_2eproto_deps[1] = {
@@ -1409,11 +1409,11 @@ const char* ProjectileInfo::_InternalParse(const char* ptr, ::_pbi::ParseContext
         } else
           goto handle_unusual;
         continue;
-      // int32 range = 4;
+      // float range = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
-          _impl_.range_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
-          CHK_(ptr);
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 37)) {
+          _impl_.range_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
         } else
           goto handle_unusual;
         continue;
@@ -1472,10 +1472,14 @@ uint8_t* ProjectileInfo::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteFloatToArray(3, this->_internal_speed(), target);
   }
 
-  // int32 range = 4;
-  if (this->_internal_range() != 0) {
+  // float range = 4;
+  static_assert(sizeof(uint32_t) == sizeof(float), "Code assumes uint32_t and float are the same size.");
+  float tmp_range = this->_internal_range();
+  uint32_t raw_range;
+  memcpy(&raw_range, &tmp_range, sizeof(tmp_range));
+  if (raw_range != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteInt32ToArray(4, this->_internal_range(), target);
+    target = ::_pbi::WireFormatLite::WriteFloatToArray(4, this->_internal_range(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1515,9 +1519,13 @@ size_t ProjectileInfo::ByteSizeLong() const {
     total_size += 1 + 4;
   }
 
-  // int32 range = 4;
-  if (this->_internal_range() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_range());
+  // float range = 4;
+  static_assert(sizeof(uint32_t) == sizeof(float), "Code assumes uint32_t and float are the same size.");
+  float tmp_range = this->_internal_range();
+  uint32_t raw_range;
+  memcpy(&raw_range, &tmp_range, sizeof(tmp_range));
+  if (raw_range != 0) {
+    total_size += 1 + 4;
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -1551,7 +1559,11 @@ void ProjectileInfo::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const :
   if (raw_speed != 0) {
     _this->_internal_set_speed(from._internal_speed());
   }
-  if (from._internal_range() != 0) {
+  static_assert(sizeof(uint32_t) == sizeof(float), "Code assumes uint32_t and float are the same size.");
+  float tmp_range = from._internal_range();
+  uint32_t raw_range;
+  memcpy(&raw_range, &tmp_range, sizeof(tmp_range));
+  if (raw_range != 0) {
     _this->_internal_set_range(from._internal_range());
   }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);

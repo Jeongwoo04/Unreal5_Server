@@ -9,6 +9,7 @@ unordered_map<int32, ObjectTemplate> ObjectData::MakeDict()
     {
         dict[objectTemplate.dataId] = objectTemplate;
     }
+
     return dict;
 }
 
@@ -22,13 +23,14 @@ ObjectData ObjectData::LoadFromJson(const string& path)
     for (auto& element : j["Object"])
     {
         ObjectTemplate objTemplate;
-        objTemplate.dataId = element["dataId"].get<int32>();
-        objTemplate.name = element["name"].get<string>();
-        objTemplate.mainType = element["mainType"].get<int32>();
-        objTemplate.subType = element["subType"].get<int32>();
+        objTemplate.dataId = element.value("dataId", 0);
+        objTemplate.name = element.value("name", "");
+        objTemplate.mainType = element.value("mainType", 0);
+        objTemplate.subType = element.value("subType", 0);
 
         data.objectTemplates.push_back(objTemplate);
     }
+
     return data;
 }
 
@@ -41,6 +43,7 @@ unordered_map<int32, StatInfo> StatData::MakeDict()
         stat.set_hp(stat.maxhp()); // 초기 HP 세팅
         dict[stat.dataid()] = stat;
     }
+
     return dict;
 }
 
@@ -54,15 +57,16 @@ StatData StatData::LoadFromJson(const string& path)
     for (auto& element : j["Stat"])
     {
         StatInfo stat;
-        stat.set_dataid(element["dataId"].get<int32>());
-        stat.set_level(element["level"].get<int32>());
-        stat.set_maxhp(element["maxHp"].get<int32>());
-        stat.set_attack(element["attack"].get<int32>());
-        stat.set_speed(element["speed"].get<float>());
-        stat.set_totalexp(element["totalExp"].get<int32>());
+        stat.set_dataid(element.value("dataId", 0));
+        stat.set_level(element.value("level", 1));
+        stat.set_maxhp(element.value("maxHp", 100));
+        stat.set_attack(element.value("attack", 10));
+        stat.set_speed(element.value("speed", 1.f));
+        stat.set_totalexp(element.value("totalExp", 0));
 
         data.stats.push_back(stat);
     }
+
     return data;
 }
 
@@ -73,6 +77,7 @@ unordered_map<int32, ProjectileInfo> ProjectileData::MakeDict()
     {
         dict[projectile.dataid()] = projectile;
     }
+
     return dict;
 }
 
@@ -86,13 +91,14 @@ ProjectileData ProjectileData::LoadFromJsonFile(const string& path)
     for (auto& element : j["Projectile"])
     {
         ProjectileInfo projectile;
-        projectile.set_dataid(element["dataId"].get<int32>());
-        projectile.set_name(element["name"].get<string>());
-        projectile.set_speed(element["speed"].get<float>());
-        projectile.set_range(element["range"].get<int32>());
+        projectile.set_dataid(element.value("dataId", 0));
+        projectile.set_name(element.value("name", ""));
+        projectile.set_speed(element.value("speed", 0.f));
+        projectile.set_range(element.value("range", 0.f));
 
         data.projectiles.push_back(projectile);
     }
+
     return data;
 }
 
@@ -103,10 +109,11 @@ unordered_map<int32, Skill> SkillData::MakeDict()
     {
         dict[skill.id] = skill;
     }
+
     return dict;
 }
 
-SkillData SkillData::LoadFromJsonFile(const std::string& path)
+SkillData SkillData::LoadFromJsonFile(const string& path)
 {
     std::ifstream file(path);
     json j;
@@ -117,9 +124,8 @@ SkillData SkillData::LoadFromJsonFile(const std::string& path)
     {
         Skill skill;
         skill.id = element["id"].get<int32>();
-        skill.name = element["name"].get<std::string>();
+        skill.name = element["name"].get<string>();
         skill.cooldown = element["cooldown"].get<float>();
-        skill.skillType = ToSkillType(element["skillType"].get<string>());
 
         if (element.contains("actions"))
         {
@@ -129,31 +135,53 @@ SkillData SkillData::LoadFromJsonFile(const std::string& path)
 
                 // type → enum
                 string typeStr = actionElem["type"].get<string>();
-                action.type = ToActionType(typeStr);
-
                 // 공통 필드
-                if (actionElem.contains("value"))
-                    action.value = actionElem["value"].get<float>();
-                if (actionElem.contains("radius"))
-                    action.radius = actionElem["radius"].get<float>();
-                if (actionElem.contains("angle"))
-                    action.angle = actionElem["angle"].get<float>();
-                if (actionElem.contains("duration"))
-                    action.duration = actionElem["duration"].get<float>();
+                action.actionType = ToActionType(typeStr);
+                action.distance = actionElem["distance"].get<float>();
 
-                // Attack
-                if (actionElem.contains("damage"))
-                    action.damage = actionElem["damage"].get<float>();
-
-                // Projectile / Field
-                if (actionElem.contains("dataId"))
-                    action.dataId = actionElem["dataId"].get<int>();
-
-                // Status
-                if (actionElem.contains("statusId"))
-                    action.statusId = actionElem["statusId"].get<int>();
-
-                skill.actions.push_back(action);
+                switch (action.actionType)
+                {
+                case ActionType::Attack:
+                {
+                    AttackActionData attack;
+                    attack.actionType = ActionType::Attack;
+                    attack.shape = ToShapeType(actionElem["shape"].get<string>());
+                    attack.damage = actionElem["damage"].get<int32>();
+                    attack.radius = actionElem.value("radius", 0.f);
+                    attack.width = actionElem.value("width", 0.f);
+                    attack.length = actionElem.value("length", 0.f);
+                    attack.angle = actionElem.value("angle", 0.f);
+                    skill.actions.push_back(attack);
+                    break;
+                }
+                case ActionType::Move:
+                {
+                    MoveActionData move;
+                    move.actionType = ActionType::Move;
+                    move.moveDistance = actionElem["moveDistance"].get<float>();
+                    skill.actions.push_back(move);
+                    break;
+                }
+                case ActionType::SpawnProjectile:
+                case ActionType::SpawnField:
+                {
+                    SpawnActionData spawn;
+                    spawn.actionType = action.actionType;
+                    spawn.dataId = actionElem["dataId"].get<int32>();
+                    skill.actions.push_back(spawn);
+                    break;
+                }
+                case ActionType::Buff:
+                {
+                    BuffActionData buff;
+                    buff.actionType = ActionType::Buff;
+                    buff.buffId = actionElem["buffId"].get<int32>();
+                    skill.actions.push_back(buff);
+                    break;
+                }
+                default:
+                    break;
+                }
             }
         }
 
@@ -183,25 +211,29 @@ MapData MapData::LoadFromJsonFile(const string& path)
     for (auto& element : j["Map"])
     {
         MapInfo map;
-        map.mapId = element["mapId"].get<int32>();
-        map.mapName = element["mapName"].get<string>();
-        map.filePath = element["filePath"].get<string>();
+        map.mapId = element.value("mapId", 0);
+        map.mapName = element.value("mapName", "");
+        map.filePath = element.value("filePath", "");
 
-        for (auto& spawnElement : element["spawns"])
+        if (element.contains("spawns"))
         {
-            SpawnTable spawn;
-            spawn.spawnId = spawnElement["spawnId"].get<int32>();
-            spawn.dataId = spawnElement["dataId"].get<int32>();
+            for (auto& spawnElement : element["spawns"])
+            {
+                SpawnTable spawn;
+                spawn.spawnId = spawnElement.value("spawnId", 0);
+                spawn.dataId = spawnElement.value("dataId", 0);
 
-            spawn.spawnPos._x = spawnElement["position"]["x"].get<float>();
-            spawn.spawnPos._y = spawnElement["position"]["y"].get<float>();
-            spawn.spawnPos._z = spawnElement["position"]["z"].get<float>();
+                auto pos = spawnElement.value("position", json::object());
+                spawn.spawnPos._x = pos.value("x", 0.f);
+                spawn.spawnPos._y = pos.value("y", 0.f);
+                spawn.spawnPos._z = pos.value("z", 0.f);
 
-            spawn.respawnInterval = spawnElement["respawnInterval"].get<int32>();
-            spawn.count = spawnElement["count"].get<int32>();
+                spawn.respawnInterval = spawnElement.value("respawnInterval", 0);
+                spawn.count = spawnElement.value("count", 0);
 
-            map.spawnTables[spawn.spawnId] = spawn;
-        }
+                map.spawnTables[spawn.spawnId] = spawn;
+            }
+        }        
 
         data.maps.push_back(map);
     }
@@ -209,7 +241,52 @@ MapData MapData::LoadFromJsonFile(const string& path)
     return data;
 }
 
-SkillType ToSkillType(const std::string& str)
+unordered_map<int32, BuffInfo> BuffData::MakeDict()
+{
+    unordered_map<int32, BuffInfo> dict;
+    for (auto& buff : buffs)
+    {
+        dict[buff.buffId] = buff;
+    }
+
+    return dict;
+}
+
+BuffData BuffData::LoadFromJsonFile(const string& path)
+{
+    std::ifstream file(path);
+    json j;
+    file >> j;
+
+    BuffData data;
+    for (auto& element : j["buffs"])
+    {
+        BuffInfo buff;
+        buff.buffId = element.value("buffId", 0);
+        buff.name = element.value("name", "");
+        buff.duration = element.value("duration", 0.f);
+        buff.tickInterval = element.value("tickInterval", 0.f);
+        buff.effectPerTick = element.value("effectPerTick", 0.f);
+        buff.effectValue = element.value("effectValue", 0.f);
+        buff.stackable = element.value("stackable", false);
+        buff.maxStacks = element.value("maxStacks", 1);
+        buff.refreshOnApply = element.value("refreshOnApply", true);
+        buff.effectType = ToEffectType(element.value("effectType", "None"));
+        buff.movementModifier = element.value("movementModifier", 1.f);
+        buff.attackModifier = element.value("attackModifier", 1.f);
+        buff.isCrowdControl = element.value("isCrowdControl", false);
+        buff.root = element.value("root", false);
+        buff.stun = element.value("stun", false);
+        buff.silence = element.value("silence", false);
+        buff.priority = element.value("priority", 0);
+
+        data.buffs.push_back(buff);
+    }
+
+    return data;
+}
+
+SkillType ToSkillType(const string& str)
 {
     if (str == "SkillAuto") return SkillType::SKILL_AUTO;
     if (str == "SkillProjectile") return SkillType::SKILL_PROJECTILE;
@@ -217,13 +294,31 @@ SkillType ToSkillType(const std::string& str)
     return SkillType::SKILL_NONE;
 }
 
-ActionType ToActionType(const std::string& str)
+ActionType ToActionType(const string& str)
 {
     if (str == "Move") return ActionType::Move;
     if (str == "Attack") return ActionType::Attack;
     if (str == "SpawnProjectile") return ActionType::SpawnProjectile;
     if (str == "SpawnField") return ActionType::SpawnField;
-    if (str == "ApplyStatus") return ActionType::ApplyStatus;
-    if (str == "React") return ActionType::React;
-    throw std::runtime_error("Unknown ActionType: " + str);
+    if (str == "Buff") return ActionType::Buff;
+    return ActionType::None;
+}
+
+ShapeType ToShapeType(const string& str)
+{
+    if (str == "Circle") return ShapeType::Circle;
+    if (str == "Cone") return ShapeType::Cone;
+    if (str == "Rectangle") return ShapeType::Rectangle;
+    if (str == "Line") return ShapeType::Line;
+    return ShapeType::None;
+}
+
+EffectType ToEffectType(const string& str)
+{
+    if (str == "HP") return EffectType::HP;
+    if (str == "MP") return EffectType::MP;
+    if (str == "Attack") return EffectType::Attack;
+    if (str == "Defense") return EffectType::Defense;
+    if (str == "Speed") return EffectType::Speed;
+    return EffectType::None;
 }

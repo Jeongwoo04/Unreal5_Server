@@ -15,9 +15,6 @@ public:
 	AS1Player();
 	virtual ~AS1Player();
 
-public:
-	bool IsMyPlayer();
-
 protected:
 	virtual void Tick(float DeltaTime) override;
 };

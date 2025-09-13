@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Arrow.cpp" />
+    <ClCompile Include="BuffSystem.cpp" />
     <ClCompile Include="CombatSystem.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
     <ClCompile Include="Creature.cpp" />
@@ -165,6 +166,7 @@
     <ClCompile Include="GameServer.cpp" />
     <ClCompile Include="GameSession.cpp" />
     <ClCompile Include="GameSessionManager.cpp" />
+    <ClCompile Include="GeometryUtil.cpp" />
     <ClCompile Include="Monster.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="ObjectManager.cpp" />
@@ -181,6 +183,7 @@
     <ClCompile Include="Room.cpp" />
     <ClCompile Include="RoomManager.cpp" />
     <ClCompile Include="ServerPacketHandler.cpp" />
+    <ClCompile Include="SkillSystem.cpp" />
     <ClCompile Include="SpatialHashGrid.cpp" />
     <ClCompile Include="Struct.pb.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -190,6 +193,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Arrow.h" />
+    <ClInclude Include="BuffSystem.h" />
     <ClInclude Include="CombatSystem.h" />
     <ClInclude Include="ConfigManager.h" />
     <ClInclude Include="Creature.h" />
@@ -199,6 +203,7 @@
     <ClInclude Include="GameMap.h" />
     <ClInclude Include="GameSession.h" />
     <ClInclude Include="GameSessionManager.h" />
+    <ClInclude Include="GeometryUtil.h" />
     <ClInclude Include="Monster.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="ObjectManager.h" />
@@ -209,6 +214,7 @@
     <ClInclude Include="Room.h" />
     <ClInclude Include="RoomManager.h" />
     <ClInclude Include="ServerPacketHandler.h" />
+    <ClInclude Include="SkillSystem.h" />
     <ClInclude Include="SpatialHashGrid.h" />
     <ClInclude Include="Struct.pb.h" />
     <ClInclude Include="Utils.h" />

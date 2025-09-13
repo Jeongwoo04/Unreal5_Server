@@ -22,10 +22,10 @@ protected:
 	weak_ptr<Object> _owner;
 
 	Vector3 _destPos;
+
 	float _radius = 20.f;
-
 	float _distance = 0.f;
-
+	
 	uint64 _nextMoveTick = 0;
 	Skill _data;
 };

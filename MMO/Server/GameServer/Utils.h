@@ -19,11 +19,6 @@ struct Vector2Int
         _x = static_cast<int32>(round(pos.x() / CELL_SIZE));
         _y = static_cast<int32>(round(pos.y() / CELL_SIZE));
     }
-    //Vector2Int(const Vector3& vec)
-    //{
-    //    _x = static_cast<int32>(round(vec._x / CELL_SIZE));
-    //    _y = static_cast<int32>(round(vec._y / CELL_SIZE));
-    //}
 
     Vector2Int& operator=(const Vector2Int& other)
     {
@@ -88,7 +83,7 @@ struct Vector3
     Vector3(float x, float y, float z) : _x(x), _y(y), _z(z) { }
     Vector3(const Protocol::PosInfo& pos) { _x = pos.x(); _y = pos.y(); _z = pos.z(); }
 
-    Vector3 operator-(const Vector3& other)
+    Vector3 operator-(const Vector3& other) const
     {
         return Vector3(_x - other._x, _y - other._y, _z - other._z);
     }
@@ -121,34 +116,38 @@ struct Vector3
         return Vector3(_x / scalar, _y / scalar, _z / scalar);
     }
 
-    float Length() const
-    {
-        return sqrtf(_x * _x + _y * _y + _z * _z);
-    }
+    float LengthSquared2D() const { return _x * _x + _y * _y; }
+    float Length2D() const { return sqrtf(LengthSquared2D()); }
 
-    float LengthSquared() const
+    float LengthSquared() const { return _x * _x + _y * _y + _z * _z; }
+    float Length() const { return sqrtf(LengthSquared()); }
+
+    Vector3 Normalized2D() const
     {
-        return _x * _x + _y * _y + _z * _z;
+        float len = Length2D();
+        if (len <= FLT_EPSILON)
+            return Vector3{ 0.f, 0.f, 0.f };
+        return Vector3{ _x / len, _y / len, 0.f };
     }
 
     Vector3 Normalized() const
     {
-        float len = sqrtf(_x * _x + _y * _y + _z * _z);
-        if (len == 0)
-            return Vector3{ 0, 0, 0 };
+        float len = Length();
+        if (len <= FLT_EPSILON)
+            return Vector3{ 0.f, 0.f, 0.f };
         return Vector3{ _x / len, _y / len, _z / len };
     }
 
-    static Vector3 YawToDir(float yaw)
+    static Vector3 YawToDir2D(float yaw)
     {
         float radians = yaw * (PI / 180.f);
         float x = cosf(radians);
         float y = sinf(radians);
 
-        return Vector3(x, y, 0).Normalized();
+        return Vector3(x, y, 0).Normalized2D();
     }
 
-    static float Dot(const Vector3& a, const Vector3& b)
+    static float Dot2D(const Vector3& a, const Vector3& b)
     {
         return a._x * b._x + a._y * b._y;
     }
@@ -208,17 +207,17 @@ static bool CheckCapsuleHitWithT(Vector3& from, Vector3& to, Vector3& center, fl
     Vector3 ab = to - from;
     Vector3 ap = center - from;
 
-    float abLengthSquared = ab.LengthSquared();
+    float abLengthSquared = ab.LengthSquared2D();
     if (abLengthSquared == 0.f)
     {
         T = 0.f;
-        return (center - from).LengthSquared() <= radius * radius;
+        return (center - from).LengthSquared2D() <= radius * radius;
     }
 
-    float t = Clamp01(Vector3::Dot(ap, ab) / abLengthSquared);
+    float t = Clamp01(Vector3::Dot2D(ap, ab) / abLengthSquared);
     Vector3 close = from + ab * t;
 
-    float distSquared = (center - close).LengthSquared();
+    float distSquared = (center - close).LengthSquared2D();
     if (distSquared <= radius * radius)
     {
         T = t;

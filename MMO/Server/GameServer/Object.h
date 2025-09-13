@@ -8,6 +8,14 @@ using namespace Protocol;
 
 using RoomRef = shared_ptr<class Room>;
 
+struct BuffInstance
+{
+	ObjectRef target = nullptr;
+	const BuffInfo* buff = nullptr;
+	float duration = 0.f;
+	float effectPerTick = 0.f;
+};
+
 class Object : public enable_shared_from_this<Object>
 {
 public:
@@ -33,6 +41,8 @@ public:
 
 	bool IsDead() { return GetState() == Protocol::STATE_MACHINE_DEAD; }
 
+	void AddBuff(const BuffInfo& buff);
+	void UpdateBuffs();
 	void SetPos(const Vector3& pos);
 	void SetPosInfo(const PosInfo& posInfo);
 	void SetSpawnPos(const Vector3& pos, float yaw = 0.f);
@@ -50,9 +60,23 @@ public:
 
 	int32 _spTableId;
 
+	float _collisionRadius;
+
 protected:
 	Protocol::StateMachine _state = Protocol::STATE_MACHINE_IDLE;
 
 	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험
+
+private:
+	vector<BuffInstance> _activeBuffs;
+
+	void ApplyBuffEffect(BuffInstance& buff, float deltaTime)
+	{
+		int32 hp = _statInfo.hp();
+		hp += buff.effectPerTick * deltaTime;
+
+		_statInfo.set_hp(hp);
+		// TODO: 다른 스탯, 효과 처리
+	}
 };
 

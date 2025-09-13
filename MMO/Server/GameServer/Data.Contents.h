@@ -13,32 +13,53 @@ using namespace Protocol;
 
 enum class ActionType
 {
+    None,
     Move,
     Attack,
     SpawnProjectile,
     SpawnField,
-    ApplyStatus,
-    React
+    Buff
+};
+
+enum class ShapeType
+{
+    None,
+    Circle,
+    Cone,
+    Rectangle,
+    Line
 };
 
 struct ActionData
 {
-    ActionType type;
+    ActionType actionType = ActionType::None;
+    float distance = 0.f;
+};
 
-    // 공통
-    float value = 0;
-    float radius = 0;
-    float angle = 0;
-    float duration = 0;
+struct AttackActionData : public ActionData
+{
+    ShapeType shape = ShapeType::None;
+    int32 damage = 0;
+    float radius = 0.f;
+    float width = 0.f;
+    float length = 0.f;
+    float angle = 0.f;
+};
 
-    // Attack 전용
-    float damage = 0;
+struct MoveActionData : public ActionData
+{
+    float moveDistance = 0.f;
+    // float dashDuration = 0.f;
+};
 
-    // Projectile / Field 전용
+struct SpawnActionData : public ActionData
+{
     int32 dataId = 0;
+};
 
-    // Status 전용
-    int32 statusId;
+struct BuffActionData : public ActionData
+{
+    int32 buffId = 0;
 };
 
 // Skill 구조체
@@ -47,14 +68,8 @@ struct Skill
     int32 id = 0;
     string name;
     float cooldown = 0;
-    SkillType skillType = SkillType::SKILL_AUTO;
     vector<ActionData> actions;
 };
-
-
-
-SkillType ToSkillType(const string& str);
-ActionType ToActionType(const std::string& str);
 
 struct ObjectTemplate
 {
@@ -80,6 +95,50 @@ struct MapInfo
     string filePath;
     unordered_map<int32, SpawnTable> spawnTables;
 };
+
+enum class EffectType
+{
+    None,
+    HP,
+    MP,
+    Attack,
+    Defense,
+    Speed
+};
+
+struct BuffInfo
+{
+    int32 buffId = 0;             // 고유 ID
+    string name;               // 이름
+    float duration = 0.f;           // 지속 시간(초)
+    float tickInterval = 0.f;       // Tick 간격(초)
+    bool stackable = false;         // 중첩 가능 여부
+    int32 maxStacks = 1;          // 최대 중첩
+    bool refreshOnApply = true;     // 재적용 시 duration 갱신
+
+    // 효과 수치
+    EffectType effectType = EffectType::None;
+    float effectValue = 0.f;        // 즉시 적용 효과
+    float effectPerTick = 0.f;      // Tick마다 적용 효과
+
+    // 스탯 보정 (slow, debuff)
+    float movementModifier = 1.0f;  // 이동 속도 계수 (0.0~1.0)
+    float attackModifier = 1.0f;    // 공격력 계수 (0.0~1.0)
+
+    // 상태 제어 (Crowd Control)
+    bool isCrowdControl = false;
+    bool root = false;
+    bool stun = false;
+    bool silence = false;
+
+    // 중첩/우선순위
+    int32_t priority = 0;            // 값 높을수록 우선 적용
+};
+
+SkillType ToSkillType(const string& str);
+ActionType ToActionType(const string& str);
+ShapeType ToShapeType(const string& str);
+EffectType ToEffectType(const string& str);
 
 // 템플릿 인터페이스
 template<typename Key, typename Value>
@@ -141,4 +200,14 @@ public:
     unordered_map<int32, MapInfo> MakeDict() override;
 
     static MapData LoadFromJsonFile(const string& path);
+};
+
+class BuffData : public ILoader<int32, BuffInfo>
+{
+public:
+    vector<BuffInfo> buffs;
+
+    unordered_map<int32, BuffInfo> MakeDict() override;
+
+    static BuffData LoadFromJsonFile(const string& path);
 };

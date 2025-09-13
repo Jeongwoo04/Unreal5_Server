@@ -61,9 +61,10 @@ public:
 	SpatialHashGrid<PlayerRef> _playerGrid;
 	SpatialHashGrid<MonsterRef> _monsterGrid;
 
-private:
+public:
 	ObjectManagerRef _objectManager;
 
+private:
 	unordered_map<uint64, PlayerRef> _players;
 	unordered_map<uint64, MonsterRef> _monsters;
 	unordered_map<uint64, ProjectileRef> _projectiles;

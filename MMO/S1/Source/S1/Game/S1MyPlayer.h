@@ -39,7 +39,6 @@ public:
 
 protected:
 	void InputRightClickMove(const FInputActionValue& value);
-	void SpawnClickFX(const FVector& Location);
 
 	void OnSkillSlotPressed(int32 SlotIndex);
 	void OnSkillSlotReleased(int32 SlotIndex);
@@ -106,8 +105,6 @@ protected:
 	UPROPERTY()
 	AS1MarkerActor* ClickMarker;
 
-public:
-	// 클릭 마커
 	void SpawnClickMarker(const FVector& Location);
 
 public:
@@ -116,13 +113,10 @@ public:
 	void PossessedBy(AController* NewController);
 	void TrySetupInput(AS1PlayerController* PC);
 	UInputMappingContext* GetDefaultMappingContext() const { return DefaultMappingContext; }
-	void SetState(const Protocol::StateMachine& State) { PosInfo.set_state(State); }
 
 protected:
-	const float MOVE_PACKET_SEND_DELAY = 0.2f;
-	float MovePacketSendTimer = MOVE_PACKET_SEND_DELAY;
-
-	FVector ClickTargetLocation;
+	FVector TargetLocation;
+	FVector NextMoveLocation;
 
 	bool DirtyFlag = false;
 	float MoveSendInterval = 0.1f;

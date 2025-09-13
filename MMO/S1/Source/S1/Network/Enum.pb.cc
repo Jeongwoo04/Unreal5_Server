@@ -37,18 +37,19 @@ const char descriptor_table_protodef_Enum_2eproto[] PROTOBUF_SECTION_VARIABLE(pr
   "\031\n\025CREATURE_TYPE_MONSTER\020\002\022\025\n\021CREATURE_T"
   "YPE_NPC\020\003*h\n\nPlayerType\022\024\n\020PLAYER_TYPE_N"
   "ONE\020\000\022\026\n\022PLAYER_TYPE_KNIGHT\020\001\022\024\n\020PLAYER_"
-  "TYPE_MAGE\020\002\022\026\n\022PLAYER_TYPE_ARCHER\020\003*\243\001\n\014"
+  "TYPE_MAGE\020\002\022\026\n\022PLAYER_TYPE_ARCHER\020\003*\276\001\n\014"
   "StateMachine\022\026\n\022STATE_MACHINE_NONE\020\000\022\026\n\022"
   "STATE_MACHINE_IDLE\020\001\022\030\n\024STATE_MACHINE_PA"
-  "TROL\020\002\022\030\n\024STATE_MACHINE_MOVING\020\003\022\027\n\023STAT"
-  "E_MACHINE_SKILL\020\004\022\026\n\022STATE_MACHINE_DEAD\020"
-  "\005*T\n\tSkillType\022\016\n\nSKILL_NONE\020\000\022\016\n\nSKILL_"
-  "AUTO\020\001\022\024\n\020SKILL_PROJECTILE\020\002\022\021\n\rSKILL_AO"
-  "E_DOT\020\003b\006proto3"
+  "TROL\020\002\022\030\n\024STATE_MACHINE_MOVING\020\003\022\031\n\025STAT"
+  "E_MACHINE_CASTING\020\004\022\027\n\023STATE_MACHINE_SKI"
+  "LL\020\005\022\026\n\022STATE_MACHINE_DEAD\020\006*T\n\tSkillTyp"
+  "e\022\016\n\nSKILL_NONE\020\000\022\016\n\nSKILL_AUTO\020\001\022\024\n\020SKI"
+  "LL_PROJECTILE\020\002\022\021\n\rSKILL_AOE_DOT\020\003b\006prot"
+  "o3"
   ;
 static ::_pbi::once_flag descriptor_table_Enum_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Enum_2eproto = {
-    false, false, 615, descriptor_table_protodef_Enum_2eproto,
+    false, false, 642, descriptor_table_protodef_Enum_2eproto,
     "Enum.proto",
     &descriptor_table_Enum_2eproto_once, nullptr, 0, 0,
     schemas, file_default_instances, TableStruct_Enum_2eproto::offsets,
@@ -122,6 +123,7 @@ bool StateMachine_IsValid(int value) {
     case 3:
     case 4:
     case 5:
+    case 6:
       return true;
     default:
       return false;

@@ -133,8 +133,9 @@ enum StateMachine : int {
   STATE_MACHINE_IDLE = 1,
   STATE_MACHINE_PATROL = 2,
   STATE_MACHINE_MOVING = 3,
-  STATE_MACHINE_SKILL = 4,
-  STATE_MACHINE_DEAD = 5,
+  STATE_MACHINE_CASTING = 4,
+  STATE_MACHINE_SKILL = 5,
+  STATE_MACHINE_DEAD = 6,
   StateMachine_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   StateMachine_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };

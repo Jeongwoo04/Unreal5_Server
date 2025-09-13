@@ -17,4 +17,7 @@ void DataManager::LoadData(const std::string& basePath)
 
     auto MapData = MapData::LoadFromJsonFile(basePath + "/MapData.json");
     MapDataDict = MapData.MakeDict();
+
+    auto BuffData = BuffData::LoadFromJsonFile(basePath + "/BuffData.json");
+    BuffDict = BuffData.MakeDict();
 }

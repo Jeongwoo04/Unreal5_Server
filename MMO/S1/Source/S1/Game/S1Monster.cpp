@@ -44,3 +44,8 @@ AS1Monster::~AS1Monster()
 {
 
 }
+
+void AS1Monster::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}

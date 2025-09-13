@@ -80,8 +80,3 @@ void AS1Player::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-
-bool AS1Player::IsMyPlayer()
-{
-	return Cast<AS1MyPlayer>(this) != nullptr;
-}

@@ -21,7 +21,19 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-	virtual void TickServerMove(float DeltaTime);
+	virtual void UpdateState(float DeltaTime);
+	virtual void ChangeState(Protocol::StateMachine NewState);
+
+	virtual void UpdateIdle(float DeltaTime);
+	virtual void UpdateMoving(float DeltaTime);
+	virtual void UpdateCasting(float DeltaTime);
+	virtual void UpdateSkill(float DeltaTime);
+	virtual void UpdateDead(float DeltaTime);
+
+	virtual void UpdateAnim(float DeltaTime);
+
+	virtual void OnExitState();
+	virtual void OnEnterState();
 
 public:
 	virtual void Move(const Protocol::PosInfo& Info);
@@ -34,13 +46,10 @@ public:
 protected:
 	UPROPERTY()
 	FVector TargetPos;
-
 	UPROPERTY()
 	FRotator TargetRot;
 
-	bool MoveFlag = false;
 	FVector PreviousLoc;
 
 	Protocol::PosInfo PosInfo;
-
 };

@@ -1,0 +1,40 @@
+{
+  "buffs": [
+    {
+      "buffId": 40101,
+      "name": "Burn",
+      "duration": 5.0,
+      "tickInterval": 1.0,
+      "effectType": "HP",
+      "effectPerTick": -2.0,
+      "stackable": false,
+      "maxStacks": 1,
+      "refreshOnApply": true,
+      "movementModifier": 1.0,
+      "attackModifier": 1.0,
+      "isCrowdControl": false,
+      "root": false,
+      "stun": false,
+      "silence": false,
+      "priority": 0
+    },
+    {
+      "buffId": 40201,
+      "name": "FrozenField",
+      "duration": 3.0,
+      "tickInterval": 1.0,
+      "effectType": "HP",
+      "effectPerTick": -1.0,
+      "stackable": false,
+      "maxStacks": 1,
+      "refreshOnApply": true,
+      "movementModifier": 0.5,
+      "attackModifier": 1.0,
+      "isCrowdControl": true,
+      "root": false,
+      "stun": false,
+      "silence": false,
+      "priority": 1
+    }
+  ]
+}
