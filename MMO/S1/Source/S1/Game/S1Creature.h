@@ -21,6 +21,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+
 	virtual void UpdateState(float DeltaTime);
 	virtual void ChangeState(Protocol::StateMachine NewState);
 
@@ -30,10 +31,7 @@ protected:
 	virtual void UpdateSkill(float DeltaTime);
 	virtual void UpdateDead(float DeltaTime);
 
-	virtual void UpdateAnim(float DeltaTime);
-
-	virtual void OnExitState();
-	virtual void OnEnterState();
+	virtual void UpdateAnim();
 
 public:
 	virtual void Move(const Protocol::PosInfo& Info);
@@ -48,8 +46,6 @@ protected:
 	FVector TargetPos;
 	UPROPERTY()
 	FRotator TargetRot;
-
-	FVector PreviousLoc;
 
 	Protocol::PosInfo PosInfo;
 };

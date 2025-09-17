@@ -126,6 +126,7 @@ SkillData SkillData::LoadFromJsonFile(const string& path)
         skill.id = element["id"].get<int32>();
         skill.name = element["name"].get<string>();
         skill.cooldown = element["cooldown"].get<float>();
+        skill.castTime = element["castTime"].get<float>();
 
         if (element.contains("actions"))
         {
@@ -134,10 +135,11 @@ SkillData SkillData::LoadFromJsonFile(const string& path)
                 ActionData action;
 
                 // type → enum
-                string typeStr = actionElem["type"].get<string>();
+                string typeStr = actionElem["actionType"].get<string>();
                 // 공통 필드
                 action.actionType = ToActionType(typeStr);
-                action.distance = actionElem["distance"].get<float>();
+                action.distance = actionElem.value("distance", 0.f);
+                action.actionDelay = actionElem.value("actionDelay", 0.f);
 
                 switch (action.actionType)
                 {

@@ -62,7 +62,7 @@ private:
 	FTimerHandle SkillAreaUpdateTimer;
 	float SkillAreaUpdateInterval = 0.05f;
 
-	int32 CurrentTargetingSkillID = -1;
+	int32 CurrentSkillID = -1;
 	bool bIsSkillTargeting = false;
 
 	float CurrentSkillDistance = 0.f; // distance

@@ -31,6 +31,8 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void UpdateMoving(float DeltaTime) override;
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -87,13 +89,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* Skill1Action;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* Skill2Action;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* Skill3Action;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* Skill4Action;
 

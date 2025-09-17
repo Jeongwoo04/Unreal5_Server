@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SkillSystem.h"
+#include "SkillState.h"
 #include "ObjectManager.h"
 #include "CombatSystem.h"
 #include "BuffSystem.h"
@@ -17,30 +18,121 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 	if (it == skillDict->end())
 		return;
 
+	uint64 now = GetTickCount64();
+
 	const Skill& skill = it->second;
 
 	SkillInstance instance;
 	instance.caster = caster;
 	instance.skill = &skill;
 	instance.targetPos = targetPos;
+	instance.isCasting = (skill.castTime > 0.0f);
+	instance.actionDelayElapsed = 0.f;
+	instance.currentActionIndex = 0;
+
+	if (instance.isCasting == true)
+	{
+		caster->_activeSkill = &instance;
+		caster->SetState(Protocol::STATE_MACHINE_CASTING);
+		
+		if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
+			static_pointer_cast<Player>(caster)->StartSkillCast(skillId, now, skill.castTime);
+		
+		// 캐스팅시작 패킷전송
+		Protocol::S_SKILL_CAST_START pkt;
+		pkt.set_object_id(caster->GetId());
+		pkt.set_casttime(instance.skill->castTime);
+		pkt.mutable_info()->set_skillid(skillId);
+
+		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+		caster->GetRoom()->Broadcast(sendBuffer, caster->GetId());
+	}
+	else
+	{
+		if (!skill.actions.empty())
+		{
+			HandleAction(caster, targetPos, skill.actions[0]);
+			if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
+			{
+				static_pointer_cast<Player>(caster)->StartSkillCooldown(skillId, now);
+			}
+		}
+	}
 
 	activeSkills.push_back(instance);
+}
 
-	for (auto& action : skill.actions)
+void SkillSystem::CancelCasting(ObjectRef caster)
+{
+	if (caster->_activeSkill && caster->_activeSkill->isCasting)
 	{
-		HandleAction(caster, targetPos, action);
+		caster->_activeSkill->canceled = true;
+		caster->_activeSkill = nullptr;
+
+		// Update에서 제거
 	}
 }
 
 void SkillSystem::Update()
 {
+	uint64 now = GetTickCount64();
+
 	for (auto it = activeSkills.begin(); it != activeSkills.end(); )
 	{
-		it->elapsedTime += 0.1f;
-		if (it->elapsedTime >= it->skill->cooldown)
+		SkillInstance& inst = *it;
+
+		// 취소된 스킬이면 제거
+		if (inst.canceled)
+		{
 			it = activeSkills.erase(it);
-		else
+			continue;
+		}
+
+		// 캐스팅 중이면 캐스팅 처리
+		if (inst.isCasting)
+		{
+			if (now >= static_pointer_cast<Player>(inst.caster)->GetSkillState(inst.skill->id)->GetCastEndTime())
+			{
+				inst.isCasting = false;
+				inst.currentActionIndex = 0;
+				inst.actionDelayElapsed = 0.f;
+				inst.caster->SetState(Protocol::STATE_MACHINE_IDLE);
+				// 캐스팅 완료 패킷 전송
+				{
+					S_SKILL_CAST_SUCCESS pkt;
+					pkt.set_object_id(inst.caster->GetId());
+					pkt.set_skillid(inst.skill->id);
+					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+					inst.caster->GetRoom()->Broadcast(sendBuffer, inst.caster->GetId());
+				}
+
+				if (inst.caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
+					static_pointer_cast<Player>(inst.caster)->StartSkillCooldown(inst.skill->id, now);
+			}
 			++it;
+			continue;
+		}
+
+		// 캐스팅이 끝났다면 액션 실행
+		if (inst.currentActionIndex < (int32)inst.skill->actions.size())
+		{
+			inst.actionDelayElapsed += 0.1f;
+			const ActionData& action = inst.skill->actions[inst.currentActionIndex];
+
+			if (inst.actionDelayElapsed >= action.actionDelay)
+			{
+				HandleAction(inst.caster, inst.targetPos, action);
+
+				inst.currentActionIndex++;
+				inst.actionDelayElapsed = 0.f; // 다음 액션 준비
+			}
+			++it;
+			continue;
+		}
+		if (inst.currentActionIndex >= (int32)inst.skill->actions.size())
+		{
+			it = activeSkills.erase(it);
+		}
 	}
 }
 
@@ -115,29 +207,29 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 	else if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
 		auto monsterCandidates = caster->GetRoom()->_monsterGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action.radius);
-		vector<MonsterRef> hitMonsters;
+		vector<MonsterRef> targetMonsters;
 
 		switch (action.shape)
 		{
 		case ShapeType::Circle:
-			hitMonsters = GeometryUtil::FindInCircle2D(monsterCandidates, center, action.radius);
+			targetMonsters = GeometryUtil::FindInCircle2D(monsterCandidates, center, action.radius);
 			break;
 		case ShapeType::Cone:
-			hitMonsters = GeometryUtil::FindInCone2D(monsterCandidates, center, forward, action.angle, action.radius);
+			targetMonsters = GeometryUtil::FindInCone2D(monsterCandidates, center, forward, action.angle, action.radius);
 			break;
 		case ShapeType::Rectangle:
-			hitMonsters = GeometryUtil::FindInRectangle2D(monsterCandidates, center, forward, action.width, action.length);
+			targetMonsters = GeometryUtil::FindInRectangle2D(monsterCandidates, center, forward, action.width, action.length);
 			break;
 		case ShapeType::Line:
-			hitMonsters = GeometryUtil::FindInLine2D(monsterCandidates, center, targetPos, action.radius);
+			targetMonsters = GeometryUtil::FindInLine2D(monsterCandidates, center, targetPos, action.radius);
 			break;
 		default:
 			break;
 		}
 
-		for (auto m : hitMonsters)
+		for (auto target : targetMonsters)
 		{
-			CombatSystem::Instance().ApplyDamage(caster, ObjectRef(m), action.damage);
+			CombatSystem::Instance().ApplyDamage(caster, static_pointer_cast<Object>(target), action.damage);
 		}
 	}
 }

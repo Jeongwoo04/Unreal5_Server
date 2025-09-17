@@ -7,6 +7,7 @@
 using namespace Protocol;
 
 using RoomRef = shared_ptr<class Room>;
+struct SkillInstance;
 
 struct BuffInstance
 {
@@ -61,6 +62,7 @@ public:
 	int32 _spTableId;
 
 	float _collisionRadius;
+	SkillInstance* _activeSkill = nullptr;
 
 protected:
 	Protocol::StateMachine _state = Protocol::STATE_MACHINE_IDLE;

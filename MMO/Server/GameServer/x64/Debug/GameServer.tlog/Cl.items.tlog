@@ -21,6 +21,7 @@ C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\Protocol.pb.cc;C:\Users\jeso
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\Room.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\Room.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\RoomManager.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\RoomManager.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\ServerPacketHandler.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\ServerPacketHandler.obj
+C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\SkillState.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\SkillState.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\SkillSystem.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\SkillSystem.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\SpatialHashGrid.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\SpatialHashGrid.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\Struct.pb.cc;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\Struct.pb.obj

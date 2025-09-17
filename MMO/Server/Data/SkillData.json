@@ -2,38 +2,77 @@
   "skills": [
     {
       "id": 1,
-      "name": "Melee",
+      "name": "Melee_Slash",
       "cooldown": 1.0,
-      "damage": 10,
-      "skillType": "SkillAuto",
-      "distance": 1.0
+      "castTime": 0.0,
+      "actions": [
+        {
+          "actionType": "Attack",
+          "shape": "Circle",
+          "damage": 10,
+          "radius": 1.0,
+          "distance": 1.0
+        }
+      ]
     },
     {
       "id": 2,
-      "name": "Arrow",
-      "cooldown": 1.0,
-      "damage": 5,
-      "skillType": "SkillProjectile",
-      "distance": 10.0,
-      "dataId": 30101
+      "name": "Ranged_Arrow",
+      "cooldown": 1.5,
+      "castTime": 0.5,
+      "actions": [
+        {
+          "actionType": "SpawnProjectile",
+          "dataId": 30101,
+          "distance": 10.0
+        }
+      ]
     },
     {
       "id": 3,
-      "name": "Fireball",
-      "cooldown": 10.0,
-      "damage": 5,
-      "skillType": "SkillProjectile",
-      "distance": 12.0,
-      "dataId": 30102
+      "name": "SkillB_Fireball",
+      "cooldown": 12.0,
+      "castTime": 1.5,
+      "actions": [
+        {
+          "actionType": "SpawnProjectile",
+          "dataId": 30102,
+          "distance": 12.0
+        }
+      ]
     },
     {
       "id": 4,
-      "name": "Blizard",
+      "name": "SkillC_FrozenField",
       "cooldown": 20.0,
-      "damage": 10,
-      "skillType": "SkillAoe",
-      "distance": 15.0,
-      "dataId": 30103
+      "castTime": 2.5,
+      "actions": [
+        {
+          "actionType": "SpawnField",
+          "dataId": 30201,
+          "distance": 8.0
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "SkillA_DashStrike",
+      "cooldown": 8.0,
+      "castTime": 0.0,
+      "actions": [
+        {
+          "actionType": "Move",
+          "moveDistance": 7.0,
+          "actionDelay": 0.2
+        },
+        {
+          "actionType": "Attack",
+          "shape": "Circle",
+          "damage": 15,
+          "radius": 1.0,
+          "distance": 1.0
+        }
+      ]
     }
   ]
-} 
+}

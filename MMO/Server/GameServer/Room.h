@@ -4,6 +4,7 @@
 
 using GameMapRef = shared_ptr<class GameMap>;
 using ObjectManagerRef = shared_ptr<class ObjectManager>;
+using SkillSystemRef = shared_ptr<class SkillSystem>;
 using RoomRef = shared_ptr<class Room>;
 using MonsterRef = shared_ptr<class Monster>;
 using ProjectileRef = shared_ptr<class Projectile>;
@@ -63,6 +64,7 @@ public:
 
 public:
 	ObjectManagerRef _objectManager;
+	SkillSystemRef _skillSystem;
 
 private:
 	unordered_map<uint64, PlayerRef> _players;

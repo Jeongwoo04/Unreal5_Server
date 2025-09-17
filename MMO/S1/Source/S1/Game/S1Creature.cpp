@@ -36,9 +36,7 @@ void AS1Creature::BeginPlay()
 void AS1Creature::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	UpdateState(DeltaTime);
-	UpdateAnim(DeltaTime);
 }
 
 void AS1Creature::UpdateState(float DeltaTime)
@@ -73,34 +71,31 @@ void AS1Creature::ChangeState(Protocol::StateMachine NewState)
 	if (PosInfo.state() == NewState)
 		return;
 
-	OnExitState();
-
 	PosInfo.set_state(NewState);
-
-	OnEnterState();
+	//UpdateAnim();
 }
 
 void AS1Creature::UpdateIdle(float DeltaTime)
 {
+
 }
 
 void AS1Creature::UpdateMoving(float DeltaTime)
 {
-	PreviousLoc = GetActorLocation();
+	FVector PreviousLoc = GetActorLocation();
 
-	// 보간 이동
-	FVector NewLocation = FMath::VInterpTo(PreviousLoc, TargetPos, DeltaTime, 10.f);
-	SetActorLocation(NewLocation);
+	SetActorRotation(TargetRot);
 
-	FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 10.f);
-	SetActorRotation(NewRot);
+	FVector NewLoc = FMath::VInterpConstantTo(PreviousLoc, TargetPos, DeltaTime, PosInfo.speed());
+	SetActorLocation(NewLoc);
 
-	// Square 오차범위가 크면. Moving 초반에 애니메이션 동기화 깨짐
-	if (FVector::DistSquared(NewLocation, TargetPos) < FMath::Square(5.f)) // 1cm 이내
+	float DistToTarget = FVector::Dist(NewLoc, TargetPos);
+	if (DistToTarget <= PosInfo.speed() * DeltaTime)
 	{
-		SetActorLocation(TargetPos);
-		SetActorRotation(TargetRot);
+		NewLoc = TargetPos;
 	}
+
+	SetActorLocation(NewLoc);
 }
 
 void AS1Creature::UpdateCasting(float DeltaTime)
@@ -115,12 +110,13 @@ void AS1Creature::UpdateDead(float DeltaTime)
 {
 }
 
-void AS1Creature::UpdateAnim(float DeltaTime)
+void AS1Creature::UpdateAnim()
 {
 	if (US1AnimInstance* AI = Cast<US1AnimInstance>(GetMesh()->GetAnimInstance()))
 	{
 		AI->SetAnimState(static_cast<EStateMachine>(PosInfo.state()));
 		AI->GroundSpeed = PosInfo.speed();
+		// MoveSpeed , AttackSpeed 등등 업데이트
 	}
 }
 

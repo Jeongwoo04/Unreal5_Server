@@ -40,7 +40,6 @@ protected:
 	FRotator TargetRot;
 
 	bool MoveFlag = false;
-	FVector PreviousLoc;
 
 	Protocol::PosInfo PosInfo;
 

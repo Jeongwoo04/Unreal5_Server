@@ -1,11 +1,19 @@
 #include "pch.h"
 #include "Player.h"
+#include "SkillState.h"
 
 Player::Player()
 {
 	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_PLAYER);
 
 	_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
+
+    for (auto& it : DataManager::Instance().SkillDict)
+    {
+        int32 id = it.first;
+        const Skill& s = it.second;
+        _skillStates.emplace(id, make_shared<SkillState>(id, s.cooldown));
+    }
 }
 
 Player::~Player()
@@ -49,4 +57,39 @@ void Player::OnDead(ObjectRef attacker)
     room->Broadcast(sendBuffer);
 
     room->LeaveRoom(shared_from_this());
+}
+
+bool Player::CanUseSkill(int32 skillId, uint64 now) const
+{
+    auto it = _skillStates.find(skillId);
+    if (it == _skillStates.end())
+        return false;
+
+    SkillStateRef state = it->second;
+
+    // 쿨타임 / 캐스팅 중 체크
+    if (state->IsOnCooldown(now) || state->IsCasting(now))
+        return false;
+
+    // 자원 체크
+
+    return true;
+}
+
+void Player::StartSkillCast(int32 skillId, uint64 now, float castTime)
+{
+    auto it = _skillStates.find(skillId);
+    if (it == _skillStates.end())
+        return;
+
+    it->second->StartCasting(now, castTime);
+}
+
+void Player::StartSkillCooldown(int32 skillId, uint64 now)
+{
+    auto it = _skillStates.find(skillId);
+    if (it == _skillStates.end())
+        return;
+
+    it->second->StartCooldown(now);
 }

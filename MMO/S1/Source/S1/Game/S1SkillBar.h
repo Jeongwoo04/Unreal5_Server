@@ -10,6 +10,7 @@
  * 
  */
 class US1SkillSlot;
+class US1CastingBar;
 
 UCLASS()
 class S1_API US1SkillBar : public UUserWidget
@@ -25,6 +26,9 @@ public:
     void StartSlotCooldown(int32 SlotIndex, float CooldownTime);
 
 private:
+    UPROPERTY(meta = (BindWidget))
+    US1CastingBar* CastingBar;
+
     UPROPERTY(meta = (BindWidget))
     US1SkillSlot* WBP_SkillSlot_0;
 

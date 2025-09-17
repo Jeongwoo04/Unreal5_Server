@@ -49,7 +49,7 @@ void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float
 	if (!CachedPlayer)
 		return;
 
-	CurrentTargetingSkillID = SkillID;
+	CurrentSkillID = SkillID;
 	bIsSkillTargeting = true;
 	CurrentSkillDistance = Distance;
 	CurrentSkillRange = Range;
@@ -139,7 +139,7 @@ void US1SkillComponent::ConfirmSkillTargeting()
 
 	// TODO : 스킬 사용 -> 캐스팅 State 추가 후 적용 -> 패킷 전송
 	C_SKILL SkillPkt;
-	SkillPkt.mutable_info()->set_skillid(CurrentTargetingSkillID);
+	SkillPkt.mutable_info()->set_skillid(CurrentSkillID);
 
 	SEND_PACKET(SkillPkt);
 
@@ -216,7 +216,7 @@ void US1SkillComponent::ClearSkillMarkers()
 	}
 
 	bIsSkillTargeting = false;
-	CurrentTargetingSkillID = -1;
+	CurrentSkillID = -1;
 	CurrentSkillDistance = 0.f;
 }
 

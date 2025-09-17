@@ -26,7 +26,7 @@ void AS1Projectile::BeginPlay()
 		PosInfo.set_y(Location.Y);
 		PosInfo.set_z(Location.Z);
 		PosInfo.set_yaw(GetActorRotation().Yaw);
-		PosInfo.set_state(Protocol::STATE_MACHINE_IDLE);
+		PosInfo.set_state(Protocol::STATE_MACHINE_MOVING);
 	}
 }
 
@@ -35,31 +35,30 @@ void AS1Projectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (MoveFlag)
+	if (MoveFlag == false)
+		return;
+
+	// 보간 이동
+	FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetPos, DeltaTime, 10.f);
+	SetActorLocation(NewLocation);
+
+	FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 10.f);
+	SetActorRotation(NewRot);
+
+	if (FVector::DistSquared(NewLocation, TargetPos) < FMath::Square(1.f)) // 1cm 이내
 	{
-		PreviousLoc = GetActorLocation();
-
-		// 보간 이동
-		FVector NewLocation = FMath::VInterpTo(PreviousLoc, TargetPos, DeltaTime, 10.f);
-		SetActorLocation(NewLocation);
-
-		FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 10.f);
-		SetActorRotation(NewRot);
-
-		if (FVector::DistSquared(NewLocation, TargetPos) < FMath::Square(1.f)) // 1cm 이내
-		{
-			MoveFlag = false;
-			SetActorLocation(TargetPos);
-			SetActorRotation(TargetRot);
-		}
+		SetActorLocation(TargetPos);
+		SetActorRotation(TargetRot);
 	}
 
+	MoveFlag = false;
 }
 
 void AS1Projectile::Move(const Protocol::PosInfo& Info)
 {
 	TargetPos = FVector(Info.x(), Info.y(), Info.z());
 	TargetRot = FRotator(0.f, Info.yaw(), 0.f);
+
 	MoveFlag = true;
 }
 

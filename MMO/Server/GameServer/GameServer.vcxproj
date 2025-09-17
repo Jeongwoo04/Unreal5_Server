@@ -183,6 +183,7 @@
     <ClCompile Include="Room.cpp" />
     <ClCompile Include="RoomManager.cpp" />
     <ClCompile Include="ServerPacketHandler.cpp" />
+    <ClCompile Include="SkillState.cpp" />
     <ClCompile Include="SkillSystem.cpp" />
     <ClCompile Include="SpatialHashGrid.cpp" />
     <ClCompile Include="Struct.pb.cc">
@@ -214,6 +215,7 @@
     <ClInclude Include="Room.h" />
     <ClInclude Include="RoomManager.h" />
     <ClInclude Include="ServerPacketHandler.h" />
+    <ClInclude Include="SkillState.h" />
     <ClInclude Include="SkillSystem.h" />
     <ClInclude Include="SpatialHashGrid.h" />
     <ClInclude Include="Struct.pb.h" />

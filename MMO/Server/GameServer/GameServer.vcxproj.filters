@@ -111,6 +111,9 @@
     <ClCompile Include="SkillSystem.cpp">
       <Filter>Game\System</Filter>
     </ClCompile>
+    <ClCompile Include="SkillState.cpp">
+      <Filter>Game\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -189,6 +192,9 @@
       <Filter>Game\System</Filter>
     </ClInclude>
     <ClInclude Include="SkillSystem.h">
+      <Filter>Game\System</Filter>
+    </ClInclude>
+    <ClInclude Include="SkillState.h">
       <Filter>Game\System</Filter>
     </ClInclude>
   </ItemGroup>

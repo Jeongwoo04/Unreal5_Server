@@ -88,55 +88,71 @@ void AS1MyPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 void AS1MyPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
 
-	if (DirtyFlag == false)
+void AS1MyPlayer::UpdateMoving(float DeltaTime)
+{
+	if (!DirtyFlag)
 		return;
 
-	FVector Dir = FVector::ZeroVector;
-	
-	if (!TargetLocation.IsZero())
-	{
-		FVector ToTarget = TargetLocation - GetActorLocation();
-		FVector2D ToTarget2D(ToTarget.X, ToTarget.Y);
-		
-		float Dist = ToTarget2D.Size();
-		const float ArrivalThreshold = 10.0f; // 허용 오차
-		
-		if (Dist > ArrivalThreshold)
-		{
-			Dir = ToTarget.GetSafeNormal();
-			AddMovementInput(Dir);
+	if (TargetLocation.IsZero())
+		return;
 
-			NextMoveLocation = GetActorLocation() + Dir * GetVelocity().Size() * DeltaTime;
-		}
-		else
-		{
-			NextMoveLocation = GetActorLocation(); // 도착
-		}
+	FVector CurrentLocation = GetActorLocation();
+	FVector ToTarget = TargetLocation - CurrentLocation;
+
+	// 2D 이동: Z 고정
+	FVector2D ToTarget2D(ToTarget.X, ToTarget.Y);
+	float Dist2D = ToTarget2D.Size();
+
+	if (Dist2D < KINDA_SMALL_NUMBER)
+	{
+		// 이미 거의 도착
+		NextMoveLocation = FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z);
+		SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z));
+		ChangeState(Protocol::STATE_MACHINE_IDLE);
+		SendMovePacket();
+		DirtyFlag = false;
+		TimeSinceLastSend = 0.f;
+		return;
 	}
 
-	if (!Dir.IsNearlyZero())
+	// 일정 속도로 이동
+	float MoveDt = PosInfo.speed() * DeltaTime;
+	FVector2D Dir2D = ToTarget2D.GetSafeNormal();
+	FVector2D Step2D = Dir2D * MoveDt;
+
+	// MoveDt가 남은 거리보다 크면, 목표 위치를 그대로 보간
+	if (MoveDt >= Dist2D)
 	{
-		DirtyFlag = true;
-
-		TimeSinceLastSend += DeltaTime;
-
-		if (TimeSinceLastSend >= MoveSendInterval)
-		{
-			ChangeState(Protocol::STATE_MACHINE_MOVING);
-			SendMovePacket();
-			TimeSinceLastSend = 0.f;
-		}
+		Step2D *= Dist2D / MoveDt; // 속도 유지하면서 마지막 이동량 보정
 	}
-	else
+
+	// 다음 위치 계산
+	NextMoveLocation.X += Step2D.X;
+	NextMoveLocation.Y += Step2D.Y;
+	NextMoveLocation.Z = CurrentLocation.Z; // Z는 고정
+
+	SetActorLocation(NextMoveLocation);
+
+	TimeSinceLastSend += DeltaTime;
+	if (TimeSinceLastSend >= MoveSendInterval)
 	{
-		if (DirtyFlag) // 멈춘 직후 Idle 패킷
-		{
-			ChangeState(Protocol::STATE_MACHINE_IDLE);
-			SendMovePacket();
-			DirtyFlag = false;
-			TimeSinceLastSend = 0.f;
-		}
+		ChangeState(Protocol::STATE_MACHINE_MOVING);
+		SendMovePacket();
+		TimeSinceLastSend = 0.f;
+	}
+
+	// 도착 체크
+	FVector2D NewToTarget2D(TargetLocation.X - NextMoveLocation.X, TargetLocation.Y - NextMoveLocation.Y);
+	if (NewToTarget2D.Size() < KINDA_SMALL_NUMBER)
+	{
+		NextMoveLocation = FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z);
+		SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z));
+		ChangeState(Protocol::STATE_MACHINE_IDLE);
+		SendMovePacket();
+		DirtyFlag = false;
+		TimeSinceLastSend = 0.f;
 	}
 }
 
@@ -188,7 +204,7 @@ void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 		if (SkillIt == S1DataManager::Instance().SkillDict.end())
 			return;
 
-		Skill& SkillData = SkillIt->second;
+		const Skill& SkillData = SkillIt->second;
 
 		SkillComponent->BeginSkillTargeting(SkillID, SkillData.distance, SkillData.range);
 
@@ -351,9 +367,6 @@ void AS1MyPlayer::SendMovePacket()
 	PosInfo.set_y(NextMoveLocation.Y);
 	PosInfo.set_z(NextMoveLocation.Z);
 	PosInfo.set_yaw(Rot.Yaw);
-
-	float Speed = GetVelocity().Size();
-	PosInfo.set_speed(Speed);
 
 	Info->CopyFrom(PosInfo);
 

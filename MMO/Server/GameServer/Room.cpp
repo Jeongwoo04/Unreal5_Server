@@ -3,12 +3,15 @@
 #include "Player.h"
 #include "Arrow.h"
 #include "ObjectManager.h"
+#include "SkillSystem.h"
 
 Room::Room()
 {
 	_gameMap = make_shared<GameMap>();
 	_objectManager = make_shared<ObjectManager>();
+	_skillSystem = make_shared<SkillSystem>();
 	_objectManager->Init();
+	_skillSystem->Init();
 }
 
 Room::~Room()
@@ -156,7 +159,7 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 	_playerGrid.ApplyMove(player, player->_gridPos, destPos);
 
 	player->SetPosInfo(pkt.info());
-	BroadcastMove(player->_posInfo);
+	BroadcastMove(player->_posInfo, player->GetId());
 }
 
 void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
@@ -164,96 +167,23 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	if (player == nullptr)
 		return;
 
-	//if (player->_posInfo.state() != Protocol::STATE_MACHINE_IDLE)
-	//	return;
+	int32 skillId = pkt.info().skillid();
 
-	const auto& skillInfo = pkt.info();
-
-	player->_posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
-	S_SKILL skillPkt;
-	skillPkt.set_object_id(player->GetId());
-	skillPkt.mutable_skill_info()->set_skillid(2);
-
-	{
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(skillPkt);
-		Broadcast(sendBuffer);
-	}
-
-	auto it = DataManager::Instance().SkillDict.find(pkt.info().skillid());
+	auto it = DataManager::Instance().SkillDict.find(skillId);
 	if (it == DataManager::Instance().SkillDict.end())
 		return;
 
 	const Skill& skillData = it->second;
+	uint64 now = ::GetTickCount64();
 
-	//switch (skillData.skillType)
-	//{
-	//case Protocol::SKILL_NONE:
-	//	break;
-	//case Protocol::SKILL_AUTO:
-	//{
-	//	const float attackRange = 1.f * CELL_SIZE;     // 평타 사거리
-	//	const float monsterRadius = 42.f;              // 몬스터 반지름
-	//	const float totalRadius = attackRange + monsterRadius;
+	// 1. 사용 가능 여부 체크 (쿨타임, 캐스팅, 자원)
+	if (!player->CanUseSkill(skillId, now))
+	{
+		// 실패 패킷 전송
+		return;
+	}
 
-	//	const float halfDegree = 45.f;
-	//	const float cosThreshold = cosf(halfDegree * (PI / 180.f));
-
-	//	const Vector3 attWorldPos = Vector3(player->_posInfo);
-	//	const float yaw = player->_posInfo.yaw();
-
-	//	const Vector3 forward(cosf(yaw), sinf(yaw), player->_posInfo.z()); // _x, _y 사용, _z는 무시
-
-	//	const int32 gridRadius = static_cast<int32>(ceil(totalRadius / CELL_SIZE));
-	//	const Vector2Int attGridPos(player->_posInfo);
-
-	//	vector<MonsterRef> candidates = _monsterGrid.FindAround(attGridPos, gridRadius);
-
-	//	for (MonsterRef monster : candidates)
-	//	{
-	//		if (monster == nullptr)
-	//			continue;
-
-	//		Vector3 targetWorldPos = Vector3(monster->_posInfo);
-	//		Vector3 targetDir = targetWorldPos - attWorldPos;
-
-	//		float distSq = targetDir.LengthSquared2D();  // _x, _y만 사용한 길이
-	//		if (distSq > totalRadius * totalRadius)
-	//			continue;
-
-	//		Vector3 dir = targetDir.Normalized2D(); // _x, _y만 정규화
-	//		float dot = dir.Dot2D(forward);
-
-	//		if (dot >= cosThreshold)
-	//		{
-	//			//monster->OnDamaged(player, player->_statInfo.attack() + skillData.damage);
-	//		}
-	//	}
-	//}
-	//	break;
-	//case Protocol::SKILL_PROJECTILE:
-	//{
-	//	ProjectileRef proj = static_pointer_cast<Projectile>(_objectManager->Spawn(30101, false, player->_posInfo));
-	//	if (proj == nullptr)
-	//		return;
-
-	//	proj->SetOwner(player);
-	//	proj->SetData(skillData);
-
-	//	proj->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-	//	proj->_statInfo.set_speed(proj->_projectileInfo.speed());
-
-	//	EnterRoom(static_pointer_cast<Object>(proj));
-	//}
-	//	break;
-	//case Protocol::SKILL_AOE_DOT:
-	//	break;
-	//}
-
-	player->SetState(Protocol::STATE_MACHINE_IDLE);
-	S_MOVE movePkt;
-	movePkt.mutable_info()->CopyFrom(player->_posInfo);
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
-	Broadcast(sendBuffer);
+	_skillSystem->ExecuteSkill(player, skillId, { pkt.x(), pkt.y(), pkt.z() });
 }
 
 RoomRef Room::GetRoomRef()

@@ -64,6 +64,7 @@ ObjectRef ObjectManager::Spawn(int32 dataId, bool randPos, const Vector3& pos, f
     if (statIt != DataManager::Instance().StatDict.end())
     {
         newObject->_statInfo.CopyFrom(statIt->second);
+        newObject->_posInfo.set_speed(statIt->second.speed());
     }
 
     if (auto proj = dynamic_pointer_cast<Projectile>(newObject))

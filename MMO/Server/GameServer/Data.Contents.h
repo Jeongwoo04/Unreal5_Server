@@ -34,6 +34,7 @@ struct ActionData
 {
     ActionType actionType = ActionType::None;
     float distance = 0.f;
+    float actionDelay = 0.f;
 };
 
 struct AttackActionData : public ActionData
@@ -67,7 +68,8 @@ struct Skill
 {
     int32 id = 0;
     string name;
-    float cooldown = 0;
+    float cooldown = 0.f;
+    float castTime = 0.f;
     vector<ActionData> actions;
 };
 
