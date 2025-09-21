@@ -5,6 +5,9 @@
 #include "S1MyPlayer.h"
 #include "S1MarkerActor.h"
 #include "S1PlayerController.h"
+#include "Data/S1DataManager.h"
+#include "S1SkillBar.h"
+#include "S1CastingBar.h"
 #include "TimerManager.h"
 #include "Protocol.pb.h"
 #include "S1.h"
@@ -39,7 +42,10 @@ void US1SkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	if (CurrentSkillState.SkillID > 0)
+	{
+		TickSkillState(DeltaTime);
+	}
 }
 
 void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float Range)
@@ -137,9 +143,50 @@ void US1SkillComponent::ConfirmSkillTargeting()
 
 	bIsSkillTargeting = false;
 
-	// TODO : 스킬 사용 -> 캐스팅 State 추가 후 적용 -> 패킷 전송
+	CurrentSkillState = FSkillState();
+	CurrentSkillState.SkillID = CurrentSkillID;
+	CurrentSkillState.TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
+	CurrentSkillState.CastID += 1; // 클라이언트 고유 CastId
+
+	// TODO: CastTime 설정 필요
+	auto SkillIt = S1DataManager::Instance().SkillDict.find(CurrentSkillID);
+	if (SkillIt != S1DataManager::Instance().SkillDict.end())
+	{
+		CurrentSkillState.name = SkillIt->second.name.c_str();
+		CurrentSkillState.CastTime = SkillIt->second.castTime;
+		CurrentSkillState.bIsCasting = CurrentSkillState.CastTime > 0.f;
+
+		// ActionInstances 초기화
+		CurrentSkillState.ActionInstances.Empty();
+		for (const auto& Action : SkillIt->second.actions)
+		{
+			FClientActionInstance Instance;
+			Instance.Action = &Action;
+			Instance.Elapsed = 0.f;
+			Instance.bTriggered = false;
+			CurrentSkillState.ActionInstances.Add(Instance);
+		}
+
+		if (CurrentSkillState.bIsCasting)
+		{
+			// 캐스팅 시작
+			CachedPlayer->StartCasting(CurrentSkillState);
+		}
+		else
+		{
+			// 즉발이면 바로 액션 Tick 수행
+			CurrentSkillState.bIsCasting = false;
+			CurrentSkillState.CurrentActionIndex = 0;
+		}
+	}
+
+	// 서버 패킷 전송
 	C_SKILL SkillPkt;
-	SkillPkt.mutable_info()->set_skillid(CurrentSkillID);
+	SkillPkt.mutable_info()->set_skillid(CurrentSkillState.SkillID);
+	SkillPkt.set_x(CurrentSkillState.TargetPos.X);
+	SkillPkt.set_y(CurrentSkillState.TargetPos.Y);
+	SkillPkt.set_z(CurrentSkillState.TargetPos.Z);
+	// SkillPkt.mutable_info()->set_pos <- 추가해야됨
 
 	SEND_PACKET(SkillPkt);
 
@@ -220,3 +267,91 @@ void US1SkillComponent::ClearSkillMarkers()
 	CurrentSkillDistance = 0.f;
 }
 
+void US1SkillComponent::TickSkillState(float DeltaTime)
+{
+	if (CurrentSkillState.SkillID <= 0)
+		return;
+
+	// 캐스팅 진행
+	if (CurrentSkillState.bIsCasting)
+	{
+		CurrentSkillState.CastElapsed += DeltaTime;
+		if (CurrentSkillState.CastElapsed >= CurrentSkillState.CastTime)
+		{
+			CurrentSkillState.bIsCasting = false;
+			CurrentSkillState.CurrentActionIndex = 0;
+		}
+	}
+	else
+	{
+		// Action 순차 실행
+		if (CurrentSkillState.CurrentActionIndex < CurrentSkillState.ActionInstances.Num())
+		{
+			FClientActionInstance& ActionInst = CurrentSkillState.ActionInstances[CurrentSkillState.CurrentActionIndex];
+			ActionInst.Elapsed += DeltaTime;
+
+			if (!ActionInst.bTriggered && ActionInst.Elapsed >= ActionInst.Action->actionDelay)
+			{
+				ExecuteAction(ActionInst);
+				ActionInst.bTriggered = true;
+			}
+
+			// 다음 액션으로 이동
+			if (ActionInst.bTriggered)
+			{
+				CurrentSkillState.CurrentActionIndex++;
+			}
+		}
+		else
+		{
+			// 스킬 종료
+			CurrentSkillState = FSkillState();
+		}
+	}
+}
+
+void US1SkillComponent::ExecuteAction(FClientActionInstance& ActionInstance)
+{
+	if (!ActionInstance.Action || !CachedPlayer)
+		return;
+
+	const ClientAction& Action = *ActionInstance.Action;
+	FVector TargetPos = CurrentSkillState.TargetPos;
+
+	// 이미 실행된 액션이면 스킵
+	if (ActionInstance.bTriggered)
+		return;
+
+	// 실제 실행
+	switch (Action.actionType)
+	{
+	case ClientActionType::PlayAnimation:
+		//CachedPlayer->PlayAnimMontage(Action.animName);
+		break;
+
+	case ClientActionType::PlayEffect:
+		//CachedPlayer->SpawnEffect(Action.effectName, Action.attachBone);
+		break;
+
+	case ClientActionType::SpawnProjectile:
+		// 클라에서는 미리보기용 Spawn만 처리
+		//CachedPlayer->SpawnPreviewProjectile(Action.dataId, TargetPos);
+		break;
+
+	case ClientActionType::SpawnField:
+		//CachedPlayer->SpawnPreviewField(Action.dataId, TargetPos);
+		break;
+
+	case ClientActionType::Move:
+		//CachedPlayer->MoveSkill(Action.moveDistance, TargetPos);
+		break;
+
+	default:
+		UE_LOG(LogTemp, Warning, TEXT("Unknown ClientActionType in ExecuteAction"));
+		break;
+	}
+
+	// 액션 완료 처리
+	ActionInstance.bTriggered = true;
+	CurrentSkillState.CurrentActionIndex++;
+}

@@ -40,10 +40,11 @@ public:
 
     void LoadGameMap(string path);
 
-    vector<Vector2Int> FindPath(Vector2Int startCellPos, Vector2Int destCellPos, bool checkObjects = true);
-    vector<Vector3> SimplifyPathRaycast(Vector3& start, vector<Vector2Int>& path);
+    vector<Vector2Int> FindPath(const Vector2Int& startCellPos, const Vector2Int& destCellPos, bool checkObjects = true);
+    vector<Vector3> SimplifyPathRaycast(const Vector3& start, const vector<Vector2Int>& path);
     // RayCast로 장애물 사이의 시야 확인
-    bool HasLineOfSightRayCast(Vector3& from, Vector3& to);
+    bool HasLineOfSightRayCast(const Vector3& from, const Vector3& to);
+    Vector3 GetSafePosRayCast(const Vector3& from, const Vector3& to, Vector2Int* blocked);
 
 private:
     vector<Vector2Int> CalcCellPathFromParent(const vector<vector<Pos>>& parent, const Pos& dest);

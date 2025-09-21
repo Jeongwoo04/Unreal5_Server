@@ -162,6 +162,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Field.cpp" />
     <ClCompile Include="GameMap.cpp" />
     <ClCompile Include="GameServer.cpp" />
     <ClCompile Include="GameSession.cpp" />
@@ -201,6 +202,7 @@
     <ClInclude Include="Data.Contents.h" />
     <ClInclude Include="DataManager.h" />
     <ClInclude Include="Enum.pb.h" />
+    <ClInclude Include="Field.h" />
     <ClInclude Include="GameMap.h" />
     <ClInclude Include="GameSession.h" />
     <ClInclude Include="GameSessionManager.h" />

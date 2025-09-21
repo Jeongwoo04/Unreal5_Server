@@ -4,15 +4,16 @@
 #include "S1CastingBar.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
+#include "S1SkillComponent.h"
 
-void US1CastingBar::ShowCastingBar(float CastTime, const FString& SkillName)
+void US1CastingBar::ShowCastingBar(const FSkillState& CurrentState)
 {
     SetVisibility(ESlateVisibility::Visible);
     CastingBar_Fill->SetPercent(0.f);
-    CastingBar_Text->SetText(FText::FromString(SkillName));
+    CastingBar_Text->SetText(FText::FromString(CurrentState.name));
 
     CurrentCastTime = 0.f;
-    TotalCastTime = CastTime;
+    TotalCastTime = CurrentState.CastTime;
 }
 
 void US1CastingBar::CancelCasting()

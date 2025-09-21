@@ -109,6 +109,7 @@ protected:
 public:
 	void InitSkillBar();
 	void BindSkillBar(US1SkillBar* InSkillBar);
+	void StartCasting(const FSkillState& CurrentState);
 	void PossessedBy(AController* NewController);
 	void TrySetupInput(AS1PlayerController* PC);
 	UInputMappingContext* GetDefaultMappingContext() const { return DefaultMappingContext; }

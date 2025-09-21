@@ -101,6 +101,31 @@ inline bool CreatureType_Parse(
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<CreatureType>(
     CreatureType_descriptor(), name, value);
 }
+enum EnvType : int {
+  ENV_TYPE_NONE = 0,
+  ENV_TYPE_FIELD = 1,
+  EnvType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  EnvType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool EnvType_IsValid(int value);
+constexpr EnvType EnvType_MIN = ENV_TYPE_NONE;
+constexpr EnvType EnvType_MAX = ENV_TYPE_FIELD;
+constexpr int EnvType_ARRAYSIZE = EnvType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* EnvType_descriptor();
+template<typename T>
+inline const std::string& EnvType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, EnvType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function EnvType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    EnvType_descriptor(), enum_t_value);
+}
+inline bool EnvType_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, EnvType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<EnvType>(
+    EnvType_descriptor(), name, value);
+}
 enum PlayerType : int {
   PLAYER_TYPE_NONE = 0,
   PLAYER_TYPE_KNIGHT = 1,
@@ -216,6 +241,11 @@ template <> struct is_proto_enum< ::Protocol::CreatureType> : ::std::true_type {
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::Protocol::CreatureType>() {
   return ::Protocol::CreatureType_descriptor();
+}
+template <> struct is_proto_enum< ::Protocol::EnvType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Protocol::EnvType>() {
+  return ::Protocol::EnvType_descriptor();
 }
 template <> struct is_proto_enum< ::Protocol::PlayerType> : ::std::true_type {};
 template <>

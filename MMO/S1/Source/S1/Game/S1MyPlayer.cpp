@@ -206,8 +206,10 @@ void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 
 		const Skill& SkillData = SkillIt->second;
 
-		SkillComponent->BeginSkillTargeting(SkillID, SkillData.distance, SkillData.range);
-
+		if (SkillData.marker)
+			SkillComponent->BeginSkillTargeting(SkillID, SkillData.markerData.distance, SkillData.markerData.range);
+		else
+			;
 		//ChangeState(Protocol::STATE_MACHINE_CASTING); -> confirm skill ¾ÈÀ¸·Î
 		//SendMovePacket();
 
@@ -312,6 +314,11 @@ void AS1MyPlayer::InitSkillBar()
 void AS1MyPlayer::BindSkillBar(US1SkillBar* InSkillBar)
 {
 	SkillBar = InSkillBar;
+}
+
+void AS1MyPlayer::StartCasting(const FSkillState& CurrentState)
+{
+	SkillBar->StartCastingBar(CurrentState);
 }
 
 void AS1MyPlayer::PossessedBy(AController* NewController)

@@ -1,16 +1,24 @@
 {
   "Projectile": [
     {
-      "dataId": 30101,
+      "dataId": 20101,
       "name": "Arrow",
+      "shape": "Line",
+      "damage": 20,
       "speed": 600.0,
-      "range": 1.0
+      "distance": 1200.0,
+      "radius": 20.0,
+      "range": 0.0
     },
     {
-      "dataId": 30102,
+      "dataId": 20102,
       "name": "Fireball",
+      "shape": "Circle",
+      "damage": 100,
       "speed": 300.0,
-      "range": 3.0
+      "distance": 1200.0,
+      "radius": 100.0,
+      "range": 0.0
     }
   ]
 } 

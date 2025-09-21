@@ -114,6 +114,7 @@
     <ClCompile Include="SkillState.cpp">
       <Filter>Game\System</Filter>
     </ClCompile>
+    <ClCompile Include="Field.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -197,6 +198,7 @@
     <ClInclude Include="SkillState.h">
       <Filter>Game\System</Filter>
     </ClInclude>
+    <ClInclude Include="Field.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Common\protoc-21.12-win64\bin\Protocol.proto">

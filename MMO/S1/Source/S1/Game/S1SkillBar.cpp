@@ -3,6 +3,7 @@
 
 #include "Game/S1SkillBar.h"
 #include "Game/S1SkillSlot.h"
+#include "S1CastingBar.h"
 
 
 void US1SkillBar::NativeConstruct()
@@ -30,4 +31,9 @@ void US1SkillBar::StartSlotCooldown(int32 SlotIndex, float CooldownTime)
     {
         SkillSlots[SlotIndex]->StartCooldown(CooldownTime);
     }
+}
+
+void US1SkillBar::StartCastingBar(const FSkillState& CurrentState)
+{
+    WBP_CastingBar->ShowCastingBar(CurrentState);
 }

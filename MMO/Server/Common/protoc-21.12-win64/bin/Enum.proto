@@ -17,6 +17,12 @@ enum CreatureType
 	CREATURE_TYPE_NPC = 3;
 }
 
+enum EnvType
+{
+	ENV_TYPE_NONE = 0;
+	ENV_TYPE_FIELD = 1;
+}
+
 enum PlayerType
 {
 	PLAYER_TYPE_NONE = 0;

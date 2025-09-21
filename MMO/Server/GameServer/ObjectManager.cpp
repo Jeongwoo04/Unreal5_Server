@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ObjectManager.h"
 #include "Projectile.h"
+#include "Field.h"
 #include "Player.h"
 #include "Monster.h"
 #include "DataManager.h"
@@ -20,6 +21,10 @@ void ObjectManager::Init()
 
     AddFactory(FactoryHash(OBJECT_TYPE_PROJECTILE, 0),
         []() -> ObjectRef { return make_shared<Projectile>(); }
+    );
+
+    AddFactory(FactoryHash(OBJECT_TYPE_ENV, ENV_TYPE_FIELD),
+        []() -> ObjectRef { return make_shared<Field>(); }
     );
 }
 
@@ -72,7 +77,16 @@ ObjectRef ObjectManager::Spawn(int32 dataId, bool randPos, const Vector3& pos, f
         auto projectileIt = DataManager::Instance().ProjectileDict.find(objTemplate.dataId);
         if (projectileIt != DataManager::Instance().ProjectileDict.end())
         {
-            proj->_projectileInfo = projectileIt->second;
+            proj->SetData(&(projectileIt->second));
+        }
+    }
+
+    if (auto field = dynamic_pointer_cast<Field>(newObject))
+    {
+        auto fieldIt = DataManager::Instance().FieldDict.find(dataId);
+        if (fieldIt != DataManager::Instance().FieldDict.end())
+        {
+            field->SetData(&(fieldIt->second));
         }
     }
 

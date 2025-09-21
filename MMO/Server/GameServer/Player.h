@@ -26,6 +26,7 @@ public:
 	void StartSkillCooldown(int32 skillId, uint64 now);
 
 	SkillStateRef GetSkillState(int32 skillId) { return _skillStates[skillId]; }
+	SkillInstance* GetSkillInstance() { return _activeSkill; }
 
 public:
 	float _collisionRadius = 42.f;

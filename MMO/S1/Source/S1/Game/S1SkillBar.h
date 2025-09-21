@@ -11,6 +11,7 @@
  */
 class US1SkillSlot;
 class US1CastingBar;
+struct FSkillState;
 
 UCLASS()
 class S1_API US1SkillBar : public UUserWidget
@@ -24,10 +25,12 @@ public:
     void SetSkillSlot(int32 SlotIndex, UTexture2D* InIcon, const FText& InKey);
     bool CanUseSkill(int32 SlotIndex);
     void StartSlotCooldown(int32 SlotIndex, float CooldownTime);
+    void StartCastingBar(const FSkillState& CurrentState);
+
 
 private:
     UPROPERTY(meta = (BindWidget))
-    US1CastingBar* CastingBar;
+    US1CastingBar* WBP_CastingBar;
 
     UPROPERTY(meta = (BindWidget))
     US1SkillSlot* WBP_SkillSlot_0;

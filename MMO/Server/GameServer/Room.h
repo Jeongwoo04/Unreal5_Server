@@ -8,7 +8,7 @@ using SkillSystemRef = shared_ptr<class SkillSystem>;
 using RoomRef = shared_ptr<class Room>;
 using MonsterRef = shared_ptr<class Monster>;
 using ProjectileRef = shared_ptr<class Projectile>;
-using ArrowRef = shared_ptr<class Arrow>;
+using FieldRef = shared_ptr<class Field>;
 
 class Room : public JobQueue
 {
@@ -26,8 +26,8 @@ public:
 
 	void SpawnInit();
 	void SpawnMonster(int32 spTableId);
-	void SpawnProjectile(int32 dataId, const Vector3& pos);
-	void SpawnField(int32 dataId, const Vector3& pos);
+	void SpawnProjectile(ObjectRef owner, int32 dataId, const Vector3& pos, const Vector3& dir);
+	void SpawnField(ObjectRef owner, int32 dataId, const Vector3& pos);
 
 public:
 	bool EnterRoom(ObjectRef object);
@@ -70,10 +70,9 @@ private:
 	unordered_map<uint64, PlayerRef> _players;
 	unordered_map<uint64, MonsterRef> _monsters;
 	unordered_map<uint64, ProjectileRef> _projectiles;
+	unordered_map<uint64, FieldRef> _fields;
 
 	vector<ObjectRef> _removePending;
-
-	//SpatialHashGrid<ProjectileRef> _projectileGrid;
 
 	MapInfo _mapInfo;
 	int32 _roomId = 0;

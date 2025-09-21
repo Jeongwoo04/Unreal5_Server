@@ -26,12 +26,12 @@ public:
 	void CancelCasting(ObjectRef caster);	
 
 private:
-	void HandleAction(ObjectRef caster, const Vector3& targetPos, const ActionData& action);
+	void HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action);
 
-	void HandleMoveAction(ObjectRef caster, const Vector3& targetPos, const MoveActionData& action);
-	void HandleAttackAction(ObjectRef caster, const Vector3& targetPos, const AttackActionData& action);
-	void HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, const SpawnActionData& action);
-	void HandleBuffAction(ObjectRef caster, const Vector3& targetPos, const BuffActionData& action);
+	void HandleMoveAction(ObjectRef caster, const Vector3& targetPos, MoveActionData* action);
+	void HandleAttackAction(ObjectRef caster, const Vector3& targetPos, AttackActionData* action);
+	void HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, SpawnActionData* action);
+	void HandleBuffAction(ObjectRef caster, const Vector3& targetPos, BuffActionData* action);
 
 private:
 	const unordered_map<int32, Skill>* skillDict = nullptr;

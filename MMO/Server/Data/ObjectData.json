@@ -31,16 +31,28 @@
       "subType": 2
     },
     {
-      "dataId": 30101,
+      "dataId": 20101,
       "name": "Arrow",
       "mainType": 2,
       "subType": 0
     },
     {
-      "dataId": 30102,
+      "dataId": 20102,
       "name": "Fireball",
       "mainType": 2,
       "subType": 0
+    },
+    {
+      "dataId": 30101,
+      "name": "FrozenField",
+      "mainType": 3,
+      "subType": 1
+    },
+    {
+      "dataId": 30102,
+      "name": "FlameField",
+      "mainType": 3,
+      "subType": 1
     }
   ]
 } 

@@ -35,6 +35,8 @@ struct ActionData
     ActionType actionType = ActionType::None;
     float distance = 0.f;
     float actionDelay = 0.f;
+
+    virtual ~ActionData() = default;
 };
 
 struct AttackActionData : public ActionData
@@ -45,22 +47,30 @@ struct AttackActionData : public ActionData
     float width = 0.f;
     float length = 0.f;
     float angle = 0.f;
+
+    AttackActionData() { actionType = ActionType::Attack; }
 };
 
 struct MoveActionData : public ActionData
 {
     float moveDistance = 0.f;
     // float dashDuration = 0.f;
+
+    MoveActionData() { actionType = ActionType::Move; }
 };
 
 struct SpawnActionData : public ActionData
 {
     int32 dataId = 0;
+
+    SpawnActionData(ActionType type = ActionType::SpawnProjectile) { actionType = type; }
 };
 
 struct BuffActionData : public ActionData
 {
     int32 buffId = 0;
+
+    BuffActionData() { actionType = ActionType::Buff; }
 };
 
 // Skill 구조체
@@ -70,7 +80,7 @@ struct Skill
     string name;
     float cooldown = 0.f;
     float castTime = 0.f;
-    vector<ActionData> actions;
+    vector<ActionData*> actions;
 };
 
 struct ObjectTemplate
@@ -79,6 +89,30 @@ struct ObjectTemplate
     string name;
     int32 mainType;
     int32 subType;
+};
+
+struct ProjectileInfo
+{
+    int32 dataId = 0;
+    string name = "";
+    ShapeType shapeType = ShapeType::None;
+    int32 damage = 0;
+    float speed = 0.f;
+    float distance = 0.f;
+    float radius = 0.f;
+    float range = 0.f;
+};
+
+struct FieldInfo
+{
+    int32 dataId = 0;
+    string name = "";
+    ShapeType shapeType = ShapeType::None;
+    int32 damagePerTick = 0.f;
+    float duration = 0.f;
+    float distance = 0.f;
+    float range = 0.f;
+    int32 buffId = 0;
 };
 
 struct SpawnTable
@@ -202,6 +236,17 @@ public:
     unordered_map<int32, MapInfo> MakeDict() override;
 
     static MapData LoadFromJsonFile(const string& path);
+};
+
+// FieldData
+class FieldData : public ILoader<int32, FieldInfo>
+{
+public:
+    vector<FieldInfo> fields;
+
+    unordered_map<int32, FieldInfo> MakeDict() override;
+
+    static FieldData LoadFromJsonFile(const string& path); // 이름 다르게!
 };
 
 class BuffData : public ILoader<int32, BuffInfo>

@@ -1,4 +1,5 @@
 #include "Data.h"
+#include "S1DataManager.h"
 #include <fstream>
 #include <Logging/MessageLog.h>
 
@@ -42,7 +43,7 @@ unordered_map<int32, ProjectileInfo> ProjectileData::MakeDict()
     unordered_map<int32, ProjectileInfo> dict;
     for (auto& projectile : projectiles)
     {
-        dict[projectile.dataid()] = projectile;
+        dict[projectile.dataId] = projectile;
     }
     return dict;
 }
@@ -56,9 +57,11 @@ ProjectileData ProjectileData::LoadFromJsonFile(const string& path)
     auto data = ProjectileData();
     for (auto& element : j["Projectile"])
     {
-        auto projectile = ProjectileInfo();
-        projectile.set_dataid(element["dataId"].get<int32>());
-        projectile.set_name(element["name"].get<string>());
+        ProjectileInfo projectile;
+        projectile.dataId = element["dataId"].get<int32>();
+        projectile.name = element["name"].get<string>();
+        projectile.distance = element["distance"].get<float>();
+        projectile.range = element["range"].get<float>();
         // 렌더링 , 애니메이션 등등
 
         data.projectiles.push_back(projectile);
@@ -95,30 +98,65 @@ SkillData SkillData::LoadFromJsonFile(const string& path)
         skill.name = element["name"].get<string>();
         skill.iconPath = element["iconPath"].get<string>();
         skill.cooldown = element["cooldown"].get<float>();
-        skill.skillType = ToSkillType(element["skillType"].get<string>());
+        skill.castTime = element["castTime"].get<float>();
+        skill.marker = element["marker"].get<bool>();
 
-        if (element.contains("projectileId"))
+        if (element.contains("actions"))
         {
-            skill.projectileId = element["projectileId"].get<int32>();
-        }
-        if (element.contains("distance"))
-        {
-            skill.distance = element["distance"].get<float>();
-        }
-        if (element.contains("range"))
-        {
-            skill.range = element["range"].get<float>();
+            for (auto& act : element["actions"])
+            {
+                ClientAction action;
+                action.actionType = ToActionType(act["actionType"].get<string>());
+
+                if (act.contains("actionDelay"))
+                    action.actionDelay = act["actionDelay"].get<float>();
+
+                switch (action.actionType)
+                {
+                case ClientActionType::PlayAnimation:
+                    action.animName = act["animName"].get<string>();
+                    break;
+                case ClientActionType::PlayEffect:
+                    action.effectName = act["effectName"].get<string>();
+                    action.attachBone = act["attachBone"].get<string>();
+                    break;
+                case ClientActionType::SpawnProjectile:
+                case ClientActionType::SpawnField:
+                {
+                    action.dataId = act["dataId"].get<int32>();
+                    auto it = S1DataManager::Instance().ProjectileDict.find(action.dataId);
+                    if (it != S1DataManager::Instance().ProjectileDict.end())
+                    {
+                        const auto& proj = it->second;
+                        //skill.markerData.shape = EMarkerShape::Line;
+                        skill.markerData.distance = proj.distance;
+                        skill.markerData.range = proj.range;
+                    }
+                }
+                    break;
+                case ClientActionType::Move:
+                    action.moveDistance = act["moveDistance"].get<float>();
+                    break;
+                default:
+                    break;
+                }
+
+                skill.actions.push_back(action);
+            }
         }
 
         data.skills.push_back(skill);
     }
+
     return data;
 }
 
-SkillType ToSkillType(const string& str)
+ClientActionType ToActionType(const string& str)
 {
-    if (str == "SkillAuto") return SkillType::SKILL_AUTO;
-    if (str == "SkillProjectile") return SkillType::SKILL_PROJECTILE;
-    if (str == "SkillAoeDot") return SkillType::SKILL_AOE_DOT;
-    return SkillType::SKILL_NONE;
+    if (str == "PlayAnimation") return ClientActionType::PlayAnimation;
+    if (str == "PlayEffect") return ClientActionType::PlayEffect;
+    if (str == "SpawnProjectile") return ClientActionType::SpawnProjectile;
+    if (str == "SpawnField") return ClientActionType::SpawnField;
+    if (str == "Move") return ClientActionType::Move;
+    return ClientActionType::None;
 }

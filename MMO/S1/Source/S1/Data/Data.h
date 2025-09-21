@@ -12,21 +12,62 @@ using namespace Protocol;
 using namespace std;
 using int32 = __int32;
 
+enum class ClientActionType
+{
+    None,
+    PlayAnimation,
+    PlayEffect,
+    SpawnProjectile,
+    SpawnField,
+    Move
+};
+
+struct ClientAction
+{
+    ClientActionType actionType = ClientActionType::None;
+
+    float actionDelay = 0.f;
+
+    string animName;
+
+    string effectName;
+    string attachBone;
+
+    int32 dataId = 0;
+
+    float moveDistance = 0.f;
+};
+
+struct MarkerData
+{
+    // shape . . .
+    float distance = 0.f;
+    float range = 0.f;
+};
+
+struct ProjectileInfo
+{
+    int32 dataId = 0;
+    string name = "";
+    float distance = 0.f;
+    float range = 0.f;
+};
+
 // Skill 구조체
 struct Skill
 {
     int32 id = 0;
     string name;
     string iconPath;
-    float cooldown = 0;
-    SkillType skillType = SkillType::SKILL_AUTO;
-    int32 projectileId;
-    // Temp 
-    float distance = 0.f;
-    float range = 0.f;
+    float cooldown = 0.f;
+    float castTime = 0.f;
+    bool marker = false;
+    MarkerData markerData;
+
+    vector<ClientAction> actions;
 };
 
-SkillType ToSkillType(const string& str);
+ClientActionType ToActionType(const string& str);
 
 // 템플릿 인터페이스
 template<typename Key, typename Value>

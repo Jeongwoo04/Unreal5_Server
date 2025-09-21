@@ -32,7 +32,7 @@ void GameMap::LoadGameMap(string path)
     _sizeY = yCount;
 }
 
-vector<Vector2Int> GameMap::FindPath(Vector2Int startCellPos, Vector2Int destCellPos, bool checkObjects)
+vector<Vector2Int> GameMap::FindPath(const Vector2Int& startCellPos, const Vector2Int& destCellPos, bool checkObjects)
 {
     vector<vector<bool>> closed(_sizeY, vector<bool>(_sizeX, false));
     vector<vector<int32>> open(_sizeY, vector<int32>(_sizeX, std::numeric_limits<int32>::max()));
@@ -83,7 +83,7 @@ vector<Vector2Int> GameMap::FindPath(Vector2Int startCellPos, Vector2Int destCel
     return CalcCellPathFromParent(parent, dest);
 }
 
-vector<Vector3> GameMap::SimplifyPathRaycast(Vector3& start, vector<Vector2Int>& path)
+vector<Vector3> GameMap::SimplifyPathRaycast(const Vector3& start, const vector<Vector2Int>& path)
 {
     std::vector<Vector3> result;
     if (path.empty())
@@ -120,7 +120,7 @@ vector<Vector3> GameMap::SimplifyPathRaycast(Vector3& start, vector<Vector2Int>&
     return result;
 }
 
-bool GameMap::HasLineOfSightRayCast(Vector3& from, Vector3& to)
+bool GameMap::HasLineOfSightRayCast(const Vector3& from, const Vector3& to)
 {
     // float ±â¹Ý RayCast
     Vector3 dir = (to - from);
@@ -136,6 +136,37 @@ bool GameMap::HasLineOfSightRayCast(Vector3& from, Vector3& to)
         current += step;
     }
     return true;
+}
+
+Vector3 GameMap::GetSafePosRayCast(const Vector3& from, const Vector3& to, Vector2Int* blocked)
+{
+    Vector3 dir = (to - from);
+    float dist = dir.Length2D();
+    if (dist < 1e-6f)
+        return from;
+
+    int32 steps = static_cast<int32>(dist / 0.1f);
+    Vector3 step = dir * (1.f / steps);
+
+    Vector3 current = from;
+    Vector3 lastSafe = from;
+
+    for (int32 i = 0; i <= steps; ++i)
+    {
+        Vector2Int cell = WorldToGrid(current);
+        if (!CanGo(cell, false))
+        {
+            if (blocked)
+                *blocked = cell;
+
+            return lastSafe;
+        }
+
+        lastSafe = current;
+        current += step;
+    }
+
+    return to;
 }
 
 vector<Vector2Int> GameMap::CalcCellPathFromParent(const vector<vector<Pos>>& parent, const Pos& dest)

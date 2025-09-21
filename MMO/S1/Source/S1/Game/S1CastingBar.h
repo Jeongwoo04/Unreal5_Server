@@ -9,6 +9,8 @@
 /**
  * 
  */
+struct FSkillState;
+
 UCLASS()
 class S1_API US1CastingBar : public UUserWidget
 {
@@ -21,7 +23,7 @@ public:
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* CastingBar_Text;
 
-    void ShowCastingBar(float CastTime, const FString& SkillName);
+    void ShowCastingBar(const FSkillState& CurrentState);
     void CancelCasting();
 
 protected:

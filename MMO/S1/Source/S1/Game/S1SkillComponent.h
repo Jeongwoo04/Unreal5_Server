@@ -8,6 +8,33 @@
 
 class AS1MarkerActor;
 class AS1MyPlayer;
+struct ClientAction;
+
+USTRUCT()
+struct FClientActionInstance
+{
+	GENERATED_BODY()
+
+	const struct ClientAction* Action = nullptr;
+	float Elapsed = 0.f;
+	bool bTriggered = false;
+};
+
+USTRUCT()
+struct FSkillState
+{
+	GENERATED_BODY()
+
+	int32 SkillID = -1;
+	FString name = "";
+	float CastTime = 0.f;
+	float CastElapsed = 0.f;
+	bool bIsCasting = false;
+	TArray<FClientActionInstance> ActionInstances;
+	int32 CurrentActionIndex = 0;
+	FVector TargetPos = FVector::ZeroVector;
+	int32 CastID = 0;
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class S1_API US1SkillComponent : public UActorComponent
@@ -43,6 +70,9 @@ private:
 	// 마커 삭제
 	void ClearSkillMarkers();
 
+	void TickSkillState(float DeltaTime);
+	void ExecuteAction(FClientActionInstance& ActionInstance);
+
 private:
 	UPROPERTY()
 	AS1MarkerActor* SkillAreaMarker = nullptr;
@@ -61,6 +91,8 @@ private:
 
 	FTimerHandle SkillAreaUpdateTimer;
 	float SkillAreaUpdateInterval = 0.05f;
+
+	FSkillState CurrentSkillState;
 
 	int32 CurrentSkillID = -1;
 	bool bIsSkillTargeting = false;

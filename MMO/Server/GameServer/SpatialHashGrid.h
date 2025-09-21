@@ -19,6 +19,8 @@ public:
 	T FindNearest(const Vector2Int& center, int32 radius, const Vector3& worldPos);
     T FindNearestOnPath(Vector3& from, Vector3& end, float thisRadius);
     
+    vector<Vector2Int> FindGridAroundFloat(const Vector2Int& center, float radius);
+
 private:
 	unordered_map<Vector2Int, vector<T>, Vector2IntHash> _cells;
 };
@@ -99,6 +101,29 @@ inline vector<T> SpatialHashGrid<T>::FindAroundFloat(const Vector2Int& center, f
             if (it != _cells.end())
             {
                 result.insert(result.end(), it->second.begin(), it->second.end());
+            }
+        }
+    }
+
+    return result;
+}
+
+template<typename T>
+inline vector<Vector2Int> SpatialHashGrid<T>::FindGridAroundFloat(const Vector2Int& center, float radius)
+{
+    vector<Vector2Int> result;
+
+    int32 range = static_cast<int32>(ceil(radius / CELL_SIZE));
+
+    for (int32 y = -range; y <= range; ++y)
+    {
+        for (int32 x = -range; x <= range; ++x)
+        {
+            Vector2Int pos = center + Vector2Int(x, y);
+
+            if (_cells.find(pos) != _cells.end())
+            {
+                result.push_back(pos);
             }
         }
     }

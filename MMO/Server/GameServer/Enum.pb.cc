@@ -22,7 +22,7 @@ namespace _pbi = _pb::internal;
 
 namespace Protocol {
 }  // namespace Protocol
-static const ::_pb::EnumDescriptor* file_level_enum_descriptors_Enum_2eproto[5];
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_Enum_2eproto[6];
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_Enum_2eproto = nullptr;
 const uint32_t TableStruct_Enum_2eproto::offsets[1] = {};
 static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
@@ -35,21 +35,22 @@ const char descriptor_table_protodef_Enum_2eproto[] PROTOBUF_SECTION_VARIABLE(pr
   "CT_TYPE_ENV\020\003*r\n\014CreatureType\022\026\n\022CREATUR"
   "E_TYPE_NONE\020\000\022\030\n\024CREATURE_TYPE_PLAYER\020\001\022"
   "\031\n\025CREATURE_TYPE_MONSTER\020\002\022\025\n\021CREATURE_T"
-  "YPE_NPC\020\003*h\n\nPlayerType\022\024\n\020PLAYER_TYPE_N"
-  "ONE\020\000\022\026\n\022PLAYER_TYPE_KNIGHT\020\001\022\024\n\020PLAYER_"
-  "TYPE_MAGE\020\002\022\026\n\022PLAYER_TYPE_ARCHER\020\003*\276\001\n\014"
-  "StateMachine\022\026\n\022STATE_MACHINE_NONE\020\000\022\026\n\022"
-  "STATE_MACHINE_IDLE\020\001\022\030\n\024STATE_MACHINE_PA"
-  "TROL\020\002\022\030\n\024STATE_MACHINE_MOVING\020\003\022\031\n\025STAT"
-  "E_MACHINE_CASTING\020\004\022\027\n\023STATE_MACHINE_SKI"
-  "LL\020\005\022\026\n\022STATE_MACHINE_DEAD\020\006*T\n\tSkillTyp"
-  "e\022\016\n\nSKILL_NONE\020\000\022\016\n\nSKILL_AUTO\020\001\022\024\n\020SKI"
-  "LL_PROJECTILE\020\002\022\021\n\rSKILL_AOE_DOT\020\003b\006prot"
-  "o3"
+  "YPE_NPC\020\003*0\n\007EnvType\022\021\n\rENV_TYPE_NONE\020\000\022"
+  "\022\n\016ENV_TYPE_FIELD\020\001*h\n\nPlayerType\022\024\n\020PLA"
+  "YER_TYPE_NONE\020\000\022\026\n\022PLAYER_TYPE_KNIGHT\020\001\022"
+  "\024\n\020PLAYER_TYPE_MAGE\020\002\022\026\n\022PLAYER_TYPE_ARC"
+  "HER\020\003*\276\001\n\014StateMachine\022\026\n\022STATE_MACHINE_"
+  "NONE\020\000\022\026\n\022STATE_MACHINE_IDLE\020\001\022\030\n\024STATE_"
+  "MACHINE_PATROL\020\002\022\030\n\024STATE_MACHINE_MOVING"
+  "\020\003\022\031\n\025STATE_MACHINE_CASTING\020\004\022\027\n\023STATE_M"
+  "ACHINE_SKILL\020\005\022\026\n\022STATE_MACHINE_DEAD\020\006*T"
+  "\n\tSkillType\022\016\n\nSKILL_NONE\020\000\022\016\n\nSKILL_AUT"
+  "O\020\001\022\024\n\020SKILL_PROJECTILE\020\002\022\021\n\rSKILL_AOE_D"
+  "OT\020\003b\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_Enum_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Enum_2eproto = {
-    false, false, 642, descriptor_table_protodef_Enum_2eproto,
+    false, false, 692, descriptor_table_protodef_Enum_2eproto,
     "Enum.proto",
     &descriptor_table_Enum_2eproto_once, nullptr, 0, 0,
     schemas, file_default_instances, TableStruct_Enum_2eproto::offsets,
@@ -95,9 +96,23 @@ bool CreatureType_IsValid(int value) {
   }
 }
 
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* PlayerType_descriptor() {
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* EnvType_descriptor() {
   ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Enum_2eproto);
   return file_level_enum_descriptors_Enum_2eproto[2];
+}
+bool EnvType_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* PlayerType_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Enum_2eproto);
+  return file_level_enum_descriptors_Enum_2eproto[3];
 }
 bool PlayerType_IsValid(int value) {
   switch (value) {
@@ -113,7 +128,7 @@ bool PlayerType_IsValid(int value) {
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* StateMachine_descriptor() {
   ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Enum_2eproto);
-  return file_level_enum_descriptors_Enum_2eproto[3];
+  return file_level_enum_descriptors_Enum_2eproto[4];
 }
 bool StateMachine_IsValid(int value) {
   switch (value) {
@@ -132,7 +147,7 @@ bool StateMachine_IsValid(int value) {
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SkillType_descriptor() {
   ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Enum_2eproto);
-  return file_level_enum_descriptors_Enum_2eproto[4];
+  return file_level_enum_descriptors_Enum_2eproto[5];
 }
 bool SkillType_IsValid(int value) {
   switch (value) {

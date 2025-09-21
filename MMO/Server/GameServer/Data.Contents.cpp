@@ -75,7 +75,7 @@ unordered_map<int32, ProjectileInfo> ProjectileData::MakeDict()
     unordered_map<int32, ProjectileInfo> dict;
     for (auto& projectile : projectiles)
     {
-        dict[projectile.dataid()] = projectile;
+        dict[projectile.dataId] = projectile;
     }
 
     return dict;
@@ -91,12 +91,51 @@ ProjectileData ProjectileData::LoadFromJsonFile(const string& path)
     for (auto& element : j["Projectile"])
     {
         ProjectileInfo projectile;
-        projectile.set_dataid(element.value("dataId", 0));
-        projectile.set_name(element.value("name", ""));
-        projectile.set_speed(element.value("speed", 0.f));
-        projectile.set_range(element.value("range", 0.f));
+        projectile.dataId = element["dataId"].get<int32>();
+        projectile.name = element["name"].get<string>();
+        projectile.shapeType = ToShapeType(element["shape"].get<string>());
+        projectile.damage = element.value("damage", 0);
+        projectile.speed = element.value("speed", 0.f);
+        projectile.distance = element.value("distance", 0.f);
+        projectile.radius = element.value("radius", 0.f);
 
         data.projectiles.push_back(projectile);
+    }
+
+    return data;
+}
+
+unordered_map<int32, FieldInfo> FieldData::MakeDict()
+{
+    unordered_map<int32, FieldInfo> dict;
+    for (auto& field : fields)
+    {
+        dict[field.dataId] = field;
+    }
+
+    return dict;
+}
+
+FieldData FieldData::LoadFromJsonFile(const string& path)
+{
+    std::ifstream file(path);
+    json j;
+    file >> j;
+
+    FieldData data;
+    for (auto& element : j["Projectile"])
+    {
+        FieldInfo field;
+        field.dataId = element["dataId"].get<int32>();
+        field.name = element["name"].get<string>();
+        field.shapeType = ToShapeType(element["shape"].get<string>());
+        field.damagePerTick = element.value("damage", 0);
+        field.duration = element.value("speed", 0.f);
+        field.distance = element.value("distance", 0.f);
+        field.range = element.value("radius", 0.f);
+        field.buffId = element.value("radius", 0);
+
+        data.fields.push_back(field);
     }
 
     return data;
@@ -132,57 +171,57 @@ SkillData SkillData::LoadFromJsonFile(const string& path)
         {
             for (auto& actionElem : element["actions"])
             {
-                ActionData action;
+                ActionType type = ToActionType(actionElem["actionType"].get<string>());
+                ActionData* action = nullptr;
+                //float distance = actionElem.value("distance", 0.f);
+                //float actionDelay = actionElem.value("actionDelay", 0.f);
 
-                // type → enum
-                string typeStr = actionElem["actionType"].get<string>();
-                // 공통 필드
-                action.actionType = ToActionType(typeStr);
-                action.distance = actionElem.value("distance", 0.f);
-                action.actionDelay = actionElem.value("actionDelay", 0.f);
-
-                switch (action.actionType)
+                switch (type)
                 {
                 case ActionType::Attack:
                 {
-                    AttackActionData attack;
-                    attack.actionType = ActionType::Attack;
-                    attack.shape = ToShapeType(actionElem["shape"].get<string>());
-                    attack.damage = actionElem["damage"].get<int32>();
-                    attack.radius = actionElem.value("radius", 0.f);
-                    attack.width = actionElem.value("width", 0.f);
-                    attack.length = actionElem.value("length", 0.f);
-                    attack.angle = actionElem.value("angle", 0.f);
-                    skill.actions.push_back(attack);
+                    auto attack = new AttackActionData();
+                    attack->shape = ToShapeType(actionElem["shape"].get<string>());
+                    attack->damage = actionElem["damage"].get<int32>();
+                    attack->radius = actionElem.value("radius", 0.f);
+                    attack->width = actionElem.value("width", 0.f);
+                    attack->length = actionElem.value("length", 0.f);
+                    attack->angle = actionElem.value("angle", 0.f);
+                    action = attack;
                     break;
                 }
                 case ActionType::Move:
                 {
-                    MoveActionData move;
-                    move.actionType = ActionType::Move;
-                    move.moveDistance = actionElem["moveDistance"].get<float>();
-                    skill.actions.push_back(move);
+                    auto move = new MoveActionData();
+                    move->actionType = ActionType::Move;
+                    move->moveDistance = actionElem["moveDistance"].get<float>();
+                    action = move;
                     break;
                 }
                 case ActionType::SpawnProjectile:
                 case ActionType::SpawnField:
                 {
-                    SpawnActionData spawn;
-                    spawn.actionType = action.actionType;
-                    spawn.dataId = actionElem["dataId"].get<int32>();
-                    skill.actions.push_back(spawn);
+                    // ActionData가 struct라 다형성 적용이 안됨
+                    auto spawn = new SpawnActionData(type);
+                    spawn->dataId = actionElem["dataId"].get<int32>();
+                    action = spawn;
                     break;
                 }
                 case ActionType::Buff:
                 {
-                    BuffActionData buff;
-                    buff.actionType = ActionType::Buff;
-                    buff.buffId = actionElem["buffId"].get<int32>();
-                    skill.actions.push_back(buff);
+                    auto buff = new BuffActionData();
+                    buff->buffId = actionElem["buffId"].get<int32>();
+                    action = buff;
                     break;
                 }
                 default:
                     break;
+                }
+                if (action != nullptr)
+                {
+                    action->distance = actionElem.value("distance", 0.f);
+                    action->actionDelay = actionElem.value("actionDelay", 0.f);
+                    skill.actions.push_back(action);
                 }
             }
         }

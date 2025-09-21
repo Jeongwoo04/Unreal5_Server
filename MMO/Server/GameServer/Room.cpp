@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "Room.h"
 #include "Player.h"
-#include "Arrow.h"
+#include "Projectile.h"
+#include "Field.h"
 #include "ObjectManager.h"
 #include "SkillSystem.h"
 
@@ -43,6 +44,12 @@ void Room::UpdateTick()
 	{
 		p.second->Update();
 	}
+	for (auto& f : _fields)
+	{
+		f.second->Update();
+	}
+
+	_skillSystem->Update();
 	ClearRemoveList();
 
 	DoTimer(100, &Room::UpdateTick);
@@ -72,21 +79,32 @@ void Room::SpawnMonster(int32 spTableId)
 	EnterRoom(obj);
 }
 
-void Room::SpawnProjectile(int32 dataId, const Vector3& pos)
+void Room::SpawnProjectile(ObjectRef owner, int32 dataId, const Vector3& pos, const Vector3& dir)
 {
 	auto obj = _objectManager->Spawn(dataId, false, pos);
 	if (!obj)
 		return;
+	else
+	{
+		auto pro = static_pointer_cast<Projectile>(obj);
+		pro->SetOwner(owner);
+		pro->SetDir(dir);
+	}
 
 	EnterRoom(obj);
 }
 
-void Room::SpawnField(int32 dataId, const Vector3& pos)
+void Room::SpawnField(ObjectRef owner, int32 dataId, const Vector3& pos)
 {
 	// TODO : EnterRoom switch¹® Ãß°¡
 	auto obj = _objectManager->Spawn(dataId, false, pos);
 	if (!obj)
 		return;
+	else
+	{
+		auto field = static_pointer_cast<Field>(obj);
+		field->SetOwner(owner);
+	}
 
 	EnterRoom(obj);
 }
@@ -232,6 +250,11 @@ bool Room::AddObject(ObjectRef object)
 		auto proj = static_pointer_cast<Projectile>(object);
 		_projectiles[proj->GetId()] = proj;
 	}	break;
+	case OBJECT_TYPE_ENV:
+	{
+		auto field = static_pointer_cast<Field>(object);
+		_fields[field->GetId()] = field;
+	} break;
 	default:
 		break;
 	}
@@ -272,6 +295,9 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 		}
 	case OBJECT_TYPE_PROJECTILE:
 		eraseCount = static_cast<int32>(_projectiles.erase(objectId));
+		break;
+	case OBJECT_TYPE_ENV:
+		eraseCount = static_cast<int32>(_fields.erase(objectId));
 		break;
 	}
 

@@ -94,7 +94,6 @@ void SkillSystem::Update()
 			if (now >= static_pointer_cast<Player>(inst.caster)->GetSkillState(inst.skill->id)->GetCastEndTime())
 			{
 				inst.isCasting = false;
-				inst.currentActionIndex = 0;
 				inst.actionDelayElapsed = 0.f;
 				inst.caster->SetState(Protocol::STATE_MACHINE_IDLE);
 				// 캐스팅 완료 패킷 전송
@@ -108,6 +107,15 @@ void SkillSystem::Update()
 
 				if (inst.caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
 					static_pointer_cast<Player>(inst.caster)->StartSkillCooldown(inst.skill->id, now);
+
+				// 캐스팅이 끝난 후 나머지 액션 실행
+				if (!inst.skill->actions.empty())
+				{
+					ActionData* action = inst.skill->actions[inst.currentActionIndex];
+					HandleAction(inst.caster, inst.targetPos, action);
+					inst.currentActionIndex++;
+					inst.actionDelayElapsed = 0.f;
+				}
 			}
 			++it;
 			continue;
@@ -117,18 +125,17 @@ void SkillSystem::Update()
 		if (inst.currentActionIndex < (int32)inst.skill->actions.size())
 		{
 			inst.actionDelayElapsed += 0.1f;
-			const ActionData& action = inst.skill->actions[inst.currentActionIndex];
+			ActionData* action = inst.skill->actions[inst.currentActionIndex];
 
-			if (inst.actionDelayElapsed >= action.actionDelay)
+			if (inst.actionDelayElapsed >= action->actionDelay)
 			{
 				HandleAction(inst.caster, inst.targetPos, action);
 
 				inst.currentActionIndex++;
 				inst.actionDelayElapsed = 0.f; // 다음 액션 준비
 			}
-			++it;
-			continue;
 		}
+
 		if (inst.currentActionIndex >= (int32)inst.skill->actions.size())
 		{
 			it = activeSkills.erase(it);
@@ -136,63 +143,63 @@ void SkillSystem::Update()
 	}
 }
 
-void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, const ActionData& action)
+void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action)
 {
-	switch (action.actionType)
+	switch (action->actionType)
 	{
 	case ActionType::Move:
-		HandleMoveAction(caster, targetPos, static_cast<const MoveActionData&>(action));
+		HandleMoveAction(caster, targetPos, static_cast<MoveActionData*>(action));
 		break;
 	case ActionType::Attack:
-		HandleAttackAction(caster, targetPos, static_cast<const AttackActionData&>(action));
+		HandleAttackAction(caster, targetPos, static_cast<AttackActionData*>(action));
 		break;
 	case ActionType::SpawnProjectile:
-		HandleSpawnAction(caster, targetPos, static_cast<const SpawnActionData&>(action));
+		HandleSpawnAction(caster, targetPos, static_cast<SpawnActionData*>(action));
 		break;
 	case ActionType::SpawnField:
-		HandleSpawnAction(caster, targetPos, static_cast<const SpawnActionData&>(action));
+		HandleSpawnAction(caster, targetPos, static_cast<SpawnActionData*>(action));
 		break;
 	case ActionType::Buff:
-		HandleBuffAction(caster, targetPos, static_cast<const BuffActionData&>(action));
+		HandleBuffAction(caster, targetPos, static_cast<BuffActionData*>(action));
 		break;
 	default:
 		break;
 	}
 }
 
-void SkillSystem::HandleMoveAction(ObjectRef caster, const Vector3& targetPos, const MoveActionData& action)
+void SkillSystem::HandleMoveAction(ObjectRef caster, const Vector3& targetPos, MoveActionData* action)
 {
 	Vector3 forward = Vector3::YawToDir2D(caster->_posInfo.yaw());
-	Vector3 destPos = Vector3(caster->_posInfo) + forward * action.moveDistance;
+	Vector3 destPos = Vector3(caster->_posInfo) + forward * action->moveDistance;
 	
 	// TODO : Room::HandleMove 분리 + Object 별 Move 처리 분리.
 	// caster->SetPos(destPos);
 	// caster->GetRoom()->BroadcasterMove();
 }
 
-void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos, const AttackActionData& action)
+void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos, AttackActionData* action)
 {
 	Vector3 center = Vector3(caster->_posInfo);
 	Vector3 forward = Vector3::YawToDir2D(caster->_posInfo.yaw());
 
 	if (caster->GetCreatureType() == CREATURE_TYPE_MONSTER)
 	{
-		auto playerCandidates = caster->GetRoom()->_playerGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action.radius);
+		auto playerCandidates = caster->GetRoom()->_playerGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action->radius);
 		vector<PlayerRef> targetPlayers;
 
-		switch (action.shape)
+		switch (action->shape)
 		{
 		case ShapeType::Circle:
-			targetPlayers = GeometryUtil::FindInCircle2D(playerCandidates, center, action.radius);
+			targetPlayers = GeometryUtil::FindInCircle2D(playerCandidates, center, action->radius);
 			break;
 		case ShapeType::Cone:
-			targetPlayers = GeometryUtil::FindInCone2D(playerCandidates, center, forward, action.angle, action.radius);
+			targetPlayers = GeometryUtil::FindInCone2D(playerCandidates, center, forward, action->angle, action->radius);
 			break;
 		case ShapeType::Rectangle:
-			targetPlayers = GeometryUtil::FindInRectangle2D(playerCandidates, center, forward, action.width, action.length);
+			targetPlayers = GeometryUtil::FindInRectangle2D(playerCandidates, center, forward, action->width, action->length);
 			break;
 		case ShapeType::Line:
-			targetPlayers = GeometryUtil::FindInLine2D(playerCandidates, center, targetPos, action.radius);
+			targetPlayers = GeometryUtil::FindInLine2D(playerCandidates, center, targetPos, action->radius);
 			break;
 		default:
 			break;
@@ -201,27 +208,27 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 		// ApplyDamage 시점에 ObjectRef로 변환
 		for (auto& target : targetPlayers)
 		{
-			CombatSystem::Instance().ApplyDamage(caster, static_pointer_cast<Object>(target), action.damage);
+			CombatSystem::Instance().ApplyDamage(caster, static_pointer_cast<Object>(target), action->damage);
 		}
 	}
 	else if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
-		auto monsterCandidates = caster->GetRoom()->_monsterGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action.radius);
+		auto monsterCandidates = caster->GetRoom()->_monsterGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action->radius);
 		vector<MonsterRef> targetMonsters;
 
-		switch (action.shape)
+		switch (action->shape)
 		{
 		case ShapeType::Circle:
-			targetMonsters = GeometryUtil::FindInCircle2D(monsterCandidates, center, action.radius);
+			targetMonsters = GeometryUtil::FindInCircle2D(monsterCandidates, center, action->radius);
 			break;
 		case ShapeType::Cone:
-			targetMonsters = GeometryUtil::FindInCone2D(monsterCandidates, center, forward, action.angle, action.radius);
+			targetMonsters = GeometryUtil::FindInCone2D(monsterCandidates, center, forward, action->angle, action->radius);
 			break;
 		case ShapeType::Rectangle:
-			targetMonsters = GeometryUtil::FindInRectangle2D(monsterCandidates, center, forward, action.width, action.length);
+			targetMonsters = GeometryUtil::FindInRectangle2D(monsterCandidates, center, forward, action->width, action->length);
 			break;
 		case ShapeType::Line:
-			targetMonsters = GeometryUtil::FindInLine2D(monsterCandidates, center, targetPos, action.radius);
+			targetMonsters = GeometryUtil::FindInLine2D(monsterCandidates, center, targetPos, action->radius);
 			break;
 		default:
 			break;
@@ -229,21 +236,23 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 
 		for (auto target : targetMonsters)
 		{
-			CombatSystem::Instance().ApplyDamage(caster, static_pointer_cast<Object>(target), action.damage);
+			CombatSystem::Instance().ApplyDamage(caster, static_pointer_cast<Object>(target), action->damage);
 		}
 	}
 }
 
-void SkillSystem::HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, const SpawnActionData& action)
+void SkillSystem::HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, SpawnActionData* action)
 {
-	if (action.actionType == ActionType::SpawnProjectile)
-		caster->GetRoom()->_objectManager->Spawn(action.dataId, false, Vector3(caster->_posInfo), caster->_posInfo.yaw());
-	else if (action.actionType == ActionType::SpawnField)
-		caster->GetRoom()->_objectManager->Spawn(action.dataId, false, targetPos);
+	if (action->actionType == ActionType::SpawnProjectile)
+	{
+		caster->GetRoom()->SpawnProjectile(caster, action->dataId, Vector3(caster->_posInfo), targetPos.Normalized2D());
+	}
+	else if (action->actionType == ActionType::SpawnField)
+		caster->GetRoom()->SpawnField(caster, action->dataId, targetPos);
 }
 
-void SkillSystem::HandleBuffAction(ObjectRef caster, const Vector3& targetPos, const BuffActionData& action)
+void SkillSystem::HandleBuffAction(ObjectRef caster, const Vector3& targetPos, BuffActionData* action)
 {
 	// TODO : BuffSystem 추가
-	BuffSystem::Instance().ApplyBuff(caster, action.buffId);
+	BuffSystem::Instance().ApplyBuff(caster, action->buffId);
 }

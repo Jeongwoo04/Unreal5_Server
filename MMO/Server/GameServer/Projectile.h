@@ -1,3 +1,4 @@
+
 #pragma once
 #include "Object.h"
 
@@ -7,25 +8,18 @@ public:
 	Projectile();
 	virtual ~Projectile();
 
-	virtual void Update();
+	virtual void Update() override;
 
-	void SetOwner(const ObjectRef& object) { _owner = object; }
+	void SetData(const ProjectileInfo* data) { _data = data; }
+	void SetOwner(ObjectRef owner) { _owner = owner; }
+	void SetDir(const Vector3& dir) { _dir = dir; }
+
 	ObjectRef GetOwner() { return _owner.lock(); }
 
-	void SetData(const Skill& data) { _data = data; }
-	Skill GetData() { return _data; }
-
-public:
-	ProjectileInfo _projectileInfo;
-
-protected:
+private:
 	weak_ptr<Object> _owner;
+	const ProjectileInfo* _data = nullptr;
+	float _moveDistance = 0.f;
 
-	Vector3 _destPos;
-
-	float _radius = 20.f;
-	float _distance = 0.f;
-	
-	uint64 _nextMoveTick = 0;
-	Skill _data;
+	Vector3 _dir;
 };

@@ -35,14 +35,6 @@ message StatInfo
 	uint32 totalExp = 7;
 }
 
-message ProjectileInfo
-{
-	int32 dataId = 1;
-    string name = 2;
-    float speed = 3;
-    float range = 4;
-}
-
 message SkillInfo
 {
 	int32 skillId = 1;
