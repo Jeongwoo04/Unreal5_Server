@@ -71,6 +71,8 @@ void AS1MarkerActor::TickFade()
     DynMat->SetScalarParameterValue("Fade", Alpha);
 
     if (Alpha <= 0.f)
-        Destroy();
+    {
+        SetLifeSpan(0.1f);
+    }    
 }
 

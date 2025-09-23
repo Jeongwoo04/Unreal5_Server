@@ -151,7 +151,6 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Arrow.cpp" />
     <ClCompile Include="BuffSystem.cpp" />
     <ClCompile Include="CombatSystem.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
@@ -194,7 +193,6 @@
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Arrow.h" />
     <ClInclude Include="BuffSystem.h" />
     <ClInclude Include="CombatSystem.h" />
     <ClInclude Include="ConfigManager.h" />

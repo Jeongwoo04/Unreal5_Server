@@ -108,7 +108,7 @@ struct FieldInfo
     int32 dataId = 0;
     string name = "";
     ShapeType shapeType = ShapeType::None;
-    int32 damagePerTick = 0.f;
+    int32 damagePerTick = 0;
     float duration = 0.f;
     float distance = 0.f;
     float range = 0.f;

@@ -121,10 +121,7 @@ inline vector<Vector2Int> SpatialHashGrid<T>::FindGridAroundFloat(const Vector2I
         {
             Vector2Int pos = center + Vector2Int(x, y);
 
-            if (_cells.find(pos) != _cells.end())
-            {
-                result.push_back(pos);
-            }
+            result.push_back(pos);
         }
     }
 

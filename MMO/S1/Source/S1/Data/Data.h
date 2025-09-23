@@ -53,6 +53,14 @@ struct ProjectileInfo
     float range = 0.f;
 };
 
+struct FieldInfo
+{
+    int32 dataId = 0;
+    string name = "";
+    float distance = 0.f;
+    float range = 0.f;
+};
+
 // Skill 구조체
 struct Skill
 {
@@ -98,6 +106,16 @@ public:
     unordered_map<int32, ProjectileInfo> MakeDict() override;
 
     static ProjectileData LoadFromJsonFile(const string& path); // 이름 다르게!
+};
+
+class FieldData : public ILoader<int32, FieldInfo>
+{
+public:
+    vector<FieldInfo> fields;
+
+    unordered_map<int32, FieldInfo> MakeDict() override;
+
+    static FieldData LoadFromJsonFile(const string& path); // 이름 다르게!
 };
 
 // SkillData

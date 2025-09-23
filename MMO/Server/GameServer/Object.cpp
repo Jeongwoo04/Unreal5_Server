@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "Object.h"
+#include "GameMap.h"
 
 Object::Object()
 {
 	_objectInfo.set_object_type(Protocol::OBJECT_TYPE_NONE);
+	_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
 }
 
 Object::~Object()
@@ -11,19 +13,57 @@ Object::~Object()
 
 }
 
-void Object::Update()
+void Object::Update(float deltaTime)
 {
 
 }
 
 void Object::OnDamaged(ObjectRef attacker, int32 damage)
 {
+	auto room = _room.lock();
+	if (!room)
+		return;
 
+	_statInfo.set_hp(_statInfo.hp() - damage);
+
+	if (_statInfo.hp() <= 0)
+	{
+		OnDead(attacker);
+		return;
+	}
+
+	S_CHANGE_HP changeHpPkt;
+	changeHpPkt.set_object_id(GetId());
+	changeHpPkt.set_hp(_statInfo.hp());
+
+	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(changeHpPkt);
+	room->Broadcast(sendBuffer);
 }
 
 void Object::OnDead(ObjectRef attacker)
 {
 
+}
+
+void Object::MoveToNextPos(const Vector3& destPos)
+{
+	auto room = GetRoom();
+	if (room == nullptr)
+		return;
+
+	Vector3 nextPos;
+	Vector2Int currentGrid = _gridPos;
+
+	nextPos = GetRoom()->GetGameMap()->GetSafePosRayCast(_worldPos, destPos, nullptr);
+	_posInfo.set_x(nextPos._x);
+	_posInfo.set_y(nextPos._y);
+	_worldPos = nextPos;
+	_gridPos = Vector2Int(_posInfo);
+
+	if (GetCreatureType() == CREATURE_TYPE_MONSTER)
+		room->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), currentGrid, _gridPos);
+	else if (GetCreatureType() == CREATURE_TYPE_PLAYER)
+		room->_playerGrid.ApplyMove(static_pointer_cast<Player>(shared_from_this()), currentGrid, _gridPos);
 }
 
 void Object::SetId(uint64 id)
@@ -71,13 +111,6 @@ void Object::UpdateBuffs()
 		else
 			++it;
 	}
-}
-
-void Object::SetPos(const Vector3& pos)
-{
-	_posInfo.set_x(pos._x);
-	_posInfo.set_y(pos._y);
-	//_posInfo.set_z(pos._z);
 }
 
 void Object::SetPosInfo(const PosInfo& posInfo)

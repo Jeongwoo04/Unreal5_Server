@@ -28,9 +28,6 @@ public:
 	SkillStateRef GetSkillState(int32 skillId) { return _skillStates[skillId]; }
 	SkillInstance* GetSkillInstance() { return _activeSkill; }
 
-public:
-	float _collisionRadius = 42.f;
-
 private:
 	weak_ptr<GameSession> _session;
 	unordered_map<int32, SkillStateRef> _skillStates;

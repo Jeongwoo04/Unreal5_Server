@@ -36,23 +36,25 @@ void Room::Init(int32 mapId)
 
 void Room::UpdateTick()
 {
+	constexpr float deltaTime = 0.1f;
+
 	for (auto& m : _monsters)
 	{
-		m.second->Update();
+		m.second->Update(deltaTime);
 	}
 	for (auto& p : _projectiles)
 	{
-		p.second->Update();
+		p.second->Update(deltaTime);
 	}
 	for (auto& f : _fields)
 	{
-		f.second->Update();
+		f.second->Update(deltaTime);
 	}
 
-	_skillSystem->Update();
+	_skillSystem->Update(deltaTime);
 	ClearRemoveList();
 
-	DoTimer(100, &Room::UpdateTick);
+	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
 }
 
 void Room::SpawnInit()
@@ -156,27 +158,16 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 {
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
-	{
 		return;
-	}
 	
-	PlayerRef& player = _players[objectId];
+	PlayerRef player = _players[objectId];
 	if (player == nullptr || player->GetRoom() == nullptr || player->GetRoom()->GetGameMap() == nullptr)
-	{
 		return;
-	}
+	
+	Vector3 destPos = Vector3(pkt.info());
 
-	Vector2Int destPos = Vector2Int(pkt.info());
-
-	if (!_gameMap->CanGo(destPos, false))
-	{
-		BroadcastMove(player->_posInfo);
-		return;
-	}
-
-	_playerGrid.ApplyMove(player, player->_gridPos, destPos);
-
-	player->SetPosInfo(pkt.info());
+	player->MoveToNextPos(destPos);
+	player->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
 	BroadcastMove(player->_posInfo, player->GetId());
 }
 

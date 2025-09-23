@@ -4,8 +4,8 @@
       "dataId": 30101,
       "name": "FrozenField",
       "shape": "Circle",
-      "damagePerTick": 6,
-      "duration": 3.0,
+      "damagePerTick": 10,
+      "duration": 5.0,
       "distance": 1200.0,
       "range": 300.0,
       "buffId": 1
@@ -14,8 +14,8 @@
       "dataId": 30102,
       "name": "FlameField",
       "shape": "Circle",
-      "damagePerTick": 5,
-      "duration": 3.0,
+      "damagePerTick": 10,
+      "duration": 5.0,
       "distance": 1200.0,
       "range": 300.0,
       "buffId": 2

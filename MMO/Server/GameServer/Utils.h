@@ -101,6 +101,16 @@ struct Vector3
         return *this;
     }
 
+    bool operator==(const Vector3& other)
+    {
+        return _x == other._x && _y == other._y && _z == other._z;
+    }
+
+    bool operator!=(const Vector3& other)
+    {
+        return *this == other;
+    }
+
     Vector3 operator+(float scalar) const
     {
         return Vector3(_x + scalar, _y + scalar, _z + scalar);

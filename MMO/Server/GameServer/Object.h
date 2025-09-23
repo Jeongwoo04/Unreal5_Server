@@ -23,9 +23,10 @@ public:
 	Object();
 	virtual ~Object();
 
-	virtual void Update();
+	virtual void Update(float deltaTime);
 	virtual void OnDamaged(ObjectRef attacker, int32 damage);
 	virtual void OnDead(ObjectRef attacker);
+	virtual void MoveToNextPos(const Vector3& destPos);
 
 	virtual Protocol::ObjectType GetObjectType() const { return _objectInfo.object_type(); }
 	virtual Protocol::CreatureType GetCreatureType() const { return _objectInfo.creature_type(); }
@@ -44,7 +45,6 @@ public:
 
 	void AddBuff(const BuffInfo& buff);
 	void UpdateBuffs();
-	void SetPos(const Vector3& pos);
 	void SetPosInfo(const PosInfo& posInfo);
 	void SetSpawnPos(const Vector3& pos, float yaw = 0.f);
 	void SetSpawnRandomPos(Vector3 pos, float yaw = 0.f);
@@ -65,8 +65,6 @@ public:
 	SkillInstance* _activeSkill = nullptr;
 
 protected:
-	Protocol::StateMachine _state = Protocol::STATE_MACHINE_IDLE;
-
 	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험
 
 private:

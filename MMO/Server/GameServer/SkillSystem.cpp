@@ -73,7 +73,7 @@ void SkillSystem::CancelCasting(ObjectRef caster)
 	}
 }
 
-void SkillSystem::Update()
+void SkillSystem::Update(float deltaTime)
 {
 	uint64 now = GetTickCount64();
 
@@ -169,8 +169,6 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 
 void SkillSystem::HandleMoveAction(ObjectRef caster, const Vector3& targetPos, MoveActionData* action)
 {
-	Vector3 forward = Vector3::YawToDir2D(caster->_posInfo.yaw());
-	Vector3 destPos = Vector3(caster->_posInfo) + forward * action->moveDistance;
 	
 	// TODO : Room::HandleMove 盒府 + Object 喊 Move 贸府 盒府.
 	// caster->SetPos(destPos);
@@ -245,7 +243,7 @@ void SkillSystem::HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, 
 {
 	if (action->actionType == ActionType::SpawnProjectile)
 	{
-		caster->GetRoom()->SpawnProjectile(caster, action->dataId, Vector3(caster->_posInfo), targetPos.Normalized2D());
+		caster->GetRoom()->SpawnProjectile(caster, action->dataId, Vector3(caster->_posInfo), (targetPos - caster->_worldPos).Normalized2D());
 	}
 	else if (action->actionType == ActionType::SpawnField)
 		caster->GetRoom()->SpawnField(caster, action->dataId, targetPos);

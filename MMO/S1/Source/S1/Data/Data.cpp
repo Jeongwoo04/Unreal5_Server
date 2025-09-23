@@ -69,6 +69,37 @@ ProjectileData ProjectileData::LoadFromJsonFile(const string& path)
     return data;
 }
 
+unordered_map<int32, FieldInfo> FieldData::MakeDict()
+{
+    unordered_map<int32, FieldInfo> dict;
+    for (auto& field : fields)
+    {
+        dict[field.dataId] = field;
+    }
+    return dict;
+}
+
+FieldData FieldData::LoadFromJsonFile(const string& path)
+{
+    std::ifstream file(path);
+    json j;
+    file >> j;
+
+    auto data = FieldData();
+    for (auto& element : j["Field"])
+    {
+        FieldInfo field;
+        field.dataId = element["dataId"].get<int32>();
+        field.name = element["name"].get<string>();
+        field.distance = element["distance"].get<float>();
+        field.range = element["range"].get<float>();
+        // 렌더링 , 애니메이션 등등
+
+        data.fields.push_back(field);
+    }
+    return data;
+}
+
 unordered_map<int32, Skill> SkillData::MakeDict()
 {
     unordered_map<int32, Skill> dict;
@@ -121,7 +152,6 @@ SkillData SkillData::LoadFromJsonFile(const string& path)
                     action.attachBone = act["attachBone"].get<string>();
                     break;
                 case ClientActionType::SpawnProjectile:
-                case ClientActionType::SpawnField:
                 {
                     action.dataId = act["dataId"].get<int32>();
                     auto it = S1DataManager::Instance().ProjectileDict.find(action.dataId);
@@ -132,8 +162,19 @@ SkillData SkillData::LoadFromJsonFile(const string& path)
                         skill.markerData.distance = proj.distance;
                         skill.markerData.range = proj.range;
                     }
-                }
-                    break;
+                }   break;
+                case ClientActionType::SpawnField:
+                {
+                    action.dataId = act["dataId"].get<int32>();
+                    auto it = S1DataManager::Instance().FieldDict.find(action.dataId);
+                    if (it != S1DataManager::Instance().FieldDict.end())
+                    {
+                        const auto& field = it->second;
+                        //skill.markerData.shape = EMarkerShape::Line;
+                        skill.markerData.distance = field.distance;
+                        skill.markerData.range = field.range;
+                    }
+                }   break;
                 case ClientActionType::Move:
                     action.moveDistance = act["moveDistance"].get<float>();
                     break;

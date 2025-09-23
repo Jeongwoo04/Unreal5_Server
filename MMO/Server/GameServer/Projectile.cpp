@@ -11,12 +11,10 @@ Projectile::~Projectile()
 
 }
 
-void Projectile::Update()
+void Projectile::Update(float deltaTime)
 {
     if (GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
         return;
-
-    constexpr float deltaTime = 0.1f;
 
     auto room = GetRoom();
 
@@ -26,15 +24,18 @@ void Projectile::Update()
         return;
     }
 
-    Vector2Int blocked;
-    Vector3 from = _worldPos;
-    Vector3 to = room->GetGameMap()->GetSafePosRayCast(from, _worldPos + (_dir * _data->speed * deltaTime), &blocked);
+    Vector3 currentPos = _worldPos;
+    Vector3 destPos = _worldPos + (_dir * _data->speed * deltaTime);
+    
+    MoveToNextPos(destPos);
+    _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+    room->BroadcastMove(_posInfo);
 
     ObjectRef target = nullptr;
 
     if (GetOwner()->GetCreatureType() == Protocol::CREATURE_TYPE_MONSTER)
     {
-        PlayerRef playerTarget = room->_playerGrid.FindNearestOnPath(from, to, _data->radius);
+        PlayerRef playerTarget = room->_playerGrid.FindNearestOnPath(currentPos, destPos, _data->radius);
         if (playerTarget)
         {
             target = playerTarget;
@@ -42,7 +43,7 @@ void Projectile::Update()
     }        
     else if (GetOwner()->GetCreatureType() == Protocol::CREATURE_TYPE_PLAYER)
     {
-        MonsterRef monsterTarget = room->_monsterGrid.FindNearestOnPath(from, to, _data->radius);
+        MonsterRef monsterTarget = room->_monsterGrid.FindNearestOnPath(currentPos, destPos, _data->radius);
         if (monsterTarget)
         {
             target = monsterTarget;
@@ -60,21 +61,11 @@ void Projectile::Update()
         ;
     }
 
-    if (!room->GetGameMap()->CanGo(blocked))
+    if (_worldPos != destPos)
     {
         room->AddRemoveList(shared_from_this());
         return;
     }
 
-    _posInfo.set_x(to._x);
-    _posInfo.set_y(to._y);
-    _worldPos = to;
-    _gridPos = Vector2Int(_posInfo);
-
-    S_MOVE movePkt;
-    movePkt.mutable_info()->CopyFrom(_posInfo);
-    {
-        auto sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
-        room->Broadcast(sendBuffer);
-    }
+    _moveDistance += _data->speed * deltaTime;
 }

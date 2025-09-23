@@ -12,13 +12,13 @@ public:
 	virtual ~Monster();
 
 	// FSM
-	virtual void Update() override;
+	virtual void Update(float deltaTime) override;
 
-	virtual void UpdateIdle();
-	virtual void UpdatePatrol();
-	virtual void UpdateMoving();
-	virtual void UpdateSkill();
-	virtual void UpdateDead();
+	virtual void UpdateIdle(float deltaTime);
+	virtual void UpdatePatrol(float deltaTime);
+	virtual void UpdateMoving(float deltaTime);
+	virtual void UpdateSkill(float deltaTime);
+	virtual void UpdateDead(float deltaTime);
 
 	virtual void OnDamaged(ObjectRef attacker, int32 damage) override;
 	virtual void OnDead(ObjectRef attacker) override;
@@ -33,22 +33,13 @@ public:
 	vector<Vector3> _simplifiedPath;
 	int32 _simplifiedIndex = 0;
 
-	float _speed = 300.0f;
-	float _deltaTime = 0.1f;
-	float _collisionRadius = 42.f;
-
 protected:
-	float _searchRadius = 20.f;
-	float _chaseCellDist = 30.f;
+	float _searchRadius = 15.f;
 
-	Skill skillData;
-
-	float _skillRange = 10.f;
+	const Skill* _skillData;
 
 	uint64 _nextPathUpdateTick = 0;
-	uint64 _nextLOSCheckTick = 0;
 	uint64 _nextSearchTick = 0;
-	uint64 _nextMoveTick = 0;
 	uint64 _coolTick = 0;
 
 	Vector3 _lastTargetPos = Vector3(-99999, -99999, -99999);

@@ -22,8 +22,8 @@ public:
 	void Init();
 	void ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos);
 
-	void Update();
-	void CancelCasting(ObjectRef caster);	
+	void Update(float deltaTime);
+	void CancelCasting(ObjectRef caster);
 
 private:
 	void HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action);

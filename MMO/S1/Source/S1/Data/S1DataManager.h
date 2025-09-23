@@ -22,4 +22,5 @@ public:
     unordered_map<int32, StatInfo> StatDict;
     unordered_map<int32, Skill> SkillDict;
     unordered_map<int32, ProjectileInfo> ProjectileDict;
+    unordered_map<int32, FieldInfo> FieldDict;
 };

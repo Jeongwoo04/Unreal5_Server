@@ -11,4 +11,7 @@ void S1DataManager::LoadData(const std::string& basePath)
 
     auto projectileData = ProjectileData::LoadFromJsonFile(basePath + "Client_ProjectileData.json");
     ProjectileDict = projectileData.MakeDict();
+
+    auto fieldData = FieldData::LoadFromJsonFile(basePath + "Client_FieldData.json");
+    FieldDict = fieldData.MakeDict();
 }

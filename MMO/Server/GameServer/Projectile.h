@@ -8,7 +8,7 @@ public:
 	Projectile();
 	virtual ~Projectile();
 
-	virtual void Update() override;
+	virtual void Update(float deltaTime) override;
 
 	void SetData(const ProjectileInfo* data) { _data = data; }
 	void SetOwner(ObjectRef owner) { _owner = owner; }

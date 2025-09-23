@@ -6,8 +6,6 @@ Player::Player()
 {
 	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_PLAYER);
 
-	_posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-
     for (auto& it : DataManager::Instance().SkillDict)
     {
         int32 id = it.first;
@@ -23,24 +21,8 @@ Player::~Player()
 
 void Player::OnDamaged(ObjectRef attacker, int32 damage)
 {
-    auto room = _room.lock();
-    if (!room)
-        return;
-
-    _statInfo.set_hp(_statInfo.hp() - damage);
-
-    if (_statInfo.hp() <= 0)
-    {
-        OnDead(attacker);
-        return;
-    }
-
-    S_CHANGE_HP changeHpPkt;
-    changeHpPkt.set_object_id(GetId());
-    changeHpPkt.set_hp(_statInfo.hp());
-
-    auto sendBuffer = ServerPacketHandler::MakeSendBuffer(changeHpPkt);
-    room->Broadcast(sendBuffer);
+    Object::OnDamaged(attacker, damage);
+    cout << "Player " << this->GetId() << " OnDamaged by Monster " << attacker->GetId() << " damage : " << damage + attacker->_statInfo.attack();
 }
 
 void Player::OnDead(ObjectRef attacker)

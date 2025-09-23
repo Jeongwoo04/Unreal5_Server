@@ -28,12 +28,14 @@ void Field::GridCaching()
 	}
 }
 
-void Field::Update()
+void Field::Update(float deltaTime)
 {
 	if (GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
 		return;
 
-	constexpr float deltaTime = 0.1f;
+	if (_cachedGrids.empty()) // °íÁ¤Çü
+		GridCaching();
+
 	_affectedTargets.clear();
 	auto room = GetRoom();
 
@@ -72,7 +74,7 @@ void Field::Update()
 				if (_affectedTargets.find(target) != _affectedTargets.end())
 					continue;
 
-				if ((target->_worldPos - _worldPos).LengthSquared2D() > _data->range + target->_collisionRadius)
+				if ((target->_worldPos - _worldPos).Length2D() > _data->range + target->_collisionRadius)
 					continue;
 
 				target->OnDamaged(GetOwner(), _data->damagePerTick);

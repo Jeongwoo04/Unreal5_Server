@@ -6,7 +6,7 @@ public:
 	Field();
 	virtual ~Field();
 
-	virtual void Update();
+	virtual void Update(float deltaTime) override;
 
 	void GridCaching();
 

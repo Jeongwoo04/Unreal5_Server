@@ -124,11 +124,11 @@ bool GameMap::HasLineOfSightRayCast(const Vector3& from, const Vector3& to)
 {
     // float ±â¹Ý RayCast
     Vector3 dir = (to - from);
-    int steps = static_cast<int>(dir.Length() / 0.1f);
+    int32 steps = static_cast<int32>(dir.Length2D() / 0.1f);
     Vector3 step = dir * (1.f / steps);
 
     Vector3 current = from;
-    for (int i = 0; i <= steps; ++i)
+    for (int32 i = 0; i <= steps; ++i)
     {
         Vector2Int cell = WorldToGrid(current);
         if (!CanGo(cell, false))

@@ -123,17 +123,17 @@ FieldData FieldData::LoadFromJsonFile(const string& path)
     file >> j;
 
     FieldData data;
-    for (auto& element : j["Projectile"])
+    for (auto& element : j["Field"])
     {
         FieldInfo field;
         field.dataId = element["dataId"].get<int32>();
         field.name = element["name"].get<string>();
         field.shapeType = ToShapeType(element["shape"].get<string>());
-        field.damagePerTick = element.value("damage", 0);
-        field.duration = element.value("speed", 0.f);
+        field.damagePerTick = element.value("damagePerTick", 0);
+        field.duration = element.value("duration", 0.f);
         field.distance = element.value("distance", 0.f);
-        field.range = element.value("radius", 0.f);
-        field.buffId = element.value("radius", 0);
+        field.range = element.value("range", 0.f);
+        field.buffId = element.value("buffId", 0);
 
         data.fields.push_back(field);
     }
