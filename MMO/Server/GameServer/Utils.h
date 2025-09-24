@@ -157,6 +157,13 @@ struct Vector3
         return Vector3(x, y, 0).Normalized2D();
     }
 
+    static float DirToYaw2D(const Vector3& dir)
+    {
+        float radian = atan2(dir._y, dir._x);
+        float degree = radian * 180.0f / PI;
+        return degree;
+    }
+
     static float Dot2D(const Vector3& a, const Vector3& b)
     {
         return a._x * b._x + a._y * b._y;

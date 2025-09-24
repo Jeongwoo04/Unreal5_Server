@@ -1,17 +1,20 @@
 #include "pch.h"
 #include "Monster.h"
 #include "DataManager.h"
+#include "SkillState.h"
+#include "SkillSystem.h"
 
 Monster::Monster()
 {
 	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_MONSTER);
 
     // 스킬 데이터 가져오기 (ID 1 고정)
-    auto skillIt = DataManager::Instance().SkillDict.find(2);
-    if (skillIt == DataManager::Instance().SkillDict.end())
-        return;
-
-    _skillData = &(skillIt->second);
+    for (auto& it : DataManager::Instance().SkillDict)
+    {
+        int32 id = it.first;
+        const Skill& s = it.second;
+        _skillStates.emplace(id, make_shared<SkillState>(id, s.cooldown + 3.f));
+    }
 }
 
 Monster::~Monster()
@@ -45,21 +48,50 @@ void Monster::UpdateIdle(float deltaTime)
 {
     const uint64 tick = GetTickCount64();
 
-    if (_nextSearchTick > tick)
-        return;
-    _nextSearchTick = tick + 500;
-
-    PlayerRef target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
-
+    auto target = GetPlayer();
     if (target == nullptr)
-        return;
+    {
+        if (_nextSearchTick > tick)
+            return;
+        _nextSearchTick = tick + 500;
 
-    SetPlayer(target);
-    _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-    BroadcastMove();
+        PlayerRef target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
+
+        if (target == nullptr)
+            return;
+
+        SetPlayer(target);
+        _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+        BroadcastMove();
+        return;
+    }
+
+    if (_coolTick <= tick)
+    {
+        SelectSkill();
+        if (_selectedSkill != nullptr)
+        {
+            DoSkill();
+            _coolTick = tick + 3000;
+            return;
+        }
+        else
+        {
+            if ((target->_worldPos - _worldPos).Length2D() > _chaseDistance * CELL_SIZE)
+            {
+                ChangeState(Protocol::STATE_MACHINE_MOVING);
+                return;
+            }
+        }
+    }
 }
 
 void Monster::UpdatePatrol(float deltaTime)
+{
+
+}
+
+void Monster::UpdateCasting(float deltaTime)
 {
 
 }
@@ -72,11 +104,14 @@ void Monster::UpdateMoving(float deltaTime)
     if (target == nullptr || target->GetRoom() != GetRoom())
     {
         SetPlayer(nullptr);
-        _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-        BroadcastMove();
+        ChangeState(Protocol::STATE_MACHINE_IDLE);
         return;
     }
 
+    auto room = GetRoom();
+    if (room == nullptr)
+        return;
+    
     GameMapRef map = GetRoom()->GetGameMap();
     Vector3 myPos = _worldPos;
     Vector3 targetPos = target->_worldPos;
@@ -84,21 +119,28 @@ void Monster::UpdateMoving(float deltaTime)
     float distance = (targetPos - myPos).Length2D();
 
     // 사정거리 초과 시 추적 종료
-    if (distance > _searchRadius * 1.5 * CELL_SIZE)
+    if (distance > _chaseDistance * CELL_SIZE)
     {
         SetPlayer(nullptr);
-        _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-        BroadcastMove();
+        ChangeState(Protocol::STATE_MACHINE_IDLE);
         return;
     }
     
-    // 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
-    if (distance <= (_skillData->actions[0]->distance * CELL_SIZE))
+    if (_coolTick <= tick)
     {
-        _coolTick = 0;
-        _posInfo.set_state(Protocol::STATE_MACHINE_SKILL);
-        BroadcastMove(); // 상태 변경 알림
-        return;
+        SelectSkill();
+
+        if (_selectedSkill != nullptr)
+        {
+            // 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
+            if (distance <= (_selectedSkill->actions[0]->distance * CELL_SIZE))
+            {
+                DoSkill();
+                ChangeState(Protocol::STATE_MACHINE_SKILL);
+                _coolTick = tick + 3000;
+                return;
+            }
+        }
     }
 
     // 직선 추적 가능 시 바로 이동
@@ -109,12 +151,10 @@ void Monster::UpdateMoving(float deltaTime)
         if (moveDist > distance)
             moveDist = distance;
 
-        destPos = dir * moveDist;
-        MoveToNextPos(destPos);
+        destPos = _worldPos + dir * moveDist;
 
-        _posInfo.set_yaw(atan2f(dir._y, dir._x) * 180.f / PI);
-        _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-        BroadcastMove();
+        MoveToNextPos(destPos, &dir);
+        room->BroadcastMove(_posInfo, GetId());
         return;
     }
 
@@ -134,8 +174,7 @@ void Monster::UpdateMoving(float deltaTime)
         if (_path.size() < 2)
         {
             SetPlayer(nullptr);
-            _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-            BroadcastMove();
+            ChangeState(Protocol::STATE_MACHINE_IDLE);
             return;
         }
 
@@ -148,89 +187,35 @@ void Monster::UpdateMoving(float deltaTime)
     if (_simplifiedIndex < _simplifiedPath.size())
     {
         destPos = _simplifiedPath[_simplifiedIndex];
-        _dir = destPos - _worldPos;
-        float segDist = _dir.Length2D();
+        Vector3 dir = destPos - _worldPos;
+        float segDist = dir.Length2D();
 
-        _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-        if (segDist < 0.01f)
+        if (segDist < 10.f)
         {
-            MoveToNextPos(destPos);
+            MoveToNextPos(destPos, &dir);
             _simplifiedIndex++;
         }
         else
         {
-            _dir = _dir / segDist;
+            dir = dir / segDist;
             float moveDist = _statInfo.speed() * deltaTime;
             if (moveDist > segDist)
                 moveDist = segDist;
 
-            Vector3 destPos = _worldPos + _dir * moveDist;
-            MoveToNextPos(destPos);
-            _posInfo.set_yaw(atan2f(_dir._y, _dir._x) * 180.f / PI);
+            Vector3 destPos = _worldPos + dir * moveDist;
+            MoveToNextPos(destPos, &dir);
         }
-
-        BroadcastMove();
+        room->BroadcastMove(_posInfo, GetId());
         return;
     }
 
     // 그 외: Idle 전환
-    _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-    BroadcastMove();
+    ChangeState(Protocol::STATE_MACHINE_IDLE);
 }
 
 void Monster::UpdateSkill(float deltaTime)
 {
-    const uint64 tick = GetTickCount64();
 
-    if (_coolTick == 0)
-    {
-        // 유효한 타겟 체크
-        PlayerRef target = GetPlayer();
-        if (target == nullptr || target->GetRoom() != GetRoom() || target->_statInfo.hp() == 0)
-        {
-            SetPlayer(nullptr);
-            _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-            BroadcastMove();
-            return;
-        }
-
-        // 타겟과 거리 확인
-        float dist = (target->_worldPos - _worldPos).Length2D();
-        if (dist > _skillData->actions[0]->distance * CELL_SIZE)
-        {
-            SetPlayer(nullptr);
-            _posInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-            BroadcastMove(); // 상태 전환 알림
-            return;
-        }
-
-        Vector3 dir = (target->_worldPos - _worldPos).Normalized2D();
-        float yaw = atan2f(dir._y, dir._x) * 180.f / PI;
-        _posInfo.set_yaw(yaw);
-        BroadcastMove();
-
-        // 데미지 적용
-        //
-
-        // 스킬 사용 패킷 전송
-        S_SKILL skillPkt;
-        skillPkt.set_object_id(GetId());
-        skillPkt.mutable_skill_info()->set_skillid(_skillData->id);
-
-        if (auto room = GetRoom())
-        {
-            auto sendBuffer = ServerPacketHandler::MakeSendBuffer(skillPkt);
-            room->Broadcast(sendBuffer);
-        }
-
-        // 쿨타임 설정
-        _coolTick = tick + static_cast<int64>(1000 * _skillData->cooldown);
-    }
-    else
-    {
-        // 쿨타임 끝
-        _coolTick = 0;
-    }
 }
 
 void Monster::UpdateDead(float deltaTime)
@@ -241,7 +226,7 @@ void Monster::UpdateDead(float deltaTime)
 void Monster::OnDamaged(ObjectRef attacker, int32 damage)
 {
     Object::OnDamaged(attacker, damage);
-    cout << "Monster " << this->GetId() << " OnDamaged by Player " << attacker->GetId() << " damage : " << damage + attacker->_statInfo.attack();
+    cout << "Monster " << this->GetId() << " OnDamaged by Player " << attacker->GetId() << " damage : " << damage + attacker->_statInfo.attack() << endl;
 }
 
 void Monster::OnDead(ObjectRef attacker)
@@ -270,4 +255,87 @@ void Monster::BroadcastMove()
         return;
 
     room->BroadcastMove(_posInfo, GetId());
+}
+
+void Monster::SelectSkill()
+{
+    uint64 now = ::GetTickCount64();
+
+    vector<int32> availableSkills;
+    for (auto& it : _skillStates)
+    {
+        if (this->CanUseSkill(it.first, now))
+            availableSkills.push_back(it.first);
+    }
+    if (availableSkills.empty())
+        return;
+
+    int32 idx = Utils::GetRandom(0, static_cast<int32>(availableSkills.size() - 1));
+
+    auto it = DataManager::Instance().SkillDict.find(availableSkills[idx]);
+    _selectedSkill = &it->second;
+}
+
+void Monster::DoSkill()
+{
+    auto room = GetRoom();
+    if (room == nullptr)
+        return;
+
+    PlayerRef target = GetPlayer();
+    if (target == nullptr)
+        return;
+
+    room->_skillSystem->ExecuteSkill(shared_from_this(), _selectedSkill->id, target->_worldPos);
+    _coolTick = 3000;
+}
+
+bool Monster::CanUseSkill(int32 skillId, uint64 now) const
+{
+    auto it = _skillStates.find(skillId);
+    if (it == _skillStates.end())
+        return false;
+
+    SkillStateRef state = it->second;
+
+    // 쿨타임 / 캐스팅 중 체크
+    if (state->IsOnCooldown(now) || state->IsCasting(now))
+        return false;
+
+    auto skillIt = DataManager::Instance().SkillDict.find(skillId);
+    const Skill* skill = &skillIt->second;
+
+    PlayerRef target = GetPlayer();
+    if (target == nullptr)
+        return false;
+
+    // 사거리 및 시야 체크
+    if ((target->_worldPos - _worldPos).Length2D() > skill->actions[0]->distance * CELL_SIZE)
+        return false;
+
+    auto map = GetRoom() ? GetRoom()->GetGameMap() : nullptr;
+    if (map && !map->HasLineOfSightRayCast(_worldPos, target->_worldPos))
+        return false;
+
+    // 자원 체크
+
+    return true;
+}
+
+void Monster::StartSkillCast(int32 skillId, uint64 now, float castTime)
+{
+    auto it = _skillStates.find(skillId);
+    if (it == _skillStates.end())
+        return;
+
+    it->second->StartCasting(now, castTime);
+}
+
+void Monster::StartSkillCooldown(int32 skillId, uint64 now)
+{
+    auto it = _skillStates.find(skillId);
+    if (it == _skillStates.end())
+        return;
+
+    it->second->StartCooldown(now);
 }

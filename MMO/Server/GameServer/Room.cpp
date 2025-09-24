@@ -166,8 +166,8 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 	
 	Vector3 destPos = Vector3(pkt.info());
 
+	player->_posInfo.set_state(pkt.info().state());
 	player->MoveToNextPos(destPos);
-	player->_posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
 	BroadcastMove(player->_posInfo, player->GetId());
 }
 
@@ -195,11 +195,6 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	_skillSystem->ExecuteSkill(player, skillId, { pkt.x(), pkt.y(), pkt.z() });
 }
 
-RoomRef Room::GetRoomRef()
-{
-	return static_pointer_cast<Room>(shared_from_this());
-}
-
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const
 {
 	auto it = _mapInfo.spawnTables.find(spawnId);
@@ -213,7 +208,7 @@ bool Room::AddObject(ObjectRef object)
 	if (object == nullptr)
 		return false;
 
-	object->SetRoom(GetRoomRef());
+	object->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 
 	switch (object->GetObjectType())
 	{

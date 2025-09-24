@@ -22,7 +22,7 @@ Player::~Player()
 void Player::OnDamaged(ObjectRef attacker, int32 damage)
 {
     Object::OnDamaged(attacker, damage);
-    cout << "Player " << this->GetId() << " OnDamaged by Monster " << attacker->GetId() << " damage : " << damage + attacker->_statInfo.attack();
+    cout << "Player " << this->GetId() << " OnDamaged by Monster " << attacker->GetId() << " damage : " << damage + attacker->_statInfo.attack() << endl;
 }
 
 void Player::OnDead(ObjectRef attacker)
@@ -30,6 +30,9 @@ void Player::OnDead(ObjectRef attacker)
     auto room = GetRoom();
     if (room == nullptr)
         return;
+
+    if (attacker->GetCreatureType() == CREATURE_TYPE_MONSTER)
+        static_pointer_cast<Monster>(attacker)->SetPlayer(nullptr);
 
     S_DIE diePkt;
     diePkt.set_object_id(GetId());

@@ -26,10 +26,10 @@ void Projectile::Update(float deltaTime)
 
     Vector3 currentPos = _worldPos;
     Vector3 destPos = _worldPos + (_dir * _data->speed * deltaTime);
+    Vector2Int blocked;
     
-    MoveToNextPos(destPos);
-    _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-    room->BroadcastMove(_posInfo);
+    MoveToNextPos(destPos, &_dir, &blocked);
+    room->BroadcastMove(_posInfo, GetId());
 
     ObjectRef target = nullptr;
 
@@ -61,7 +61,7 @@ void Projectile::Update(float deltaTime)
         ;
     }
 
-    if (_worldPos != destPos)
+    if (!room->GetGameMap()->CanGo(blocked))
     {
         room->AddRemoveList(shared_from_this());
         return;

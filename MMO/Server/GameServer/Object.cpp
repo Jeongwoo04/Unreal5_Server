@@ -45,16 +45,30 @@ void Object::OnDead(ObjectRef attacker)
 
 }
 
-void Object::MoveToNextPos(const Vector3& destPos)
+void Object::MoveToNextPos(const Vector3& destPos, Vector3* dir, Vector2Int* blocked)
 {
 	auto room = GetRoom();
 	if (room == nullptr)
 		return;
 
 	Vector3 nextPos;
+	Vector3 currentPos = _worldPos;
 	Vector2Int currentGrid = _gridPos;
 
-	nextPos = GetRoom()->GetGameMap()->GetSafePosRayCast(_worldPos, destPos, nullptr);
+	nextPos = GetRoom()->GetGameMap()->GetSafePosRayCast(_worldPos, destPos, blocked);
+	Vector3 direction;
+	if (dir == nullptr)
+		direction = (nextPos - currentPos).Normalized2D();
+	else
+		direction = *dir;
+
+	if (direction.Length2D() > 1e-6f)
+	{
+		_posInfo.set_yaw(Vector3::DirToYaw2D(direction));
+	}
+
+	_posInfo.set_object_id(GetId());
+	_posInfo.set_speed(_statInfo.speed());
 	_posInfo.set_x(nextPos._x);
 	_posInfo.set_y(nextPos._y);
 	_worldPos = nextPos;
@@ -64,6 +78,19 @@ void Object::MoveToNextPos(const Vector3& destPos)
 		room->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), currentGrid, _gridPos);
 	else if (GetCreatureType() == CREATURE_TYPE_PLAYER)
 		room->_playerGrid.ApplyMove(static_pointer_cast<Player>(shared_from_this()), currentGrid, _gridPos);
+}
+
+void Object::ChangeState(const Protocol::StateMachine& state)
+{
+	if (GetState() == state)
+		return;
+
+	_posInfo.set_state(state);
+	auto room = GetRoom();
+	if (room == nullptr)
+		return;
+
+	room->BroadcastMove(_posInfo, GetId());
 }
 
 void Object::SetId(uint64 id)

@@ -26,13 +26,13 @@ public:
 	virtual void Update(float deltaTime);
 	virtual void OnDamaged(ObjectRef attacker, int32 damage);
 	virtual void OnDead(ObjectRef attacker);
-	virtual void MoveToNextPos(const Vector3& destPos);
+	virtual void MoveToNextPos(const Vector3& destPos, Vector3* dir = nullptr, Vector2Int* blocked = nullptr);
 
 	virtual Protocol::ObjectType GetObjectType() const { return _objectInfo.object_type(); }
 	virtual Protocol::CreatureType GetCreatureType() const { return _objectInfo.creature_type(); }
 	virtual Protocol::PlayerType GetPlayerType() const { return _objectInfo.player_type(); }
 
-	void SetState(const Protocol::StateMachine& state) { _posInfo.set_state(state); }
+	void ChangeState(const Protocol::StateMachine& state);
 	Protocol::StateMachine GetState() const { return _posInfo.state(); }
 
 	void SetId(uint64 id);
@@ -56,8 +56,6 @@ public:
 
 	Vector2Int _gridPos;
 	Vector3 _worldPos;
-
-	Vector3 _dir;
 
 	int32 _spTableId;
 

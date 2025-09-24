@@ -31,6 +31,5 @@ public:
 private:
 	weak_ptr<GameSession> _session;
 	unordered_map<int32, SkillStateRef> _skillStates;
-	SkillInstance* _activeSkill = nullptr;
 };
 

@@ -39,7 +39,6 @@ public:
 	void HandleSkill(PlayerRef player, Protocol::C_SKILL pkt);
 
 public:
-	RoomRef GetRoomRef();
 	const SpawnTable* GetSpawnTable(int32 spawnId) const;
 
 private:

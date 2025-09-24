@@ -55,24 +55,24 @@ void AS1MarkerActor::Tick(float DeltaTime)
 // Called every frame
 void AS1MarkerActor::TickFade()
 {
-    if (LifeTime <= 0.f)
-        return;
+    //if (LifeTime <= 0.f)
+    //    return;
 
-    const float TickInterval = 0.02f;
-    Elapsed += TickInterval;
+    //const float TickInterval = 0.02f;
+    //Elapsed += TickInterval;
 
-    if (!DynMat)
-    {
-        Destroy();
-        return;
-    }
+    //if (!DynMat)
+    //{
+    //    Destroy();
+    //    return;
+    //}
 
-    float Alpha = FMath::Clamp(1.f - (Elapsed / LifeTime), 0.f, 1.f);
-    DynMat->SetScalarParameterValue("Fade", Alpha);
+    //float Alpha = FMath::Clamp(1.f - (Elapsed / LifeTime), 0.f, 1.f);
+    //DynMat->SetScalarParameterValue("Fade", Alpha);
 
-    if (Alpha <= 0.f)
-    {
-        SetLifeSpan(0.1f);
-    }    
+    //if (Alpha <= 0.f)
+    //{
+    //    SetLifeSpan(0.1f);
+    //}
 }
 
