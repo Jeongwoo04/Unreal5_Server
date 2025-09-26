@@ -43,38 +43,3 @@ void Player::OnDead(ObjectRef attacker)
 
     room->LeaveRoom(shared_from_this());
 }
-
-bool Player::CanUseSkill(int32 skillId, uint64 now) const
-{
-    auto it = _skillStates.find(skillId);
-    if (it == _skillStates.end())
-        return false;
-
-    SkillStateRef state = it->second;
-
-    // 쿨타임 / 캐스팅 중 체크
-    if (state->IsOnCooldown(now) || state->IsCasting(now))
-        return false;
-
-    // 자원 체크
-
-    return true;
-}
-
-void Player::StartSkillCast(int32 skillId, uint64 now, float castTime)
-{
-    auto it = _skillStates.find(skillId);
-    if (it == _skillStates.end())
-        return;
-
-    it->second->StartCasting(now, castTime);
-}
-
-void Player::StartSkillCooldown(int32 skillId, uint64 now)
-{
-    auto it = _skillStates.find(skillId);
-    if (it == _skillStates.end())
-        return;
-
-    it->second->StartCooldown(now);
-}

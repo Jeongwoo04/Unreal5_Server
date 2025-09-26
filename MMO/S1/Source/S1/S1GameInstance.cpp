@@ -208,9 +208,75 @@ void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
 	if (World == nullptr)
 		return;
 
-	// TODO : Skill anim
-	SkillPkt.object_id();
-	SkillPkt.skill_info().skillid();
+	const uint64 ObjectId = SkillPkt.object_id();
+
+	AActor* FindActor = ObjectManager->FindObject(ObjectId);
+	if (FindActor == nullptr)
+		return;
+
+	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+	
+	// Creature 狼 S_Skill 贸府
+}
+
+void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& CastStartPkt)
+{
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
+
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	const uint64 ObjectId = CastStartPkt.object_id();
+
+	AActor* FindActor = ObjectManager->FindObject(ObjectId);
+	if (FindActor == nullptr)
+		return;
+
+	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+
+	// Creature 狼 S_SkillCastStart 贸府
+}
+
+void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCESS& CastSuccessPkt)
+{
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
+
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	const uint64 ObjectId = CastSuccessPkt.object_id();
+
+	AActor* FindActor = ObjectManager->FindObject(ObjectId);
+	if (FindActor == nullptr)
+		return;
+
+	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+
+	// Creature 狼 S_SkillCastSuccess 贸府
+}
+
+void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL& CastCancelPkt)
+{
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
+
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	const uint64 ObjectId = CastCancelPkt.object_id();
+
+	AActor* FindActor = ObjectManager->FindObject(ObjectId);
+	if (FindActor == nullptr)
+		return;
+
+	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+
+	// Creature 狼 S_SkillCastCancel 贸府
 }
 
 void US1GameInstance::HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt)

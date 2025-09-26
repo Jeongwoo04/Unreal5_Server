@@ -32,19 +32,14 @@ public:
 	void SelectSkill();
 	void DoSkill();
 
-	bool CanUseSkill(int32 skillId, uint64 now) const;
-	void StartSkillCast(int32 skillId, uint64 now, float castTime);
-	void StartSkillCooldown(int32 skillId, uint64 now);
-
-	SkillStateRef GetSkillState(int32 skillId) { return _skillStates[skillId]; }
-	SkillInstance* GetSkillInstance() { return _activeSkill; }
+	bool CanUseSkill(int32 skillId, uint64 now) const override;
 
 public:
 	vector<Vector2Int> _path;
 	vector<Vector3> _simplifiedPath;
 	int32 _simplifiedIndex = 0;
 
-	const Skill* _selectedSkill = nullptr;
+	int32 _currentSkillId = -1;
 
 private:
 	float _searchRadius = 20.f;
@@ -58,6 +53,5 @@ private:
 
 private:
 	weak_ptr<Player> _targetPlayer;
-	unordered_map<int32, SkillStateRef> _skillStates;
 };
 

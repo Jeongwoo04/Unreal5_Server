@@ -22,47 +22,43 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 
 	const Skill& skill = it->second;
 
-	SkillInstance instance;
-	instance.caster = caster;
-	instance.skill = &skill;
-	instance.targetPos = targetPos;
-	instance.isCasting = (skill.castTime > 0.0f);
-	instance.actionDelayElapsed = 0.f;
-	instance.currentActionIndex = 0;
+	SkillInstanceRef instance = make_shared<SkillInstance>();
+	instance->caster = caster;
+	instance->skill = &skill;
+	instance->targetPos = targetPos;
+	instance->isCasting = (skill.castTime > 0.0f);
+	instance->actionDelayElapsed = 0.f;
+	instance->currentActionIndex = 0;
 
-	if (instance.isCasting == true)
+	auto creature = static_pointer_cast<Creature>(caster);
+	if (creature == nullptr)
+		return;
+
+	if (instance->isCasting == true)
 	{
-		caster->_activeSkill = &instance;
-		caster->_posInfo.set_yaw(Vector3::DirToYaw2D((targetPos - caster->_worldPos).Normalized2D()));
-		caster->ChangeState(Protocol::STATE_MACHINE_CASTING);
-		
-		if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
-			static_pointer_cast<Player>(caster)->StartSkillCast(skillId, now, skill.castTime);
-		else if (caster->GetCreatureType() == CREATURE_TYPE_MONSTER)
-			static_pointer_cast<Monster>(caster)->StartSkillCast(skillId, now, skill.castTime);
+		creature->ChangeState(Protocol::STATE_MACHINE_CASTING);
+		creature->StartSkillCast(skillId, now, skill.castTime);
 		
 		// 캐스팅시작 패킷전송
 		Protocol::S_SKILL_CAST_START pkt;
 		pkt.set_object_id(caster->GetId());
-		pkt.set_casttime(instance.skill->castTime);
-		pkt.mutable_info()->set_skillid(skillId);
+		pkt.set_skillid(skillId);
+		pkt.set_servernow(now);
+		pkt.set_castendtime(now + static_cast<uint64>(instance->skill->castTime * 1000));
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-		caster->GetRoom()->Broadcast(sendBuffer, caster->GetId());
+		if (auto room = GetRoom())
+			room->Broadcast(sendBuffer, caster->GetId());
 	}
 	else
 	{
 		if (!skill.actions.empty())
 		{
-			HandleAction(caster, targetPos, skill.actions[0]);
-			if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
-			{
-				static_pointer_cast<Player>(caster)->StartSkillCooldown(skillId, now);
-			}
-			else if (caster->GetCreatureType() == CREATURE_TYPE_MONSTER)
-			{
-				static_pointer_cast<Monster>(caster)->StartSkillCooldown(skillId, now);
-			}
+			ActionData* action = instance->skill->actions[instance->currentActionIndex];
+			HandleAction(caster, targetPos, action, instance);
+			
+			creature->StartSkillCooldown(skillId, now);
+			creature->ChangeState(Protocol::STATE_MACHINE_SKILL);
 		}
 	}
 
@@ -71,12 +67,13 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 
 void SkillSystem::CancelCasting(ObjectRef caster)
 {
-	if (caster->_activeSkill && caster->_activeSkill->isCasting)
+	if (auto creature = static_pointer_cast<Creature>(caster))
 	{
-		caster->_activeSkill->canceled = true;
-		caster->_activeSkill = nullptr;
+		if (creature->GetActiveSkill() == nullptr)
+			return;
 
-		// Update에서 제거
+		creature->GetActiveSkill()->canceled = true;
+		creature->SetActiveSkill(nullptr);
 	}
 }
 
@@ -86,51 +83,51 @@ void SkillSystem::Update(float deltaTime)
 
 	for (auto it = activeSkills.begin(); it != activeSkills.end(); )
 	{
-		SkillInstance& inst = *it;
+		SkillInstanceRef instance = *it;
+		auto creature = static_pointer_cast<Creature>(instance->caster);
 
-		// 취소된 스킬이면 제거
-		if (inst.canceled)
+		if (instance == nullptr || creature == nullptr)
 		{
 			it = activeSkills.erase(it);
 			continue;
 		}
 
-		// 캐스팅 중이면 캐스팅 처리
-		if (inst.isCasting)
+		// 취소된 스킬이면 제거
+		if (instance->canceled)
 		{
-			bool ret = false;
-			if (inst.caster->GetCreatureType() == CREATURE_TYPE_MONSTER)
-				ret = (now >= static_pointer_cast<Monster>(inst.caster)->GetSkillState(inst.skill->id)->GetCastEndTime()) ? true : false;
-			else if (inst.caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
-				ret = (now >= static_pointer_cast<Player>(inst.caster)->GetSkillState(inst.skill->id)->GetCastEndTime()) ? true : false;
-			
-			if (ret)
+			if (creature->GetActiveSkill() == instance)
+				creature->SetActiveSkill(nullptr);
+
+			it = activeSkills.erase(it);
+			continue;
+		}
+
+		// 캐스팅 중이면 캐스팅 처리
+		if (instance->isCasting)
+		{
+			if (now >= creature->GetSkillState(instance->skill->id)->GetCastEndTime())
 			{
-				cout << "캐스팅 완료" << endl;
-				inst.isCasting = false;
-				inst.actionDelayElapsed = 0.f;
-				inst.caster->ChangeState(Protocol::STATE_MACHINE_IDLE);
+				cout << instance->skill->name << " 캐스팅 완료" << endl;
+				instance->isCasting = false;
+				instance->actionDelayElapsed = 0.f;
+				instance->caster->ChangeState(Protocol::STATE_MACHINE_IDLE);
 				// 캐스팅 완료 패킷 전송
 				{
 					S_SKILL_CAST_SUCCESS pkt;
-					pkt.set_object_id(inst.caster->GetId());
-					pkt.set_skillid(inst.skill->id);
+					pkt.set_object_id(instance->caster->GetId());
+					pkt.set_skillid(instance->skill->id);
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-					inst.caster->GetRoom()->Broadcast(sendBuffer, inst.caster->GetId());
+					GetRoom()->Broadcast(sendBuffer, instance->caster->GetId());
 				}
-
-				if (inst.caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
-					static_pointer_cast<Player>(inst.caster)->StartSkillCooldown(inst.skill->id, now);
-				else if (inst.caster->GetCreatureType() == CREATURE_TYPE_MONSTER)
-					static_pointer_cast<Monster>(inst.caster)->StartSkillCooldown(inst.skill->id, now);
+				creature->StartSkillCooldown(instance->skill->id, now);
 
 				// 캐스팅이 끝난 후 나머지 액션 실행
-				if (!inst.skill->actions.empty())
+				if (!instance->skill->actions.empty())
 				{
-					ActionData* action = inst.skill->actions[inst.currentActionIndex];
-					HandleAction(inst.caster, inst.targetPos, action);
-					inst.currentActionIndex++;
-					inst.actionDelayElapsed = 0.f;
+					ActionData* action = instance->skill->actions[instance->currentActionIndex];
+					HandleAction(instance->caster, instance->targetPos, action, instance);
+					instance->currentActionIndex++;
+					instance->actionDelayElapsed = 0.f;
 				}
 			}
 			++it;
@@ -138,26 +135,27 @@ void SkillSystem::Update(float deltaTime)
 		}
 
 		// 캐스팅이 끝났다면 액션 실행
-		if (inst.currentActionIndex < (int32)inst.skill->actions.size())
+		if (instance->currentActionIndex < (int32)instance->skill->actions.size())
 		{
-			inst.actionDelayElapsed += deltaTime;
-			ActionData* action = inst.skill->actions[inst.currentActionIndex];
+			instance->actionDelayElapsed += deltaTime;
+			ActionData* action = instance->skill->actions[instance->currentActionIndex];
 
-			if (inst.actionDelayElapsed >= action->actionDelay)
+			if (instance->actionDelayElapsed >= action->actionDelay)
 			{
-				HandleAction(inst.caster, inst.targetPos, action);
-
-				inst.currentActionIndex++;
-				inst.actionDelayElapsed = 0.f; // 다음 액션 준비
+				HandleAction(instance->caster, instance->targetPos, action, instance);
+				instance->currentActionIndex++;
+				instance->actionDelayElapsed = 0.f; // 다음 액션 준비
 			}
 		}
 
-		if (inst.currentActionIndex >= (int32)inst.skill->actions.size())
+		if (instance->currentActionIndex >= (int32)instance->skill->actions.size())
 		{
-			cout << "스킬 완료" << endl;
-			if (auto monster = dynamic_pointer_cast<Monster>(inst.caster))
+			cout << instance->skill->name << "스킬 완료" << endl;
+			creature->SetActiveSkill(nullptr);
+
+			if (auto monster = dynamic_pointer_cast<Monster>(instance->caster))
 			{
-				monster->_selectedSkill = nullptr;
+				monster->_currentSkillId = -1;
 				monster->ChangeState(Protocol::STATE_MACHINE_IDLE);
 			}
 
@@ -166,8 +164,23 @@ void SkillSystem::Update(float deltaTime)
 	}
 }
 
-void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action)
+void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action, SkillInstanceRef instance)
 {
+	cout << static_cast<int32>(action->actionType) << " Handle Action" << endl;
+
+	int32 idx = instance->currentActionIndex;
+
+	{
+		Protocol::S_SKILL pkt;
+		pkt.set_object_id(caster->GetId());
+		pkt.mutable_skill_info()->set_skillid(instance->skill->id);
+		pkt.mutable_skill_info()->set_actionindex(idx);
+
+		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+		if (auto room = GetRoom())
+			room->Broadcast(sendBuffer);
+	}
+
 	switch (action->actionType)
 	{
 	case ActionType::Move:
@@ -193,6 +206,8 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 void SkillSystem::HandleMoveAction(ObjectRef caster, const Vector3& targetPos, MoveActionData* action)
 {
 	caster->MoveToNextPos(targetPos);
+	if (auto room = GetRoom())
+		room->BroadcastMove(caster->_posInfo, caster->GetId());
 }
 
 void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos, AttackActionData* action)
@@ -202,7 +217,7 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 
 	if (caster->GetCreatureType() == CREATURE_TYPE_MONSTER)
 	{
-		auto playerCandidates = caster->GetRoom()->_playerGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action->radius);
+		auto playerCandidates = GetRoom()->_playerGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action->radius);
 		vector<PlayerRef> targetPlayers;
 
 		switch (action->shape)
@@ -231,7 +246,7 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 	}
 	else if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
-		auto monsterCandidates = caster->GetRoom()->_monsterGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action->radius);
+		auto monsterCandidates = GetRoom()->_monsterGrid.FindAroundFloat(Vector2Int(caster->_posInfo), action->radius);
 		vector<MonsterRef> targetMonsters;
 
 		switch (action->shape)
@@ -263,10 +278,10 @@ void SkillSystem::HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, 
 {
 	if (action->actionType == ActionType::SpawnProjectile)
 	{
-		caster->GetRoom()->SpawnProjectile(caster, action->dataId, Vector3(caster->_posInfo), (targetPos - caster->_worldPos).Normalized2D());
+		GetRoom()->SpawnProjectile(caster, action->dataId, Vector3(caster->_posInfo), (targetPos - caster->_worldPos).Normalized2D());
 	}
 	else if (action->actionType == ActionType::SpawnField)
-		caster->GetRoom()->SpawnField(caster, action->dataId, targetPos);
+		GetRoom()->SpawnField(caster, action->dataId, targetPos);
 }
 
 void SkillSystem::HandleBuffAction(ObjectRef caster, const Vector3& targetPos, BuffActionData* action)

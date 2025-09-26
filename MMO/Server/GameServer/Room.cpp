@@ -13,6 +13,7 @@ Room::Room()
 	_skillSystem = make_shared<SkillSystem>();
 	_objectManager->Init();
 	_skillSystem->Init();
+	_skillSystem->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 }
 
 Room::~Room()
@@ -176,7 +177,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	if (player == nullptr)
 		return;
 
-	int32 skillId = pkt.info().skillid();
+	int32 skillId = pkt.skillid();
 
 	auto it = DataManager::Instance().SkillDict.find(skillId);
 	if (it == DataManager::Instance().SkillDict.end())
@@ -192,7 +193,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		return;
 	}
 
-	_skillSystem->ExecuteSkill(player, skillId, { pkt.x(), pkt.y(), pkt.z() });
+	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.targetpos()));
 }
 
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const
@@ -253,8 +254,6 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 	if (object == nullptr)
 		return false;
 
-	object->SetRoom(nullptr);
-
 	int32 eraseCount = 0;
 
 	switch (object->GetObjectType())
@@ -288,6 +287,7 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 	}
 
 	_objectManager->Despawn(object);
+	object->SetRoom(nullptr);
 
 	return eraseCount > 0 ? true : false;
 }

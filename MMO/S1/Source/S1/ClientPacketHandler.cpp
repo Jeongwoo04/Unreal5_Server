@@ -81,24 +81,36 @@ bool Handle_S_SKILL(PacketSessionRef& session, Protocol::S_SKILL& pkt)
 		GameInstance->HandleSkill(pkt);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Received S_SKILL packet: object_id=%llu, skill_id=%d"),
-		pkt.object_id(),
-		pkt.skill_info().skillid());
 	return true;
 }
 
 bool Handle_S_SKILL_CAST_START(PacketSessionRef& session, Protocol::S_SKILL_CAST_START& pkt)
 {
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleSkillCastStart(pkt);
+	}
+
 	return true;
 }
 
 bool Handle_S_SKILL_CAST_SUCCESS(PacketSessionRef& session, Protocol::S_SKILL_CAST_SUCCESS& pkt)
 {
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleSkillCastSuccess(pkt);
+	}
+
 	return true;
 }
 
 bool Handle_S_SKILL_CAST_CANCEL(PacketSessionRef& session, Protocol::S_SKILL_CAST_CANCEL& pkt)
 {
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleSkillCastCancel(pkt);
+	}
+
 	return true;
 }
 
@@ -109,8 +121,6 @@ bool Handle_S_CHANGE_HP(PacketSessionRef& session, Protocol::S_CHANGE_HP& pkt)
 		GameInstance->HandleChangeHp(pkt);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Received S_CHANGE_HP packet: object_id=%llu, hp=%d"),
-		pkt.object_id(), pkt.hp());
 	return true;
 }
 
@@ -121,8 +131,6 @@ bool Handle_S_DIE(PacketSessionRef& session, Protocol::S_DIE& pkt)
 		GameInstance->HandleDie(pkt);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Received S_DIE packet: object_id=%llu"),
-		pkt.object_id());
 	return true;
 }
 

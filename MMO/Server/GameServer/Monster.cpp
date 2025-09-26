@@ -61,24 +61,24 @@ void Monster::UpdateIdle(float deltaTime)
             return;
 
         SetPlayer(target);
-        _posInfo.set_state(Protocol::STATE_MACHINE_MOVING);
-        BroadcastMove();
+        ChangeState(Protocol::STATE_MACHINE_MOVING);
         return;
     }
 
     if (_coolTick <= tick)
     {
         SelectSkill();
-        if (_selectedSkill != nullptr)
+        if (_currentSkillId > 0)
         {
             DoSkill();
-            _coolTick = tick + 3000;
             return;
         }
         else
         {
-            if ((target->_worldPos - _worldPos).Length2D() > _chaseDistance * CELL_SIZE)
+            Vector3 dir = (target->_worldPos - _worldPos);
+            if (dir.Length2D() < _chaseDistance * CELL_SIZE)
             {
+                _posInfo.set_yaw(Vector3::DirToYaw2D(dir.Normalized2D()));
                 ChangeState(Protocol::STATE_MACHINE_MOVING);
                 return;
             }
@@ -130,15 +130,20 @@ void Monster::UpdateMoving(float deltaTime)
     {
         SelectSkill();
 
-        if (_selectedSkill != nullptr)
+        if (_currentSkillId > 0) // 스킬을 골랐다면
         {
-            // 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
-            if (distance <= (_selectedSkill->actions[0]->distance * CELL_SIZE))
+            auto it = DataManager::Instance().SkillDict.find(_currentSkillId);
+            if (it != DataManager::Instance().SkillDict.end())
             {
-                DoSkill();
-                ChangeState(Protocol::STATE_MACHINE_SKILL);
-                _coolTick = tick + 3000;
-                return;
+                const Skill& skillData = it->second;
+
+                // 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
+                if (distance <= (skillData.actions[0]->distance * CELL_SIZE))
+                {
+                    DoSkill();
+                    ChangeState(Protocol::STATE_MACHINE_SKILL);
+                    return;
+                }
             }
         }
     }
@@ -235,6 +240,9 @@ void Monster::OnDead(ObjectRef attacker)
     if (room == nullptr)
         return;
 
+    //_selectedSkill = nullptr;
+    room->_skillSystem->CancelCasting(shared_from_this());
+
     S_DIE diePkt;
     diePkt.set_object_id(GetId());
     diePkt.set_attacker_id(attacker->GetId());
@@ -271,23 +279,24 @@ void Monster::SelectSkill()
         return;
 
     int32 idx = Utils::GetRandom(0, static_cast<int32>(availableSkills.size() - 1));
-
-    auto it = DataManager::Instance().SkillDict.find(availableSkills[idx]);
-    _selectedSkill = &it->second;
+    _currentSkillId = availableSkills[idx];
 }
 
 void Monster::DoSkill()
 {
-    auto room = GetRoom();
-    if (room == nullptr)
-        return;
-
     PlayerRef target = GetPlayer();
     if (target == nullptr)
         return;
 
-    room->_skillSystem->ExecuteSkill(shared_from_this(), _selectedSkill->id, target->_worldPos);
-    _coolTick = 3000;
+    Vector3 dir = target->_worldPos - _worldPos;
+    _posInfo.set_yaw(Vector3::DirToYaw2D(dir));
+
+    if (auto room = GetRoom())
+    {
+        room->BroadcastMove(_posInfo, GetId());
+        room->_skillSystem->ExecuteSkill(shared_from_this(), _currentSkillId, target->_worldPos);
+        _coolTick = ::GetTickCount64() + 3000;
+    }
 }
 
 bool Monster::CanUseSkill(int32 skillId, uint64 now) const
@@ -320,22 +329,4 @@ bool Monster::CanUseSkill(int32 skillId, uint64 now) const
     // 자원 체크
 
     return true;
-}
-
-void Monster::StartSkillCast(int32 skillId, uint64 now, float castTime)
-{
-    auto it = _skillStates.find(skillId);
-    if (it == _skillStates.end())
-        return;
-
-    it->second->StartCasting(now, castTime);
-}
-
-void Monster::StartSkillCooldown(int32 skillId, uint64 now)
-{
-    auto it = _skillStates.find(skillId);
-    if (it == _skillStates.end())
-        return;
-
-    it->second->StartCooldown(now);
 }

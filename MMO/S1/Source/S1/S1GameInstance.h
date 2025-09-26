@@ -53,6 +53,10 @@ public:
 
 	void HandleSkill(const Protocol::S_SKILL& SkillPkt);
 
+	void HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& CastStartPkt);
+	void HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCESS& CastSuccessPkt);
+	void HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL& CastCancelPkt);
+
 	void HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt);
 
 	void HandleDie(const Protocol::S_DIE& DiePkt);

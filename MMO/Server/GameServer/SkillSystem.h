@@ -16,6 +16,8 @@ struct SkillInstance
 	int32 currentActionIndex = 0;
 };
 
+using SkillInstanceRef = shared_ptr<struct SkillInstance>;
+
 class SkillSystem
 {
 public:
@@ -25,8 +27,11 @@ public:
 	void Update(float deltaTime);
 	void CancelCasting(ObjectRef caster);
 
+	RoomRef GetRoom() { return _room.lock(); }
+	void SetRoom(RoomRef room) { _room = room; }
+
 private:
-	void HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action);
+	void HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action, SkillInstanceRef instance);
 
 	void HandleMoveAction(ObjectRef caster, const Vector3& targetPos, MoveActionData* action);
 	void HandleAttackAction(ObjectRef caster, const Vector3& targetPos, AttackActionData* action);
@@ -34,7 +39,8 @@ private:
 	void HandleBuffAction(ObjectRef caster, const Vector3& targetPos, BuffActionData* action);
 
 private:
+	weak_ptr<Room> _room;
 	const unordered_map<int32, Skill>* skillDict = nullptr;
-	vector<SkillInstance> activeSkills;
+	vector<SkillInstanceRef> activeSkills;
 };
 

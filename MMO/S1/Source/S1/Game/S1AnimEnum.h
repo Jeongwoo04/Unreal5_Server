@@ -10,6 +10,7 @@ enum class EStateMachine : uint8
 	STATE_MACHINE_IDLE    UMETA(DisplayName = "Idle"),
 	STATE_MACHINE_PATROL  UMETA(DisplayName = "Patrol"),
 	STATE_MACHINE_MOVING  UMETA(DisplayName = "Moving"),
+	STATE_MACHINE_CASTING UMETA(DisplayName = "Casting"),
 	STATE_MACHINE_SKILL   UMETA(DisplayName = "Skill"),
 	STATE_MACHINE_DEAD    UMETA(DisplayName = "Dead")
 };

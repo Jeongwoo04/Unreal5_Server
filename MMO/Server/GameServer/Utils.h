@@ -80,6 +80,7 @@ struct Vector3
 {
     float _x, _y, _z;
     Vector3() { };
+    Vector3(const Protocol::Vec3& targetPos) { _x = targetPos.x(); _y = targetPos.y(); _z = targetPos.z(); }
     Vector3(float x, float y, float z) : _x(x), _y(y), _z(z) { }
     Vector3(const Protocol::PosInfo& pos) { _x = pos.x(); _y = pos.y(); _z = pos.z(); }
 

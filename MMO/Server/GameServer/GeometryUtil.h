@@ -12,14 +12,14 @@ public:
         const Vector3& center, float radius)
     {
         vector<T> result;
-        float rSq = radius * radius;
+        float radiusSq = radius * radius;
         for (T obj : candidates)
         {
             if (!obj)
                 continue;
             Vector3 pos(obj->_posInfo);
             float distSq = (pos - center).LengthSquared2D();
-            if (distSq <= rSq)
+            if (distSq <= radiusSq)
                 result.push_back(obj);
         }
         return result;
@@ -33,7 +33,7 @@ public:
     {
         vector<T> result;
         float cosHalfFov = cosf((fovDeg * 0.5f) * (PI / 180.f));
-        float rangeSq = range * range;
+        float rangeSq = (range * CELL_SIZE) * (range * CELL_SIZE);
 
         Vector3 forward2D = forward.Normalized2D();
 
@@ -73,8 +73,8 @@ public:
             float distForward = Vector3::Dot2D(forward2D, dir);
             float distRight = Vector3::Dot2D(right, dir);
 
-            if (distForward >= 0 && distForward <= length &&
-                fabs(distRight) <= (width * 0.5f))
+            if (distForward >= 0 && distForward <= length * CELL_SIZE &&
+                fabs(distRight) <= (width * CELL_SIZE * 0.5f))
             {
                 result.push_back(obj);
             }

@@ -77,7 +77,7 @@ void AS1Creature::ChangeState(Protocol::StateMachine NewState)
 
 void AS1Creature::UpdateIdle(float DeltaTime)
 {
-
+	SetActorRotation(TargetRot);
 }
 
 void AS1Creature::UpdateMoving(float DeltaTime)

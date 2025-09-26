@@ -60,7 +60,6 @@ public:
 	int32 _spTableId;
 
 	float _collisionRadius;
-	SkillInstance* _activeSkill = nullptr;
 
 protected:
 	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험

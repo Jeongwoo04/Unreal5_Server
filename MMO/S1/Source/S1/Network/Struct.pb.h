@@ -58,12 +58,16 @@ extern SkillInfoDefaultTypeInternal _SkillInfo_default_instance_;
 class StatInfo;
 struct StatInfoDefaultTypeInternal;
 extern StatInfoDefaultTypeInternal _StatInfo_default_instance_;
+class Vec3;
+struct Vec3DefaultTypeInternal;
+extern Vec3DefaultTypeInternal _Vec3_default_instance_;
 }  // namespace Protocol
 PROTOBUF_NAMESPACE_OPEN
 template<> ::Protocol::ObjectInfo* Arena::CreateMaybeMessage<::Protocol::ObjectInfo>(Arena*);
 template<> ::Protocol::PosInfo* Arena::CreateMaybeMessage<::Protocol::PosInfo>(Arena*);
 template<> ::Protocol::SkillInfo* Arena::CreateMaybeMessage<::Protocol::SkillInfo>(Arena*);
 template<> ::Protocol::StatInfo* Arena::CreateMaybeMessage<::Protocol::StatInfo>(Arena*);
+template<> ::Protocol::Vec3* Arena::CreateMaybeMessage<::Protocol::Vec3>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace Protocol {
 
@@ -831,6 +835,7 @@ class SkillInfo final :
 
   enum : int {
     kSkillIdFieldNumber = 1,
+    kActionIndexFieldNumber = 2,
   };
   // int32 skillId = 1;
   void clear_skillid();
@@ -839,6 +844,15 @@ class SkillInfo final :
   private:
   int32_t _internal_skillid() const;
   void _internal_set_skillid(int32_t value);
+  public:
+
+  // int32 actionIndex = 2;
+  void clear_actionindex();
+  int32_t actionindex() const;
+  void set_actionindex(int32_t value);
+  private:
+  int32_t _internal_actionindex() const;
+  void _internal_set_actionindex(int32_t value);
   public:
 
   // @@protoc_insertion_point(class_scope:Protocol.SkillInfo)
@@ -850,6 +864,177 @@ class SkillInfo final :
   typedef void DestructorSkippable_;
   struct Impl_ {
     int32_t skillid_;
+    int32_t actionindex_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_Struct_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Vec3 final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:Protocol.Vec3) */ {
+ public:
+  inline Vec3() : Vec3(nullptr) {}
+  ~Vec3() override;
+  explicit PROTOBUF_CONSTEXPR Vec3(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Vec3(const Vec3& from);
+  Vec3(Vec3&& from) noexcept
+    : Vec3() {
+    *this = ::std::move(from);
+  }
+
+  inline Vec3& operator=(const Vec3& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Vec3& operator=(Vec3&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Vec3& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Vec3* internal_default_instance() {
+    return reinterpret_cast<const Vec3*>(
+               &_Vec3_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  friend void swap(Vec3& a, Vec3& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Vec3* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Vec3* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Vec3* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Vec3>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Vec3& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const Vec3& from) {
+    Vec3::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Vec3* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "Protocol.Vec3";
+  }
+  protected:
+  explicit Vec3(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kXFieldNumber = 1,
+    kYFieldNumber = 2,
+    kZFieldNumber = 3,
+  };
+  // float x = 1;
+  void clear_x();
+  float x() const;
+  void set_x(float value);
+  private:
+  float _internal_x() const;
+  void _internal_set_x(float value);
+  public:
+
+  // float y = 2;
+  void clear_y();
+  float y() const;
+  void set_y(float value);
+  private:
+  float _internal_y() const;
+  void _internal_set_y(float value);
+  public:
+
+  // float z = 3;
+  void clear_z();
+  float z() const;
+  void set_z(float value);
+  private:
+  float _internal_z() const;
+  void _internal_set_z(float value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:Protocol.Vec3)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    float x_;
+    float y_;
+    float z_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -1368,9 +1553,95 @@ inline void SkillInfo::set_skillid(int32_t value) {
   // @@protoc_insertion_point(field_set:Protocol.SkillInfo.skillId)
 }
 
+// int32 actionIndex = 2;
+inline void SkillInfo::clear_actionindex() {
+  _impl_.actionindex_ = 0;
+}
+inline int32_t SkillInfo::_internal_actionindex() const {
+  return _impl_.actionindex_;
+}
+inline int32_t SkillInfo::actionindex() const {
+  // @@protoc_insertion_point(field_get:Protocol.SkillInfo.actionIndex)
+  return _internal_actionindex();
+}
+inline void SkillInfo::_internal_set_actionindex(int32_t value) {
+  
+  _impl_.actionindex_ = value;
+}
+inline void SkillInfo::set_actionindex(int32_t value) {
+  _internal_set_actionindex(value);
+  // @@protoc_insertion_point(field_set:Protocol.SkillInfo.actionIndex)
+}
+
+// -------------------------------------------------------------------
+
+// Vec3
+
+// float x = 1;
+inline void Vec3::clear_x() {
+  _impl_.x_ = 0;
+}
+inline float Vec3::_internal_x() const {
+  return _impl_.x_;
+}
+inline float Vec3::x() const {
+  // @@protoc_insertion_point(field_get:Protocol.Vec3.x)
+  return _internal_x();
+}
+inline void Vec3::_internal_set_x(float value) {
+  
+  _impl_.x_ = value;
+}
+inline void Vec3::set_x(float value) {
+  _internal_set_x(value);
+  // @@protoc_insertion_point(field_set:Protocol.Vec3.x)
+}
+
+// float y = 2;
+inline void Vec3::clear_y() {
+  _impl_.y_ = 0;
+}
+inline float Vec3::_internal_y() const {
+  return _impl_.y_;
+}
+inline float Vec3::y() const {
+  // @@protoc_insertion_point(field_get:Protocol.Vec3.y)
+  return _internal_y();
+}
+inline void Vec3::_internal_set_y(float value) {
+  
+  _impl_.y_ = value;
+}
+inline void Vec3::set_y(float value) {
+  _internal_set_y(value);
+  // @@protoc_insertion_point(field_set:Protocol.Vec3.y)
+}
+
+// float z = 3;
+inline void Vec3::clear_z() {
+  _impl_.z_ = 0;
+}
+inline float Vec3::_internal_z() const {
+  return _impl_.z_;
+}
+inline float Vec3::z() const {
+  // @@protoc_insertion_point(field_get:Protocol.Vec3.z)
+  return _internal_z();
+}
+inline void Vec3::_internal_set_z(float value) {
+  
+  _impl_.z_ = value;
+}
+inline void Vec3::set_z(float value) {
+  _internal_set_z(value);
+  // @@protoc_insertion_point(field_set:Protocol.Vec3.z)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

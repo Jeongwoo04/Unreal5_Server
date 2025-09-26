@@ -182,11 +182,10 @@ void US1SkillComponent::ConfirmSkillTargeting()
 
 	// 서버 패킷 전송
 	C_SKILL SkillPkt;
-	SkillPkt.mutable_info()->set_skillid(CurrentSkillState.SkillID);
-	SkillPkt.set_x(CurrentSkillState.TargetPos.X);
-	SkillPkt.set_y(CurrentSkillState.TargetPos.Y);
-	SkillPkt.set_z(CurrentSkillState.TargetPos.Z);
-	// SkillPkt.mutable_info()->set_pos <- 추가해야됨
+	SkillPkt.set_skillid(CurrentSkillState.SkillID);
+	SkillPkt.mutable_targetpos()->set_x(CurrentSkillState.TargetPos.X);
+	SkillPkt.mutable_targetpos()->set_y(CurrentSkillState.TargetPos.Y);
+	SkillPkt.mutable_targetpos()->set_z(CurrentSkillState.TargetPos.Z);
 
 	SEND_PACKET(SkillPkt);
 

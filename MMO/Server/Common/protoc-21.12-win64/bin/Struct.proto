@@ -38,4 +38,12 @@ message StatInfo
 message SkillInfo
 {
 	int32 skillId = 1;
+	int32 actionIndex = 2;
+}
+
+message Vec3
+{
+	float x = 1;
+	float y = 2;
+	float z = 3;
 }
