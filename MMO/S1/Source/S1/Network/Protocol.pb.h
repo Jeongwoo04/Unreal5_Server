@@ -1723,10 +1723,11 @@ class C_SKILL final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kTargetPosFieldNumber = 2,
+    kTargetPosFieldNumber = 3,
     kSkillIdFieldNumber = 1,
+    kCastIdFieldNumber = 2,
   };
-  // optional .Protocol.Vec3 targetPos = 2;
+  // optional .Protocol.Vec3 targetPos = 3;
   bool has_targetpos() const;
   private:
   bool _internal_has_targetpos() const;
@@ -1753,6 +1754,15 @@ class C_SKILL final :
   void _internal_set_skillid(int32_t value);
   public:
 
+  // int32 castId = 2;
+  void clear_castid();
+  int32_t castid() const;
+  void set_castid(int32_t value);
+  private:
+  int32_t _internal_castid() const;
+  void _internal_set_castid(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.C_SKILL)
  private:
   class _Internal;
@@ -1765,6 +1775,7 @@ class C_SKILL final :
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
     ::Protocol::Vec3* targetpos_;
     int32_t skillid_;
+    int32_t castid_;
   };
   union { Impl_ _impl_; };
   friend struct ::TableStruct_Protocol_2eproto;
@@ -2061,9 +2072,10 @@ class S_SKILL_CAST_START final :
 
   enum : int {
     kObjectIdFieldNumber = 1,
-    kServerNowFieldNumber = 3,
-    kCastEndTimeFieldNumber = 4,
     kSkillIdFieldNumber = 2,
+    kCastIdFieldNumber = 3,
+    kServerNowFieldNumber = 4,
+    kCastEndTimeFieldNumber = 5,
   };
   // uint64 object_id = 1;
   void clear_object_id();
@@ -2072,24 +2084,6 @@ class S_SKILL_CAST_START final :
   private:
   uint64_t _internal_object_id() const;
   void _internal_set_object_id(uint64_t value);
-  public:
-
-  // uint64 serverNow = 3;
-  void clear_servernow();
-  uint64_t servernow() const;
-  void set_servernow(uint64_t value);
-  private:
-  uint64_t _internal_servernow() const;
-  void _internal_set_servernow(uint64_t value);
-  public:
-
-  // uint64 castEndTime = 4;
-  void clear_castendtime();
-  uint64_t castendtime() const;
-  void set_castendtime(uint64_t value);
-  private:
-  uint64_t _internal_castendtime() const;
-  void _internal_set_castendtime(uint64_t value);
   public:
 
   // int32 skillId = 2;
@@ -2101,6 +2095,33 @@ class S_SKILL_CAST_START final :
   void _internal_set_skillid(int32_t value);
   public:
 
+  // int32 castId = 3;
+  void clear_castid();
+  int32_t castid() const;
+  void set_castid(int32_t value);
+  private:
+  int32_t _internal_castid() const;
+  void _internal_set_castid(int32_t value);
+  public:
+
+  // uint64 serverNow = 4;
+  void clear_servernow();
+  uint64_t servernow() const;
+  void set_servernow(uint64_t value);
+  private:
+  uint64_t _internal_servernow() const;
+  void _internal_set_servernow(uint64_t value);
+  public:
+
+  // uint64 castEndTime = 5;
+  void clear_castendtime();
+  uint64_t castendtime() const;
+  void set_castendtime(uint64_t value);
+  private:
+  uint64_t _internal_castendtime() const;
+  void _internal_set_castendtime(uint64_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.S_SKILL_CAST_START)
  private:
   class _Internal;
@@ -2110,9 +2131,10 @@ class S_SKILL_CAST_START final :
   typedef void DestructorSkippable_;
   struct Impl_ {
     uint64_t object_id_;
+    int32_t skillid_;
+    int32_t castid_;
     uint64_t servernow_;
     uint64_t castendtime_;
-    int32_t skillid_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -2243,6 +2265,7 @@ class S_SKILL_CAST_SUCCESS final :
   enum : int {
     kObjectIdFieldNumber = 1,
     kSkillIdFieldNumber = 2,
+    kCastIdFieldNumber = 3,
   };
   // uint64 object_id = 1;
   void clear_object_id();
@@ -2262,6 +2285,15 @@ class S_SKILL_CAST_SUCCESS final :
   void _internal_set_skillid(int32_t value);
   public:
 
+  // int32 castId = 3;
+  void clear_castid();
+  int32_t castid() const;
+  void set_castid(int32_t value);
+  private:
+  int32_t _internal_castid() const;
+  void _internal_set_castid(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.S_SKILL_CAST_SUCCESS)
  private:
   class _Internal;
@@ -2272,6 +2304,7 @@ class S_SKILL_CAST_SUCCESS final :
   struct Impl_ {
     uint64_t object_id_;
     int32_t skillid_;
+    int32_t castid_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -2402,6 +2435,7 @@ class S_SKILL_CAST_CANCEL final :
   enum : int {
     kObjectIdFieldNumber = 1,
     kSkillIdFieldNumber = 2,
+    kCastIdFieldNumber = 3,
   };
   // uint64 object_id = 1;
   void clear_object_id();
@@ -2421,6 +2455,15 @@ class S_SKILL_CAST_CANCEL final :
   void _internal_set_skillid(int32_t value);
   public:
 
+  // int32 castId = 3;
+  void clear_castid();
+  int32_t castid() const;
+  void set_castid(int32_t value);
+  private:
+  int32_t _internal_castid() const;
+  void _internal_set_castid(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.S_SKILL_CAST_CANCEL)
  private:
   class _Internal;
@@ -2431,6 +2474,7 @@ class S_SKILL_CAST_CANCEL final :
   struct Impl_ {
     uint64_t object_id_;
     int32_t skillid_;
+    int32_t castid_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -3578,7 +3622,27 @@ inline void C_SKILL::set_skillid(int32_t value) {
   // @@protoc_insertion_point(field_set:Protocol.C_SKILL.skillId)
 }
 
-// optional .Protocol.Vec3 targetPos = 2;
+// int32 castId = 2;
+inline void C_SKILL::clear_castid() {
+  _impl_.castid_ = 0;
+}
+inline int32_t C_SKILL::_internal_castid() const {
+  return _impl_.castid_;
+}
+inline int32_t C_SKILL::castid() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_SKILL.castId)
+  return _internal_castid();
+}
+inline void C_SKILL::_internal_set_castid(int32_t value) {
+  
+  _impl_.castid_ = value;
+}
+inline void C_SKILL::set_castid(int32_t value) {
+  _internal_set_castid(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_SKILL.castId)
+}
+
+// optional .Protocol.Vec3 targetPos = 3;
 inline bool C_SKILL::_internal_has_targetpos() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.targetpos_ != nullptr);
@@ -3818,7 +3882,27 @@ inline void S_SKILL_CAST_START::set_skillid(int32_t value) {
   // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_START.skillId)
 }
 
-// uint64 serverNow = 3;
+// int32 castId = 3;
+inline void S_SKILL_CAST_START::clear_castid() {
+  _impl_.castid_ = 0;
+}
+inline int32_t S_SKILL_CAST_START::_internal_castid() const {
+  return _impl_.castid_;
+}
+inline int32_t S_SKILL_CAST_START::castid() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_SKILL_CAST_START.castId)
+  return _internal_castid();
+}
+inline void S_SKILL_CAST_START::_internal_set_castid(int32_t value) {
+  
+  _impl_.castid_ = value;
+}
+inline void S_SKILL_CAST_START::set_castid(int32_t value) {
+  _internal_set_castid(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_START.castId)
+}
+
+// uint64 serverNow = 4;
 inline void S_SKILL_CAST_START::clear_servernow() {
   _impl_.servernow_ = uint64_t{0u};
 }
@@ -3838,7 +3922,7 @@ inline void S_SKILL_CAST_START::set_servernow(uint64_t value) {
   // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_START.serverNow)
 }
 
-// uint64 castEndTime = 4;
+// uint64 castEndTime = 5;
 inline void S_SKILL_CAST_START::clear_castendtime() {
   _impl_.castendtime_ = uint64_t{0u};
 }
@@ -3902,6 +3986,26 @@ inline void S_SKILL_CAST_SUCCESS::set_skillid(int32_t value) {
   // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_SUCCESS.skillId)
 }
 
+// int32 castId = 3;
+inline void S_SKILL_CAST_SUCCESS::clear_castid() {
+  _impl_.castid_ = 0;
+}
+inline int32_t S_SKILL_CAST_SUCCESS::_internal_castid() const {
+  return _impl_.castid_;
+}
+inline int32_t S_SKILL_CAST_SUCCESS::castid() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_SKILL_CAST_SUCCESS.castId)
+  return _internal_castid();
+}
+inline void S_SKILL_CAST_SUCCESS::_internal_set_castid(int32_t value) {
+  
+  _impl_.castid_ = value;
+}
+inline void S_SKILL_CAST_SUCCESS::set_castid(int32_t value) {
+  _internal_set_castid(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_SUCCESS.castId)
+}
+
 // -------------------------------------------------------------------
 
 // S_SKILL_CAST_CANCEL
@@ -3944,6 +4048,26 @@ inline void S_SKILL_CAST_CANCEL::_internal_set_skillid(int32_t value) {
 inline void S_SKILL_CAST_CANCEL::set_skillid(int32_t value) {
   _internal_set_skillid(value);
   // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_CANCEL.skillId)
+}
+
+// int32 castId = 3;
+inline void S_SKILL_CAST_CANCEL::clear_castid() {
+  _impl_.castid_ = 0;
+}
+inline int32_t S_SKILL_CAST_CANCEL::_internal_castid() const {
+  return _impl_.castid_;
+}
+inline int32_t S_SKILL_CAST_CANCEL::castid() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_SKILL_CAST_CANCEL.castId)
+  return _internal_castid();
+}
+inline void S_SKILL_CAST_CANCEL::_internal_set_castid(int32_t value) {
+  
+  _impl_.castid_ = value;
+}
+inline void S_SKILL_CAST_CANCEL::set_castid(int32_t value) {
+  _internal_set_castid(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_CANCEL.castId)
 }
 
 // -------------------------------------------------------------------

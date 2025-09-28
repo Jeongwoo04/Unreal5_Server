@@ -241,7 +241,7 @@ void Monster::OnDead(ObjectRef attacker)
         return;
 
     //_selectedSkill = nullptr;
-    room->_skillSystem->CancelCasting(shared_from_this());
+    room->_skillSystem->CancelCasting(shared_from_this(), _castId);
 
     S_DIE diePkt;
     diePkt.set_object_id(GetId());
@@ -290,11 +290,12 @@ void Monster::DoSkill()
 
     Vector3 dir = target->_worldPos - _worldPos;
     _posInfo.set_yaw(Vector3::DirToYaw2D(dir));
+    _castId++;
 
     if (auto room = GetRoom())
     {
         room->BroadcastMove(_posInfo, GetId());
-        room->_skillSystem->ExecuteSkill(shared_from_this(), _currentSkillId, target->_worldPos);
+        room->_skillSystem->ExecuteSkill(shared_from_this(), _currentSkillId, target->_worldPos, _castId);
         _coolTick = ::GetTickCount64() + 3000;
     }
 }

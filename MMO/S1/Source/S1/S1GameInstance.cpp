@@ -16,6 +16,7 @@
 #include "S1ObjectManager.h"
 #include "Data/S1ConfigManager.h"
 #include "Data/S1DataManager.h"
+#include "S1SkillComponent.h"
 
 void US1GameInstance::Init()
 {
@@ -193,10 +194,27 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	}
 
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
-	if (Creature)
+	if (Creature == nullptr)
+		return;
+
+	if (Creature == MyPlayer)
+	{
+		FVector ServerPos = FVector(MovePkt.info().x(), MovePkt.info().y(), MovePkt.info().z());
+		
+		float DistSq = FVector::DistSquared(ServerPos, MyPlayer->GetActorLocation());
+		const float Allow = FMath::Square(5.f);
+
+		if (DistSq > Allow)
+		{
+			Creature->SetPosInfo(MovePkt.info());
+		}
+		else
+			return;
+	}
+	else
 	{
 		Creature->SetPosInfo(MovePkt.info());
-	}	
+	}
 }
 
 void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
@@ -215,8 +233,14 @@ void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
 		return;
 
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+	if (Creature == nullptr)
+		return;
 	
-	// Creature 의 S_Skill 처리
+	Creature->ChangeState(Protocol::STATE_MACHINE_SKILL);
+	// Creature->UpdateAnim(SkillPkt.skillid());
+
+	// ActionIndex에 맞게 ExecuteAction
+	Creature->HandleActionPkt(SkillPkt);
 }
 
 void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& CastStartPkt)
@@ -236,7 +260,26 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
 
-	// Creature 의 S_SkillCastStart 처리
+	// CastId 검증
+	if (Creature == MyPlayer)
+	{
+		if (CastStartPkt.castid() < MyPlayer->SkillComponent->GetCurrentSkillState().CastID)
+			return; // 이미 더 최신 캐스팅 중이면 무시
+
+		// MyPlayer는 서버 기준 보정 포함
+		FSkillState ServerState;
+		ServerState.SkillID = CastStartPkt.skillid();
+		ServerState.CastTime = CastStartPkt.castendtime() - CastStartPkt.servernow(); // 서버 기준 캐스팅 시간
+		ServerState.CastID = CastStartPkt.castid();
+
+		MyPlayer->StartCasting(ServerState, CastStartPkt.castendtime());
+	}
+	else
+	{
+		// OtherPlayer / Monster는 단순 State 변경 + 애니메이션
+		Creature->ChangeState(Protocol::STATE_MACHINE_CASTING);
+		// Creature->UpdateAnim(CastStartPkt.skillid());
+	}
 }
 
 void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCESS& CastSuccessPkt)
@@ -255,8 +298,22 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 		return;
 
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+	if (Creature == nullptr)
+		return;
 
-	// Creature 의 S_SkillCastSuccess 처리
+	if (Creature == MyPlayer)
+	{
+		// CastId 검증
+		if (CastSuccessPkt.castid() != MyPlayer->SkillComponent->GetCurrentSkillState().CastID)
+			return;
+
+		MyPlayer->FinishCasting(); // 캐스팅바 UI 정리
+	}
+	else
+	{
+		Creature->ChangeState(Protocol::STATE_MACHINE_IDLE);
+		// Creature->UpdateAnim(CastSuccessPkt.skillid());
+	}
 }
 
 void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL& CastCancelPkt)
@@ -275,8 +332,23 @@ void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL&
 		return;
 
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+	if (Creature == nullptr)
+		return;
+	
+	if (Creature == MyPlayer)
+	{
+		// CastId 검증
+		if (CastCancelPkt.castid() != MyPlayer->SkillComponent->GetCurrentSkillState().CastID)
+			return;
 
-	// Creature 의 S_SkillCastCancel 처리
+		MyPlayer->CancelCasting(); // 캐스팅바 UI 정리
+	}
+	else
+	{
+		// OtherPlayer / Monster
+		Creature->ChangeState(Protocol::STATE_MACHINE_IDLE);
+		// Creature->UpdateAnim(CastCancelPkt.skillid());
+	}
 }
 
 void US1GameInstance::HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt)

@@ -6,14 +6,24 @@
 #include "Components/ProgressBar.h"
 #include "S1SkillComponent.h"
 
-void US1CastingBar::ShowCastingBar(const FSkillState& CurrentState)
+void US1CastingBar::ShowCastingBar(const FSkillState& CurrentState, uint64 ServerCastEndTick)
 {
     SetVisibility(ESlateVisibility::Visible);
     CastingBar_Fill->SetPercent(0.f);
     CastingBar_Text->SetText(FText::FromString(CurrentState.name));
 
-    CurrentCastTime = 0.f;
     TotalCastTime = CurrentState.CastTime;
+
+    if (ServerCastEndTick > 0)
+    {
+        float ServerEndTime = static_cast<float>(ServerCastEndTick) / 1000.f;
+        float ClientTime = GetWorld()->GetTimeSeconds();
+        CurrentCastTime = FMath::Clamp(TotalCastTime - (ServerEndTime - ClientTime), 0.f, TotalCastTime);
+    }
+    else
+    {
+        CurrentCastTime = 0.f;
+    }
 }
 
 void US1CastingBar::CancelCasting()

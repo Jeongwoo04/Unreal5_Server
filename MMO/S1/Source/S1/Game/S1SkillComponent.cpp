@@ -2,6 +2,7 @@
 
 
 #include "Game/S1SkillComponent.h"
+#include "S1Creature.h"
 #include "S1MyPlayer.h"
 #include "S1MarkerActor.h"
 #include "S1PlayerController.h"
@@ -31,9 +32,8 @@ void US1SkillComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
+	OwnerCreature = Cast<AS1Creature>(GetOwner());
 	CachedPlayer = Cast<AS1MyPlayer>(GetOwner());
-	if (!CachedPlayer)
-		return;
 }
 
 
@@ -42,7 +42,7 @@ void US1SkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (CurrentSkillState.SkillID > 0)
+	if (CachedPlayer && CurrentSkillState.SkillID > 0)
 	{
 		TickSkillState(DeltaTime);
 	}
@@ -138,15 +138,17 @@ void US1SkillComponent::CancelSkillTargeting()
 
 void US1SkillComponent::ConfirmSkillTargeting()
 {
-	if (!bIsSkillTargeting)
+	if (!bIsSkillTargeting || !CachedPlayer)
 		return;
+
+	CachedPlayer->ChangeState(Protocol::STATE_MACHINE_CASTING);
 
 	bIsSkillTargeting = false;
 
 	CurrentSkillState = FSkillState();
 	CurrentSkillState.SkillID = CurrentSkillID;
 	CurrentSkillState.TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
-	CurrentSkillState.CastID += 1; // 클라이언트 고유 CastId
+	CurrentSkillState.CastID = CachedPlayer->GetNextCastId(); // 클라이언트 고유 CastId
 
 	// TODO: CastTime 설정 필요
 	auto SkillIt = S1DataManager::Instance().SkillDict.find(CurrentSkillID);
@@ -166,23 +168,26 @@ void US1SkillComponent::ConfirmSkillTargeting()
 			Instance.bTriggered = false;
 			CurrentSkillState.ActionInstances.Add(Instance);
 		}
-
-		if (CurrentSkillState.bIsCasting)
-		{
-			// 캐스팅 시작
-			CachedPlayer->StartCasting(CurrentSkillState);
-		}
-		else
-		{
-			// 즉발이면 바로 액션 Tick 수행
-			CurrentSkillState.bIsCasting = false;
-			CurrentSkillState.CurrentActionIndex = 0;
-		}
 	}
 
-	// 서버 패킷 전송
+	if (CurrentSkillState.bIsCasting)
+	{
+		// 캐스팅 시작
+		CachedPlayer->StartCasting(CurrentSkillState);
+		// TODO : 액션 시작
+	}
+	else
+	{
+		// 즉발이면 바로 액션 Tick 수행
+		CurrentSkillState.bIsCasting = false;
+		CurrentSkillState.CurrentActionIndex = 0;
+		// TODO : 액션 시작
+	}
+
+	// TODO : 서버 패킷 전송 -> 액션 핸들링쪽으로 이동
 	C_SKILL SkillPkt;
 	SkillPkt.set_skillid(CurrentSkillState.SkillID);
+	SkillPkt.set_castid(CurrentSkillState.CastID);
 	SkillPkt.mutable_targetpos()->set_x(CurrentSkillState.TargetPos.X);
 	SkillPkt.mutable_targetpos()->set_y(CurrentSkillState.TargetPos.Y);
 	SkillPkt.mutable_targetpos()->set_z(CurrentSkillState.TargetPos.Z);
@@ -195,6 +200,46 @@ void US1SkillComponent::ConfirmSkillTargeting()
 bool US1SkillComponent::IsSkillTargeting()
 {
 	return bIsSkillTargeting;
+}
+
+void US1SkillComponent::StartCasting(const FSkillState& SkillState)
+{
+	if (OwnerCreature)
+	{
+		CurrentSkillState = SkillState;
+		OwnerCreature->ChangeState(Protocol::STATE_MACHINE_CASTING);
+
+		// 캐스팅 애니메이션/이펙트 처리
+		//OwnerCreature->PlayCastingAnimation(SkillState.SkillID);
+	}
+
+	// MyPlayer일 경우 캐스팅바 표시
+	if (CachedPlayer)
+	{
+		CachedPlayer->StartCasting(SkillState);
+	}
+}
+
+void US1SkillComponent::CancelCasting()
+{
+	CurrentSkillState = FSkillState();
+}
+
+void US1SkillComponent::FinishCasting()
+{
+
+}
+
+void US1SkillComponent::HandleActionPkt(const Protocol::S_SKILL& Pkt)
+{
+	auto it = S1DataManager::Instance().SkillDict.find(Pkt.skill_info().skillid());
+	if (it == S1DataManager::Instance().SkillDict.end())
+		return;
+
+	const ClientAction& Action = it->second.actions[Pkt.skill_info().actionindex()];
+	
+	const FVector& TargetPos = { Pkt.skill_info().targetpos().x(),Pkt.skill_info().targetpos().y(), Pkt.skill_info().targetpos().z() };
+	ExecuteAction(Action, TargetPos);
 }
 
 void US1SkillComponent::UpdateSkillMarkers()
@@ -268,7 +313,7 @@ void US1SkillComponent::ClearSkillMarkers()
 
 void US1SkillComponent::TickSkillState(float DeltaTime)
 {
-	if (CurrentSkillState.SkillID <= 0)
+	if (CurrentSkillState.SkillID <= 0 || !CachedPlayer)
 		return;
 
 	// 캐스팅 진행
@@ -291,7 +336,7 @@ void US1SkillComponent::TickSkillState(float DeltaTime)
 
 			if (!ActionInst.bTriggered && ActionInst.Elapsed >= ActionInst.Action->actionDelay)
 			{
-				ExecuteAction(ActionInst);
+				HandleExecuteAction(ActionInst);
 				ActionInst.bTriggered = true;
 			}
 
@@ -309,18 +354,27 @@ void US1SkillComponent::TickSkillState(float DeltaTime)
 	}
 }
 
-void US1SkillComponent::ExecuteAction(FClientActionInstance& ActionInstance)
+void US1SkillComponent::HandleExecuteAction(FClientActionInstance& ActionInstance)
 {
 	if (!ActionInstance.Action || !CachedPlayer)
 		return;
-
-	const ClientAction& Action = *ActionInstance.Action;
-	FVector TargetPos = CurrentSkillState.TargetPos;
 
 	// 이미 실행된 액션이면 스킵
 	if (ActionInstance.bTriggered)
 		return;
 
+	const ClientAction& Action = *ActionInstance.Action;
+	FVector TargetPos = CurrentSkillState.TargetPos;
+
+	ExecuteAction(Action, TargetPos);
+
+	// 액션 완료 처리
+	ActionInstance.bTriggered = true;
+	CurrentSkillState.CurrentActionIndex++;
+}
+
+void US1SkillComponent::ExecuteAction(const ClientAction& Action, const FVector& TargetPos)
+{
 	// 실제 실행
 	switch (Action.actionType)
 	{
@@ -349,8 +403,4 @@ void US1SkillComponent::ExecuteAction(FClientActionInstance& ActionInstance)
 		UE_LOG(LogTemp, Warning, TEXT("Unknown ClientActionType in ExecuteAction"));
 		break;
 	}
-
-	// 액션 완료 처리
-	ActionInstance.bTriggered = true;
-	CurrentSkillState.CurrentActionIndex++;
 }

@@ -8,6 +8,7 @@ struct SkillInstance
 	const Skill* skill;
 	Vector3 targetPos;
 
+	int32 castId = 0;
 	bool isCasting = false;
 	bool canceled = false;
 
@@ -22,10 +23,10 @@ class SkillSystem
 {
 public:
 	void Init();
-	void ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos);
+	void ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId);
 
 	void Update(float deltaTime);
-	void CancelCasting(ObjectRef caster);
+	void CancelCasting(ObjectRef caster, int32 castId);
 
 	RoomRef GetRoom() { return _room.lock(); }
 	void SetRoom(RoomRef room) { _room = room; }

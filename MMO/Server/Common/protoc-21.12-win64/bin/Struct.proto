@@ -35,15 +35,16 @@ message StatInfo
 	uint32 totalExp = 7;
 }
 
-message SkillInfo
-{
-	int32 skillId = 1;
-	int32 actionIndex = 2;
-}
-
 message Vec3
 {
 	float x = 1;
 	float y = 2;
 	float z = 3;
+}
+
+message SkillInfo
+{
+	int32 skillId = 1;
+	int32 actionIndex = 2;
+	Vec3 TargetPos = 3;
 }

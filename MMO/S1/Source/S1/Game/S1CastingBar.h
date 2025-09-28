@@ -23,7 +23,7 @@ public:
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* CastingBar_Text;
 
-    void ShowCastingBar(const FSkillState& CurrentState);
+    void ShowCastingBar(const FSkillState& CurrentState, uint64 ServerCastEnd = 0);
     void CancelCasting();
 
 protected:

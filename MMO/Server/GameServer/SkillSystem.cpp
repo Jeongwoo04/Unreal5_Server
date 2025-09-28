@@ -12,7 +12,7 @@ void SkillSystem::Init()
 	skillDict = &DataManager::Instance().SkillDict;
 }
 
-void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos)
+void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId)
 {
 	auto it = skillDict->find(skillId);
 	if (it == skillDict->end())
@@ -26,6 +26,7 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 	instance->caster = caster;
 	instance->skill = &skill;
 	instance->targetPos = targetPos;
+	instance->castId = castId;
 	instance->isCasting = (skill.castTime > 0.0f);
 	instance->actionDelayElapsed = 0.f;
 	instance->currentActionIndex = 0;
@@ -43,6 +44,7 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 		Protocol::S_SKILL_CAST_START pkt;
 		pkt.set_object_id(caster->GetId());
 		pkt.set_skillid(skillId);
+		pkt.set_castid(castId);
 		pkt.set_servernow(now);
 		pkt.set_castendtime(now + static_cast<uint64>(instance->skill->castTime * 1000));
 
@@ -62,18 +64,28 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 		}
 	}
 
+	creature->SetActiveSkill(instance);
 	activeSkills.push_back(instance);
 }
 
-void SkillSystem::CancelCasting(ObjectRef caster)
+void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 {
 	if (auto creature = static_pointer_cast<Creature>(caster))
 	{
 		if (creature->GetActiveSkill() == nullptr)
 			return;
 
+		Protocol::S_SKILL_CAST_CANCEL cancelPkt;
+		cancelPkt.set_object_id(creature->GetId());
+		cancelPkt.set_skillid(creature->GetActiveSkill()->skill->id);
+		cancelPkt.set_castid(castId);
+
 		creature->GetActiveSkill()->canceled = true;
 		creature->SetActiveSkill(nullptr);
+
+		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(cancelPkt);
+		if (auto room = GetRoom())
+			room->Broadcast(sendBuffer);
 	}
 }
 
@@ -116,6 +128,7 @@ void SkillSystem::Update(float deltaTime)
 					S_SKILL_CAST_SUCCESS pkt;
 					pkt.set_object_id(instance->caster->GetId());
 					pkt.set_skillid(instance->skill->id);
+					pkt.set_castid(instance->castId);
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 					GetRoom()->Broadcast(sendBuffer, instance->caster->GetId());
 				}
@@ -175,6 +188,9 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 		pkt.set_object_id(caster->GetId());
 		pkt.mutable_skill_info()->set_skillid(instance->skill->id);
 		pkt.mutable_skill_info()->set_actionindex(idx);
+		pkt.mutable_skill_info()->mutable_targetpos()->set_x(targetPos._x);
+		pkt.mutable_skill_info()->mutable_targetpos()->set_y(targetPos._y);
+		pkt.mutable_skill_info()->mutable_targetpos()->set_z(targetPos._z);
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())
@@ -207,7 +223,7 @@ void SkillSystem::HandleMoveAction(ObjectRef caster, const Vector3& targetPos, M
 {
 	caster->MoveToNextPos(targetPos);
 	if (auto room = GetRoom())
-		room->BroadcastMove(caster->_posInfo, caster->GetId());
+		room->BroadcastMove(caster->_posInfo);
 }
 
 void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos, AttackActionData* action)

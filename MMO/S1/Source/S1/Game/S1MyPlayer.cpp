@@ -46,7 +46,7 @@ AS1MyPlayer::AS1MyPlayer()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -316,9 +316,19 @@ void AS1MyPlayer::BindSkillBar(US1SkillBar* InSkillBar)
 	SkillBar = InSkillBar;
 }
 
-void AS1MyPlayer::StartCasting(const FSkillState& CurrentState)
+void AS1MyPlayer::StartCasting(const FSkillState& CurrentState, uint64 ServerCastEndTick)
 {
-	SkillBar->StartCastingBar(CurrentState);
+	SkillBar->StartCastingBar(CurrentState, ServerCastEndTick);
+}
+
+void AS1MyPlayer::CancelCasting()
+{
+	SkillBar->HideCastingBar();
+}
+
+void AS1MyPlayer::FinishCasting()
+{
+	SkillBar->HideCastingBar();
 }
 
 void AS1MyPlayer::PossessedBy(AController* NewController)

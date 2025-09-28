@@ -13,7 +13,6 @@ Room::Room()
 	_skillSystem = make_shared<SkillSystem>();
 	_objectManager->Init();
 	_skillSystem->Init();
-	_skillSystem->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 }
 
 Room::~Room()
@@ -29,6 +28,7 @@ void Room::Init(int32 mapId)
 
 	_mapInfo = mapIt->second;
 	_gameMap->LoadGameMap(_mapInfo.filePath);
+	_skillSystem->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 
 	SpawnInit();
 
@@ -164,12 +164,23 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 	PlayerRef player = _players[objectId];
 	if (player == nullptr || player->GetRoom() == nullptr || player->GetRoom()->GetGameMap() == nullptr)
 		return;
-	
+
+	if (player->GetState() == Protocol::STATE_MACHINE_CASTING)
+	{
+		auto activeSkill = player->GetActiveSkill();
+		if (activeSkill)
+		{
+			_skillSystem->CancelCasting(player, activeSkill->castId);
+		}
+	}
+	else if (player->GetState() == Protocol::STATE_MACHINE_SKILL)
+		return;
+		
 	Vector3 destPos = Vector3(pkt.info());
 
 	player->_posInfo.set_state(pkt.info().state());
 	player->MoveToNextPos(destPos);
-	BroadcastMove(player->_posInfo, player->GetId());
+	BroadcastMove(player->_posInfo);
 }
 
 void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
@@ -193,7 +204,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		return;
 	}
 
-	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.targetpos()));
+	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.targetpos()), pkt.castid());
 }
 
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const

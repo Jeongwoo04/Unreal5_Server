@@ -5,17 +5,19 @@
 #include "CoreMinimal.h"
 #include "Game/S1Player.h"
 #include "InputActionValue.h"
+#include "S1Creature.h"
 #include "S1MyPlayer.generated.h"
 
 /**
  * 
  */
 class US1LoadoutComponent;
-class US1SkillComponent;
 class US1SkillBar;
 class AS1MarkerActor;
 class AS1PlayerController;
 class UInputAction;
+
+struct FSkillState;
 
 UCLASS()
 class S1_API AS1MyPlayer : public AS1Player
@@ -81,9 +83,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	US1LoadoutComponent* LoadoutComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	US1SkillComponent* SkillComponent;
-
 	UPROPERTY()
 	US1SkillBar* SkillBar;
 
@@ -109,10 +108,15 @@ protected:
 public:
 	void InitSkillBar();
 	void BindSkillBar(US1SkillBar* InSkillBar);
-	void StartCasting(const FSkillState& CurrentState);
 	void PossessedBy(AController* NewController);
 	void TrySetupInput(AS1PlayerController* PC);
 	UInputMappingContext* GetDefaultMappingContext() const { return DefaultMappingContext; }
+
+	int32 GetNextCastId() { return CastId++; }
+
+	void StartCasting(const FSkillState& CurrentState, uint64 ServerCastEndTick = 0);
+	void CancelCasting();
+	void FinishCasting();
 
 protected:
 	FVector TargetLocation;
@@ -122,8 +126,7 @@ protected:
 	float MoveSendInterval = 0.1f;
 	float TimeSinceLastSend = 0.f;
 
-	float SkillCooldown = 0.f; // TODO : skill data Ã³¸®
-	float TimeSinceLastSkill = 0.f;
+	int32 CastId = 0;
 
 	void SendMovePacket();
 };

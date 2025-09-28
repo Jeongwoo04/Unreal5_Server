@@ -7,6 +7,7 @@
 #include "S1SkillComponent.generated.h"
 
 class AS1MarkerActor;
+class AS1Creature;
 class AS1MyPlayer;
 struct ClientAction;
 
@@ -54,11 +55,19 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
+	// 로컬 입력
 	void BeginSkillTargeting(int32 SkillID, float Distance, float Range);
 	void CancelSkillTargeting();
 	void ConfirmSkillTargeting();
 
 	bool IsSkillTargeting();
+
+	// 서버 패킷 입력
+	void StartCasting(const FSkillState& SkillState);
+	void CancelCasting();
+	void FinishCasting();
+
+	void HandleActionPkt(const Protocol::S_SKILL& Pkt);
 
 private:
 	// 마커 업데이트
@@ -71,7 +80,12 @@ private:
 	void ClearSkillMarkers();
 
 	void TickSkillState(float DeltaTime);
-	void ExecuteAction(FClientActionInstance& ActionInstance);
+
+	void HandleExecuteAction(FClientActionInstance& ActionInstance);
+	void ExecuteAction(const ClientAction& Action, const FVector& TargetPos);
+
+public:
+	FSkillState GetCurrentSkillState() { return CurrentSkillState; }
 
 private:
 	UPROPERTY()
@@ -85,6 +99,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	UMaterialInterface* SkillRangeMaterial;
+
+	UPROPERTY()
+	class AS1Creature* OwnerCreature;
 
 	UPROPERTY()
 	class AS1MyPlayer* CachedPlayer;

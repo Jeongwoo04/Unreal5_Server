@@ -153,7 +153,8 @@ PROTOBUF_CONSTEXPR C_SKILL::C_SKILL(
     /*decltype(_impl_._has_bits_)*/{}
   , /*decltype(_impl_._cached_size_)*/{}
   , /*decltype(_impl_.targetpos_)*/nullptr
-  , /*decltype(_impl_.skillid_)*/0} {}
+  , /*decltype(_impl_.skillid_)*/0
+  , /*decltype(_impl_.castid_)*/0} {}
 struct C_SKILLDefaultTypeInternal {
   PROTOBUF_CONSTEXPR C_SKILLDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
@@ -180,9 +181,10 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORIT
 PROTOBUF_CONSTEXPR S_SKILL_CAST_START::S_SKILL_CAST_START(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.object_id_)*/uint64_t{0u}
+  , /*decltype(_impl_.skillid_)*/0
+  , /*decltype(_impl_.castid_)*/0
   , /*decltype(_impl_.servernow_)*/uint64_t{0u}
   , /*decltype(_impl_.castendtime_)*/uint64_t{0u}
-  , /*decltype(_impl_.skillid_)*/0
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct S_SKILL_CAST_STARTDefaultTypeInternal {
   PROTOBUF_CONSTEXPR S_SKILL_CAST_STARTDefaultTypeInternal()
@@ -197,6 +199,7 @@ PROTOBUF_CONSTEXPR S_SKILL_CAST_SUCCESS::S_SKILL_CAST_SUCCESS(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.object_id_)*/uint64_t{0u}
   , /*decltype(_impl_.skillid_)*/0
+  , /*decltype(_impl_.castid_)*/0
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct S_SKILL_CAST_SUCCESSDefaultTypeInternal {
   PROTOBUF_CONSTEXPR S_SKILL_CAST_SUCCESSDefaultTypeInternal()
@@ -211,6 +214,7 @@ PROTOBUF_CONSTEXPR S_SKILL_CAST_CANCEL::S_SKILL_CAST_CANCEL(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.object_id_)*/uint64_t{0u}
   , /*decltype(_impl_.skillid_)*/0
+  , /*decltype(_impl_.castid_)*/0
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct S_SKILL_CAST_CANCELDefaultTypeInternal {
   PROTOBUF_CONSTEXPR S_SKILL_CAST_CANCELDefaultTypeInternal()
@@ -358,7 +362,9 @@ const uint32_t TableStruct_Protocol_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::Protocol::C_SKILL, _impl_.skillid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::C_SKILL, _impl_.castid_),
   PROTOBUF_FIELD_OFFSET(::Protocol::C_SKILL, _impl_.targetpos_),
+  ~0u,
   ~0u,
   0,
   ~0u,  // no _has_bits_
@@ -377,6 +383,7 @@ const uint32_t TableStruct_Protocol_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_START, _impl_.object_id_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_START, _impl_.skillid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_START, _impl_.castid_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_START, _impl_.servernow_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_START, _impl_.castendtime_),
   ~0u,  // no _has_bits_
@@ -387,6 +394,7 @@ const uint32_t TableStruct_Protocol_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_SUCCESS, _impl_.object_id_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_SUCCESS, _impl_.skillid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_SUCCESS, _impl_.castid_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_CANCEL, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -395,6 +403,7 @@ const uint32_t TableStruct_Protocol_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_CANCEL, _impl_.object_id_),
   PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_CANCEL, _impl_.skillid_),
+  PROTOBUF_FIELD_OFFSET(::Protocol::S_SKILL_CAST_CANCEL, _impl_.castid_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::Protocol::S_CHANGE_HP, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -438,15 +447,15 @@ static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protode
   { 48, -1, -1, sizeof(::Protocol::S_DESPAWN)},
   { 55, -1, -1, sizeof(::Protocol::C_MOVE)},
   { 62, -1, -1, sizeof(::Protocol::S_MOVE)},
-  { 69, 77, -1, sizeof(::Protocol::C_SKILL)},
-  { 79, -1, -1, sizeof(::Protocol::S_SKILL)},
-  { 87, -1, -1, sizeof(::Protocol::S_SKILL_CAST_START)},
-  { 97, -1, -1, sizeof(::Protocol::S_SKILL_CAST_SUCCESS)},
-  { 105, -1, -1, sizeof(::Protocol::S_SKILL_CAST_CANCEL)},
-  { 113, -1, -1, sizeof(::Protocol::S_CHANGE_HP)},
-  { 121, -1, -1, sizeof(::Protocol::S_DIE)},
-  { 129, -1, -1, sizeof(::Protocol::C_CHAT)},
-  { 136, -1, -1, sizeof(::Protocol::S_CHAT)},
+  { 69, 78, -1, sizeof(::Protocol::C_SKILL)},
+  { 81, -1, -1, sizeof(::Protocol::S_SKILL)},
+  { 89, -1, -1, sizeof(::Protocol::S_SKILL_CAST_START)},
+  { 100, -1, -1, sizeof(::Protocol::S_SKILL_CAST_SUCCESS)},
+  { 109, -1, -1, sizeof(::Protocol::S_SKILL_CAST_CANCEL)},
+  { 118, -1, -1, sizeof(::Protocol::S_CHANGE_HP)},
+  { 126, -1, -1, sizeof(::Protocol::S_DIE)},
+  { 134, -1, -1, sizeof(::Protocol::C_CHAT)},
+  { 141, -1, -1, sizeof(::Protocol::S_CHAT)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -483,20 +492,21 @@ const char descriptor_table_protodef_Protocol_2eproto[] PROTOBUF_SECTION_VARIABL
   "\"\037\n\tS_DESPAWN\022\022\n\nobject_ids\030\001 \003(\004\")\n\006C_M"
   "OVE\022\037\n\004info\030\001 \001(\0132\021.Protocol.PosInfo\")\n\006"
   "S_MOVE\022\037\n\004info\030\001 \001(\0132\021.Protocol.PosInfo\""
-  "P\n\007C_SKILL\022\017\n\007skillId\030\001 \001(\005\022&\n\ttargetPos"
-  "\030\002 \001(\0132\016.Protocol.Vec3H\000\210\001\001B\014\n\n_targetPo"
-  "s\"E\n\007S_SKILL\022\021\n\tobject_id\030\001 \001(\004\022\'\n\nskill"
-  "_info\030\002 \001(\0132\023.Protocol.SkillInfo\"`\n\022S_SK"
-  "ILL_CAST_START\022\021\n\tobject_id\030\001 \001(\004\022\017\n\007ski"
-  "llId\030\002 \001(\005\022\021\n\tserverNow\030\003 \001(\004\022\023\n\013castEnd"
-  "Time\030\004 \001(\004\":\n\024S_SKILL_CAST_SUCCESS\022\021\n\tob"
-  "ject_id\030\001 \001(\004\022\017\n\007skillId\030\002 \001(\005\"9\n\023S_SKIL"
-  "L_CAST_CANCEL\022\021\n\tobject_id\030\001 \001(\004\022\017\n\007skil"
-  "lId\030\002 \001(\005\",\n\013S_CHANGE_HP\022\021\n\tobject_id\030\001 "
-  "\001(\004\022\n\n\002hp\030\002 \001(\005\"/\n\005S_DIE\022\021\n\tobject_id\030\001 "
-  "\001(\004\022\023\n\013attacker_id\030\002 \001(\004\"\025\n\006C_CHAT\022\013\n\003ms"
-  "g\030\001 \001(\t\"\'\n\006S_CHAT\022\020\n\010playerId\030\001 \001(\004\022\013\n\003m"
-  "sg\030\002 \001(\tb\006proto3"
+  "`\n\007C_SKILL\022\017\n\007skillId\030\001 \001(\005\022\016\n\006castId\030\002 "
+  "\001(\005\022&\n\ttargetPos\030\003 \001(\0132\016.Protocol.Vec3H\000"
+  "\210\001\001B\014\n\n_targetPos\"E\n\007S_SKILL\022\021\n\tobject_i"
+  "d\030\001 \001(\004\022\'\n\nskill_info\030\002 \001(\0132\023.Protocol.S"
+  "killInfo\"p\n\022S_SKILL_CAST_START\022\021\n\tobject"
+  "_id\030\001 \001(\004\022\017\n\007skillId\030\002 \001(\005\022\016\n\006castId\030\003 \001"
+  "(\005\022\021\n\tserverNow\030\004 \001(\004\022\023\n\013castEndTime\030\005 \001"
+  "(\004\"J\n\024S_SKILL_CAST_SUCCESS\022\021\n\tobject_id\030"
+  "\001 \001(\004\022\017\n\007skillId\030\002 \001(\005\022\016\n\006castId\030\003 \001(\005\"I"
+  "\n\023S_SKILL_CAST_CANCEL\022\021\n\tobject_id\030\001 \001(\004"
+  "\022\017\n\007skillId\030\002 \001(\005\022\016\n\006castId\030\003 \001(\005\",\n\013S_C"
+  "HANGE_HP\022\021\n\tobject_id\030\001 \001(\004\022\n\n\002hp\030\002 \001(\005\""
+  "/\n\005S_DIE\022\021\n\tobject_id\030\001 \001(\004\022\023\n\013attacker_"
+  "id\030\002 \001(\004\"\025\n\006C_CHAT\022\013\n\003msg\030\001 \001(\t\"\'\n\006S_CHA"
+  "T\022\020\n\010playerId\030\001 \001(\004\022\013\n\003msg\030\002 \001(\tb\006proto3"
   ;
 static const ::_pbi::DescriptorTable* const descriptor_table_Protocol_2eproto_deps[2] = {
   &::descriptor_table_Enum_2eproto,
@@ -504,7 +514,7 @@ static const ::_pbi::DescriptorTable* const descriptor_table_Protocol_2eproto_de
 };
 static ::_pbi::once_flag descriptor_table_Protocol_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Protocol_2eproto = {
-    false, false, 976, descriptor_table_protodef_Protocol_2eproto,
+    false, false, 1040, descriptor_table_protodef_Protocol_2eproto,
     "Protocol.proto",
     &descriptor_table_Protocol_2eproto_once, descriptor_table_Protocol_2eproto_deps, 2, 19,
     schemas, file_default_instances, TableStruct_Protocol_2eproto::offsets,
@@ -2073,13 +2083,16 @@ C_SKILL::C_SKILL(const C_SKILL& from)
       decltype(_impl_._has_bits_){from._impl_._has_bits_}
     , /*decltype(_impl_._cached_size_)*/{}
     , decltype(_impl_.targetpos_){nullptr}
-    , decltype(_impl_.skillid_){}};
+    , decltype(_impl_.skillid_){}
+    , decltype(_impl_.castid_){}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   if (from._internal_has_targetpos()) {
     _this->_impl_.targetpos_ = new ::Protocol::Vec3(*from._impl_.targetpos_);
   }
-  _this->_impl_.skillid_ = from._impl_.skillid_;
+  ::memcpy(&_impl_.skillid_, &from._impl_.skillid_,
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.castid_) -
+    reinterpret_cast<char*>(&_impl_.skillid_)) + sizeof(_impl_.castid_));
   // @@protoc_insertion_point(copy_constructor:Protocol.C_SKILL)
 }
 
@@ -2092,6 +2105,7 @@ inline void C_SKILL::SharedCtor(
     , /*decltype(_impl_._cached_size_)*/{}
     , decltype(_impl_.targetpos_){nullptr}
     , decltype(_impl_.skillid_){0}
+    , decltype(_impl_.castid_){0}
   };
 }
 
@@ -2124,7 +2138,9 @@ void C_SKILL::Clear() {
     GOOGLE_DCHECK(_impl_.targetpos_ != nullptr);
     _impl_.targetpos_->Clear();
   }
-  _impl_.skillid_ = 0;
+  ::memset(&_impl_.skillid_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&_impl_.castid_) -
+      reinterpret_cast<char*>(&_impl_.skillid_)) + sizeof(_impl_.castid_));
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
@@ -2144,9 +2160,17 @@ const char* C_SKILL::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) 
         } else
           goto handle_unusual;
         continue;
-      // optional .Protocol.Vec3 targetPos = 2;
+      // int32 castId = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          _impl_.castid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // optional .Protocol.Vec3 targetPos = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_targetpos(), ptr);
           CHK_(ptr);
         } else
@@ -2188,10 +2212,16 @@ uint8_t* C_SKILL::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_skillid(), target);
   }
 
-  // optional .Protocol.Vec3 targetPos = 2;
+  // int32 castId = 2;
+  if (this->_internal_castid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(2, this->_internal_castid(), target);
+  }
+
+  // optional .Protocol.Vec3 targetPos = 3;
   if (_internal_has_targetpos()) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(2, _Internal::targetpos(this),
+      InternalWriteMessage(3, _Internal::targetpos(this),
         _Internal::targetpos(this).GetCachedSize(), target, stream);
   }
 
@@ -2211,7 +2241,7 @@ size_t C_SKILL::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // optional .Protocol.Vec3 targetPos = 2;
+  // optional .Protocol.Vec3 targetPos = 3;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size += 1 +
@@ -2222,6 +2252,11 @@ size_t C_SKILL::ByteSizeLong() const {
   // int32 skillId = 1;
   if (this->_internal_skillid() != 0) {
     total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_skillid());
+  }
+
+  // int32 castId = 2;
+  if (this->_internal_castid() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_castid());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -2249,6 +2284,9 @@ void C_SKILL::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOB
   if (from._internal_skillid() != 0) {
     _this->_internal_set_skillid(from._internal_skillid());
   }
+  if (from._internal_castid() != 0) {
+    _this->_internal_set_castid(from._internal_castid());
+  }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -2268,8 +2306,8 @@ void C_SKILL::InternalSwap(C_SKILL* other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(C_SKILL, _impl_.skillid_)
-      + sizeof(C_SKILL::_impl_.skillid_)
+      PROTOBUF_FIELD_OFFSET(C_SKILL, _impl_.castid_)
+      + sizeof(C_SKILL::_impl_.castid_)
       - PROTOBUF_FIELD_OFFSET(C_SKILL, _impl_.targetpos_)>(
           reinterpret_cast<char*>(&_impl_.targetpos_),
           reinterpret_cast<char*>(&other->_impl_.targetpos_));
@@ -2528,15 +2566,16 @@ S_SKILL_CAST_START::S_SKILL_CAST_START(const S_SKILL_CAST_START& from)
   S_SKILL_CAST_START* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.object_id_){}
+    , decltype(_impl_.skillid_){}
+    , decltype(_impl_.castid_){}
     , decltype(_impl_.servernow_){}
     , decltype(_impl_.castendtime_){}
-    , decltype(_impl_.skillid_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&_impl_.object_id_, &from._impl_.object_id_,
-    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.skillid_) -
-    reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.skillid_));
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.castendtime_) -
+    reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.castendtime_));
   // @@protoc_insertion_point(copy_constructor:Protocol.S_SKILL_CAST_START)
 }
 
@@ -2546,9 +2585,10 @@ inline void S_SKILL_CAST_START::SharedCtor(
   (void)is_message_owned;
   new (&_impl_) Impl_{
       decltype(_impl_.object_id_){uint64_t{0u}}
+    , decltype(_impl_.skillid_){0}
+    , decltype(_impl_.castid_){0}
     , decltype(_impl_.servernow_){uint64_t{0u}}
     , decltype(_impl_.castendtime_){uint64_t{0u}}
-    , decltype(_impl_.skillid_){0}
     , /*decltype(_impl_._cached_size_)*/{}
   };
 }
@@ -2577,8 +2617,8 @@ void S_SKILL_CAST_START::Clear() {
   (void) cached_has_bits;
 
   ::memset(&_impl_.object_id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&_impl_.skillid_) -
-      reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.skillid_));
+      reinterpret_cast<char*>(&_impl_.castendtime_) -
+      reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.castendtime_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -2604,17 +2644,25 @@ const char* S_SKILL_CAST_START::_InternalParse(const char* ptr, ::_pbi::ParseCon
         } else
           goto handle_unusual;
         continue;
-      // uint64 serverNow = 3;
+      // int32 castId = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.castid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint64 serverNow = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
           _impl_.servernow_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
-      // uint64 castEndTime = 4;
-      case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+      // uint64 castEndTime = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 40)) {
           _impl_.castendtime_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else
@@ -2661,16 +2709,22 @@ uint8_t* S_SKILL_CAST_START::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteInt32ToArray(2, this->_internal_skillid(), target);
   }
 
-  // uint64 serverNow = 3;
-  if (this->_internal_servernow() != 0) {
+  // int32 castId = 3;
+  if (this->_internal_castid() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(3, this->_internal_servernow(), target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(3, this->_internal_castid(), target);
   }
 
-  // uint64 castEndTime = 4;
+  // uint64 serverNow = 4;
+  if (this->_internal_servernow() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(4, this->_internal_servernow(), target);
+  }
+
+  // uint64 castEndTime = 5;
   if (this->_internal_castendtime() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(4, this->_internal_castendtime(), target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(5, this->_internal_castendtime(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2694,19 +2748,24 @@ size_t S_SKILL_CAST_START::ByteSizeLong() const {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_object_id());
   }
 
-  // uint64 serverNow = 3;
+  // int32 skillId = 2;
+  if (this->_internal_skillid() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_skillid());
+  }
+
+  // int32 castId = 3;
+  if (this->_internal_castid() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_castid());
+  }
+
+  // uint64 serverNow = 4;
   if (this->_internal_servernow() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_servernow());
   }
 
-  // uint64 castEndTime = 4;
+  // uint64 castEndTime = 5;
   if (this->_internal_castendtime() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_castendtime());
-  }
-
-  // int32 skillId = 2;
-  if (this->_internal_skillid() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_skillid());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -2730,14 +2789,17 @@ void S_SKILL_CAST_START::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, con
   if (from._internal_object_id() != 0) {
     _this->_internal_set_object_id(from._internal_object_id());
   }
+  if (from._internal_skillid() != 0) {
+    _this->_internal_set_skillid(from._internal_skillid());
+  }
+  if (from._internal_castid() != 0) {
+    _this->_internal_set_castid(from._internal_castid());
+  }
   if (from._internal_servernow() != 0) {
     _this->_internal_set_servernow(from._internal_servernow());
   }
   if (from._internal_castendtime() != 0) {
     _this->_internal_set_castendtime(from._internal_castendtime());
-  }
-  if (from._internal_skillid() != 0) {
-    _this->_internal_set_skillid(from._internal_skillid());
   }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -2757,8 +2819,8 @@ void S_SKILL_CAST_START::InternalSwap(S_SKILL_CAST_START* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_START, _impl_.skillid_)
-      + sizeof(S_SKILL_CAST_START::_impl_.skillid_)
+      PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_START, _impl_.castendtime_)
+      + sizeof(S_SKILL_CAST_START::_impl_.castendtime_)
       - PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_START, _impl_.object_id_)>(
           reinterpret_cast<char*>(&_impl_.object_id_),
           reinterpret_cast<char*>(&other->_impl_.object_id_));
@@ -2788,12 +2850,13 @@ S_SKILL_CAST_SUCCESS::S_SKILL_CAST_SUCCESS(const S_SKILL_CAST_SUCCESS& from)
   new (&_impl_) Impl_{
       decltype(_impl_.object_id_){}
     , decltype(_impl_.skillid_){}
+    , decltype(_impl_.castid_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&_impl_.object_id_, &from._impl_.object_id_,
-    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.skillid_) -
-    reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.skillid_));
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.castid_) -
+    reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.castid_));
   // @@protoc_insertion_point(copy_constructor:Protocol.S_SKILL_CAST_SUCCESS)
 }
 
@@ -2804,6 +2867,7 @@ inline void S_SKILL_CAST_SUCCESS::SharedCtor(
   new (&_impl_) Impl_{
       decltype(_impl_.object_id_){uint64_t{0u}}
     , decltype(_impl_.skillid_){0}
+    , decltype(_impl_.castid_){0}
     , /*decltype(_impl_._cached_size_)*/{}
   };
 }
@@ -2832,8 +2896,8 @@ void S_SKILL_CAST_SUCCESS::Clear() {
   (void) cached_has_bits;
 
   ::memset(&_impl_.object_id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&_impl_.skillid_) -
-      reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.skillid_));
+      reinterpret_cast<char*>(&_impl_.castid_) -
+      reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.castid_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -2855,6 +2919,14 @@ const char* S_SKILL_CAST_SUCCESS::_InternalParse(const char* ptr, ::_pbi::ParseC
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
           _impl_.skillid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int32 castId = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.castid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -2900,6 +2972,12 @@ uint8_t* S_SKILL_CAST_SUCCESS::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteInt32ToArray(2, this->_internal_skillid(), target);
   }
 
+  // int32 castId = 3;
+  if (this->_internal_castid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(3, this->_internal_castid(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -2926,6 +3004,11 @@ size_t S_SKILL_CAST_SUCCESS::ByteSizeLong() const {
     total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_skillid());
   }
 
+  // int32 castId = 3;
+  if (this->_internal_castid() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_castid());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -2950,6 +3033,9 @@ void S_SKILL_CAST_SUCCESS::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, c
   if (from._internal_skillid() != 0) {
     _this->_internal_set_skillid(from._internal_skillid());
   }
+  if (from._internal_castid() != 0) {
+    _this->_internal_set_castid(from._internal_castid());
+  }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -2968,8 +3054,8 @@ void S_SKILL_CAST_SUCCESS::InternalSwap(S_SKILL_CAST_SUCCESS* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_SUCCESS, _impl_.skillid_)
-      + sizeof(S_SKILL_CAST_SUCCESS::_impl_.skillid_)
+      PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_SUCCESS, _impl_.castid_)
+      + sizeof(S_SKILL_CAST_SUCCESS::_impl_.castid_)
       - PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_SUCCESS, _impl_.object_id_)>(
           reinterpret_cast<char*>(&_impl_.object_id_),
           reinterpret_cast<char*>(&other->_impl_.object_id_));
@@ -2999,12 +3085,13 @@ S_SKILL_CAST_CANCEL::S_SKILL_CAST_CANCEL(const S_SKILL_CAST_CANCEL& from)
   new (&_impl_) Impl_{
       decltype(_impl_.object_id_){}
     , decltype(_impl_.skillid_){}
+    , decltype(_impl_.castid_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&_impl_.object_id_, &from._impl_.object_id_,
-    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.skillid_) -
-    reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.skillid_));
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.castid_) -
+    reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.castid_));
   // @@protoc_insertion_point(copy_constructor:Protocol.S_SKILL_CAST_CANCEL)
 }
 
@@ -3015,6 +3102,7 @@ inline void S_SKILL_CAST_CANCEL::SharedCtor(
   new (&_impl_) Impl_{
       decltype(_impl_.object_id_){uint64_t{0u}}
     , decltype(_impl_.skillid_){0}
+    , decltype(_impl_.castid_){0}
     , /*decltype(_impl_._cached_size_)*/{}
   };
 }
@@ -3043,8 +3131,8 @@ void S_SKILL_CAST_CANCEL::Clear() {
   (void) cached_has_bits;
 
   ::memset(&_impl_.object_id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&_impl_.skillid_) -
-      reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.skillid_));
+      reinterpret_cast<char*>(&_impl_.castid_) -
+      reinterpret_cast<char*>(&_impl_.object_id_)) + sizeof(_impl_.castid_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -3066,6 +3154,14 @@ const char* S_SKILL_CAST_CANCEL::_InternalParse(const char* ptr, ::_pbi::ParseCo
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
           _impl_.skillid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int32 castId = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.castid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -3111,6 +3207,12 @@ uint8_t* S_SKILL_CAST_CANCEL::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteInt32ToArray(2, this->_internal_skillid(), target);
   }
 
+  // int32 castId = 3;
+  if (this->_internal_castid() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(3, this->_internal_castid(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -3137,6 +3239,11 @@ size_t S_SKILL_CAST_CANCEL::ByteSizeLong() const {
     total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_skillid());
   }
 
+  // int32 castId = 3;
+  if (this->_internal_castid() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_castid());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -3161,6 +3268,9 @@ void S_SKILL_CAST_CANCEL::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, co
   if (from._internal_skillid() != 0) {
     _this->_internal_set_skillid(from._internal_skillid());
   }
+  if (from._internal_castid() != 0) {
+    _this->_internal_set_castid(from._internal_castid());
+  }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -3179,8 +3289,8 @@ void S_SKILL_CAST_CANCEL::InternalSwap(S_SKILL_CAST_CANCEL* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_CANCEL, _impl_.skillid_)
-      + sizeof(S_SKILL_CAST_CANCEL::_impl_.skillid_)
+      PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_CANCEL, _impl_.castid_)
+      + sizeof(S_SKILL_CAST_CANCEL::_impl_.castid_)
       - PROTOBUF_FIELD_OFFSET(S_SKILL_CAST_CANCEL, _impl_.object_id_)>(
           reinterpret_cast<char*>(&_impl_.object_id_),
           reinterpret_cast<char*>(&other->_impl_.object_id_));

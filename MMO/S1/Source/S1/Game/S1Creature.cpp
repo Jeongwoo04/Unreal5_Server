@@ -4,8 +4,7 @@
 #include "Game/S1Creature.h"
 #include "Components//CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "S1Monster.h"
-#include "S1MyPlayer.h"
+#include "S1SkillComponent.h"
 
 AS1Creature::AS1Creature()
 {
@@ -77,7 +76,7 @@ void AS1Creature::ChangeState(Protocol::StateMachine NewState)
 
 void AS1Creature::UpdateIdle(float DeltaTime)
 {
-	SetActorRotation(TargetRot);
+	
 }
 
 void AS1Creature::UpdateMoving(float DeltaTime)
@@ -100,14 +99,17 @@ void AS1Creature::UpdateMoving(float DeltaTime)
 
 void AS1Creature::UpdateCasting(float DeltaTime)
 {
+
 }
 
 void AS1Creature::UpdateSkill(float DeltaTime)
 {
+
 }
 
 void AS1Creature::UpdateDead(float DeltaTime)
 {
+
 }
 
 void AS1Creature::UpdateAnim()
@@ -136,5 +138,10 @@ void AS1Creature::SetPosInfo(const Protocol::PosInfo& Info)
 	PosInfo.CopyFrom(Info);
 
 	Move(Info);
+}
+
+void AS1Creature::HandleActionPkt(const Protocol::S_SKILL& Pkt)
+{
+	SkillComponent->HandleActionPkt(Pkt);
 }
 

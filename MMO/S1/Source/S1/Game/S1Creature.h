@@ -9,6 +9,8 @@
 #include "GameFramework/Character.h"
 #include "S1Creature.generated.h"
 
+class US1SkillComponent;
+
 UCLASS()
 class S1_API AS1Creature : public ACharacter
 {
@@ -18,12 +20,13 @@ public:
 	AS1Creature();
 	virtual ~AS1Creature();
 
+	virtual void ChangeState(Protocol::StateMachine NewState);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void UpdateState(float DeltaTime);
-	virtual void ChangeState(Protocol::StateMachine NewState);
 
 	virtual void UpdateIdle(float DeltaTime);
 	virtual void UpdateMoving(float DeltaTime);
@@ -40,6 +43,12 @@ public:
 	Protocol::PosInfo GetPosInfo() const { return PosInfo; }
 
 	EStateMachine GetCurrentState() const { return StaticCast<EStateMachine>(PosInfo.state()); }
+
+	void HandleActionPkt(const Protocol::S_SKILL& Pkt);
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	US1SkillComponent* SkillComponent;
 
 protected:
 	UPROPERTY()

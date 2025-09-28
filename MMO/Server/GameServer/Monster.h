@@ -53,5 +53,6 @@ private:
 
 private:
 	weak_ptr<Player> _targetPlayer;
+	int32 _castId = 0;
 };
 
