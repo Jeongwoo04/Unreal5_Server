@@ -19,7 +19,7 @@ Monster::Monster()
 
 Monster::~Monster()
 {
-
+    //cout << "Monster " << GetId() << " Destructor" << endl;
 }
 
 void Monster::Update(float deltaTime)
@@ -34,6 +34,9 @@ void Monster::Update(float deltaTime)
         break;
     case StateMachine::STATE_MACHINE_MOVING:
         UpdateMoving(deltaTime);
+        break;
+    case StateMachine::STATE_MACHINE_CASTING:
+        UpdateCasting(deltaTime);
         break;
     case StateMachine::STATE_MACHINE_SKILL:
         UpdateSkill(deltaTime);
@@ -231,7 +234,6 @@ void Monster::UpdateDead(float deltaTime)
 void Monster::OnDamaged(ObjectRef attacker, int32 damage)
 {
     Object::OnDamaged(attacker, damage);
-    cout << "Monster " << this->GetId() << " OnDamaged by Player " << attacker->GetId() << " damage : " << damage + attacker->_statInfo.attack() << endl;
 }
 
 void Monster::OnDead(ObjectRef attacker)
@@ -247,7 +249,7 @@ void Monster::OnDead(ObjectRef attacker)
     diePkt.set_object_id(GetId());
     diePkt.set_attacker_id(attacker->GetId());
 
-    cout << "Monster is Dead" << endl;
+    //cout << "Monster is Dead" << endl;
 
     auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
     room->Broadcast(sendBuffer);

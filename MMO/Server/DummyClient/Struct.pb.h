@@ -46,6 +46,9 @@ struct TableStruct_Struct_2eproto {
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_Struct_2eproto;
 namespace Protocol {
+class HpChange;
+struct HpChangeDefaultTypeInternal;
+extern HpChangeDefaultTypeInternal _HpChange_default_instance_;
 class ObjectInfo;
 struct ObjectInfoDefaultTypeInternal;
 extern ObjectInfoDefaultTypeInternal _ObjectInfo_default_instance_;
@@ -63,6 +66,7 @@ struct Vec3DefaultTypeInternal;
 extern Vec3DefaultTypeInternal _Vec3_default_instance_;
 }  // namespace Protocol
 PROTOBUF_NAMESPACE_OPEN
+template<> ::Protocol::HpChange* Arena::CreateMaybeMessage<::Protocol::HpChange>(Arena*);
 template<> ::Protocol::ObjectInfo* Arena::CreateMaybeMessage<::Protocol::ObjectInfo>(Arena*);
 template<> ::Protocol::PosInfo* Arena::CreateMaybeMessage<::Protocol::PosInfo>(Arena*);
 template<> ::Protocol::SkillInfo* Arena::CreateMaybeMessage<::Protocol::SkillInfo>(Arena*);
@@ -1008,7 +1012,7 @@ class SkillInfo final :
     kSkillIdFieldNumber = 1,
     kActionIndexFieldNumber = 2,
   };
-  // .Protocol.Vec3 TargetPos = 3;
+  // optional .Protocol.Vec3 TargetPos = 3;
   bool has_targetpos() const;
   private:
   bool _internal_has_targetpos() const;
@@ -1035,7 +1039,11 @@ class SkillInfo final :
   void _internal_set_skillid(int32_t value);
   public:
 
-  // int32 actionIndex = 2;
+  // optional int32 actionIndex = 2;
+  bool has_actionindex() const;
+  private:
+  bool _internal_has_actionindex() const;
+  public:
   void clear_actionindex();
   int32_t actionindex() const;
   void set_actionindex(int32_t value);
@@ -1052,9 +1060,169 @@ class SkillInfo final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
     ::Protocol::Vec3* targetpos_;
     int32_t skillid_;
     int32_t actionindex_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_Struct_2eproto;
+};
+// -------------------------------------------------------------------
+
+class HpChange final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:Protocol.HpChange) */ {
+ public:
+  inline HpChange() : HpChange(nullptr) {}
+  ~HpChange() override;
+  explicit PROTOBUF_CONSTEXPR HpChange(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  HpChange(const HpChange& from);
+  HpChange(HpChange&& from) noexcept
+    : HpChange() {
+    *this = ::std::move(from);
+  }
+
+  inline HpChange& operator=(const HpChange& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline HpChange& operator=(HpChange&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const HpChange& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const HpChange* internal_default_instance() {
+    return reinterpret_cast<const HpChange*>(
+               &_HpChange_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    5;
+
+  friend void swap(HpChange& a, HpChange& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(HpChange* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(HpChange* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  HpChange* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<HpChange>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const HpChange& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const HpChange& from) {
+    HpChange::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(HpChange* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "Protocol.HpChange";
+  }
+  protected:
+  explicit HpChange(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kObjectIdFieldNumber = 1,
+    kHpFieldNumber = 2,
+  };
+  // uint64 object_id = 1;
+  void clear_object_id();
+  uint64_t object_id() const;
+  void set_object_id(uint64_t value);
+  private:
+  uint64_t _internal_object_id() const;
+  void _internal_set_object_id(uint64_t value);
+  public:
+
+  // int32 hp = 2;
+  void clear_hp();
+  int32_t hp() const;
+  void set_hp(int32_t value);
+  private:
+  int32_t _internal_hp() const;
+  void _internal_set_hp(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:Protocol.HpChange)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    uint64_t object_id_;
+    int32_t hp_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -1637,9 +1805,17 @@ inline void SkillInfo::set_skillid(int32_t value) {
   // @@protoc_insertion_point(field_set:Protocol.SkillInfo.skillId)
 }
 
-// int32 actionIndex = 2;
+// optional int32 actionIndex = 2;
+inline bool SkillInfo::_internal_has_actionindex() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool SkillInfo::has_actionindex() const {
+  return _internal_has_actionindex();
+}
 inline void SkillInfo::clear_actionindex() {
   _impl_.actionindex_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline int32_t SkillInfo::_internal_actionindex() const {
   return _impl_.actionindex_;
@@ -1649,7 +1825,7 @@ inline int32_t SkillInfo::actionindex() const {
   return _internal_actionindex();
 }
 inline void SkillInfo::_internal_set_actionindex(int32_t value) {
-  
+  _impl_._has_bits_[0] |= 0x00000002u;
   _impl_.actionindex_ = value;
 }
 inline void SkillInfo::set_actionindex(int32_t value) {
@@ -1657,18 +1833,18 @@ inline void SkillInfo::set_actionindex(int32_t value) {
   // @@protoc_insertion_point(field_set:Protocol.SkillInfo.actionIndex)
 }
 
-// .Protocol.Vec3 TargetPos = 3;
+// optional .Protocol.Vec3 TargetPos = 3;
 inline bool SkillInfo::_internal_has_targetpos() const {
-  return this != internal_default_instance() && _impl_.targetpos_ != nullptr;
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.targetpos_ != nullptr);
+  return value;
 }
 inline bool SkillInfo::has_targetpos() const {
   return _internal_has_targetpos();
 }
 inline void SkillInfo::clear_targetpos() {
-  if (GetArenaForAllocation() == nullptr && _impl_.targetpos_ != nullptr) {
-    delete _impl_.targetpos_;
-  }
-  _impl_.targetpos_ = nullptr;
+  if (_impl_.targetpos_ != nullptr) _impl_.targetpos_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline const ::Protocol::Vec3& SkillInfo::_internal_targetpos() const {
   const ::Protocol::Vec3* p = _impl_.targetpos_;
@@ -1686,14 +1862,14 @@ inline void SkillInfo::unsafe_arena_set_allocated_targetpos(
   }
   _impl_.targetpos_ = targetpos;
   if (targetpos) {
-    
+    _impl_._has_bits_[0] |= 0x00000001u;
   } else {
-    
+    _impl_._has_bits_[0] &= ~0x00000001u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:Protocol.SkillInfo.TargetPos)
 }
 inline ::Protocol::Vec3* SkillInfo::release_targetpos() {
-  
+  _impl_._has_bits_[0] &= ~0x00000001u;
   ::Protocol::Vec3* temp = _impl_.targetpos_;
   _impl_.targetpos_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
@@ -1709,13 +1885,13 @@ inline ::Protocol::Vec3* SkillInfo::release_targetpos() {
 }
 inline ::Protocol::Vec3* SkillInfo::unsafe_arena_release_targetpos() {
   // @@protoc_insertion_point(field_release:Protocol.SkillInfo.TargetPos)
-  
+  _impl_._has_bits_[0] &= ~0x00000001u;
   ::Protocol::Vec3* temp = _impl_.targetpos_;
   _impl_.targetpos_ = nullptr;
   return temp;
 }
 inline ::Protocol::Vec3* SkillInfo::_internal_mutable_targetpos() {
-  
+  _impl_._has_bits_[0] |= 0x00000001u;
   if (_impl_.targetpos_ == nullptr) {
     auto* p = CreateMaybeMessage<::Protocol::Vec3>(GetArenaForAllocation());
     _impl_.targetpos_ = p;
@@ -1739,17 +1915,63 @@ inline void SkillInfo::set_allocated_targetpos(::Protocol::Vec3* targetpos) {
       targetpos = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
           message_arena, targetpos, submessage_arena);
     }
-    
+    _impl_._has_bits_[0] |= 0x00000001u;
   } else {
-    
+    _impl_._has_bits_[0] &= ~0x00000001u;
   }
   _impl_.targetpos_ = targetpos;
   // @@protoc_insertion_point(field_set_allocated:Protocol.SkillInfo.TargetPos)
 }
 
+// -------------------------------------------------------------------
+
+// HpChange
+
+// uint64 object_id = 1;
+inline void HpChange::clear_object_id() {
+  _impl_.object_id_ = uint64_t{0u};
+}
+inline uint64_t HpChange::_internal_object_id() const {
+  return _impl_.object_id_;
+}
+inline uint64_t HpChange::object_id() const {
+  // @@protoc_insertion_point(field_get:Protocol.HpChange.object_id)
+  return _internal_object_id();
+}
+inline void HpChange::_internal_set_object_id(uint64_t value) {
+  
+  _impl_.object_id_ = value;
+}
+inline void HpChange::set_object_id(uint64_t value) {
+  _internal_set_object_id(value);
+  // @@protoc_insertion_point(field_set:Protocol.HpChange.object_id)
+}
+
+// int32 hp = 2;
+inline void HpChange::clear_hp() {
+  _impl_.hp_ = 0;
+}
+inline int32_t HpChange::_internal_hp() const {
+  return _impl_.hp_;
+}
+inline int32_t HpChange::hp() const {
+  // @@protoc_insertion_point(field_get:Protocol.HpChange.hp)
+  return _internal_hp();
+}
+inline void HpChange::_internal_set_hp(int32_t value) {
+  
+  _impl_.hp_ = value;
+}
+inline void HpChange::set_hp(int32_t value) {
+  _internal_set_hp(value);
+  // @@protoc_insertion_point(field_set:Protocol.HpChange.hp)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

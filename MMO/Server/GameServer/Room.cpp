@@ -33,10 +33,13 @@ void Room::Init(int32 mapId)
 	SpawnInit();
 
 	UpdateTick();
+	StartHeartbeat();
 }
 
 void Room::UpdateTick()
 {
+	auto start = GetTickCount64();
+
 	constexpr float deltaTime = 0.1f;
 
 	for (auto& m : _monsters)
@@ -55,7 +58,30 @@ void Room::UpdateTick()
 	_skillSystem->Update(deltaTime);
 	ClearRemoveList();
 
+	auto end = GetTickCount64();
+	auto duration = end - start;
+	cout << "[Room Tick] duration = " << duration << " ms, Players = "
+		<< _players.size() << ", Monsters = " << _monsters.size() << std::endl;
+
 	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
+}
+
+void Room::StartHeartbeat()
+{
+	constexpr uint64 Tick = 10000;
+	DoTimer(Tick, &Room::CheckHeartbeat);
+}
+
+void Room::CheckHeartbeat()
+{
+	S_HEARTBEAT pkt;
+
+	pkt.set_servertime(GetTickCount64());
+	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+	Broadcast(sendBuffer);
+
+	constexpr uint64 Tick = 10000;
+	DoTimer(Tick, &Room::CheckHeartbeat);
 }
 
 void Room::SpawnInit()
@@ -188,7 +214,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	if (player == nullptr)
 		return;
 
-	int32 skillId = pkt.skillid();
+	int32 skillId = pkt.skill_info().skillid();
 
 	auto it = DataManager::Instance().SkillDict.find(skillId);
 	if (it == DataManager::Instance().SkillDict.end())
@@ -204,7 +230,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		return;
 	}
 
-	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.targetpos()), pkt.castid());
+	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.skill_info().targetpos()), pkt.castid());
 }
 
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const

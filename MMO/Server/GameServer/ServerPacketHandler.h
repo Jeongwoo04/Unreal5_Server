@@ -27,8 +27,10 @@ enum : uint16
 	PKT_S_SKILL_CAST_CANCEL = 1014,
 	PKT_S_CHANGE_HP = 1015,
 	PKT_S_DIE = 1016,
-	PKT_C_CHAT = 1017,
-	PKT_S_CHAT = 1018,
+	PKT_C_HEARTBEAT = 1017,
+	PKT_S_HEARTBEAT = 1018,
+	PKT_C_CHAT = 1019,
+	PKT_S_CHAT = 1020,
 };
 
 // Custom Handlers
@@ -38,6 +40,7 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 bool Handle_C_LEAVE_GAME(PacketSessionRef& session, Protocol::C_LEAVE_GAME& pkt);
 bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt);
 bool Handle_C_SKILL(PacketSessionRef& session, Protocol::C_SKILL& pkt);
+bool Handle_C_HEARTBEAT(PacketSessionRef& session, Protocol::C_HEARTBEAT& pkt);
 bool Handle_C_CHAT(PacketSessionRef& session, Protocol::C_CHAT& pkt);
 
 class ServerPacketHandler
@@ -52,6 +55,7 @@ public:
 		GPacketHandler[PKT_C_LEAVE_GAME] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::C_LEAVE_GAME>(Handle_C_LEAVE_GAME, session, buffer, len); };
 		GPacketHandler[PKT_C_MOVE] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::C_MOVE>(Handle_C_MOVE, session, buffer, len); };
 		GPacketHandler[PKT_C_SKILL] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::C_SKILL>(Handle_C_SKILL, session, buffer, len); };
+		GPacketHandler[PKT_C_HEARTBEAT] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::C_HEARTBEAT>(Handle_C_HEARTBEAT, session, buffer, len); };
 		GPacketHandler[PKT_C_CHAT] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::C_CHAT>(Handle_C_CHAT, session, buffer, len); };
 	}
 
@@ -72,6 +76,7 @@ public:
 	static SendBufferRef MakeSendBuffer(Protocol::S_SKILL_CAST_CANCEL& pkt) { return MakeSendBuffer(pkt, PKT_S_SKILL_CAST_CANCEL); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_CHANGE_HP& pkt) { return MakeSendBuffer(pkt, PKT_S_CHANGE_HP); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_DIE& pkt) { return MakeSendBuffer(pkt, PKT_S_DIE); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_HEARTBEAT& pkt) { return MakeSendBuffer(pkt, PKT_S_HEARTBEAT); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_CHAT& pkt) { return MakeSendBuffer(pkt, PKT_S_CHAT); }
 
 private:

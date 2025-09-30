@@ -27,13 +27,14 @@ class S1_API US1GameInstance : public UGameInstance
 
 public:
 	virtual void Init() override;
-
+	virtual void Shutdown() override;
+	
 	UFUNCTION(BlueprintCallable)
 	void ConnectToGameServer();
 
 	UFUNCTION(BlueprintCallable)
 	void DisconnectFromGameServer();
-
+	
 	UFUNCTION(BlueprintCallable)
 	void HandleRecvPackets();
 
@@ -52,14 +53,14 @@ public:
 	void HandleMove(const Protocol::S_MOVE& MovePkt);
 
 	void HandleSkill(const Protocol::S_SKILL& SkillPkt);
-
 	void HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& CastStartPkt);
 	void HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCESS& CastSuccessPkt);
 	void HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL& CastCancelPkt);
 
 	void HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt);
-
 	void HandleDie(const Protocol::S_DIE& DiePkt);
+
+	void HandleHeartbeat(const Protocol::S_HEARTBEAT& pkt);
 
 public:
 	// GameServer

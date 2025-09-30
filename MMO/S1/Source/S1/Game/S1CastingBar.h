@@ -17,19 +17,24 @@ class S1_API US1CastingBar : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-    UPROPERTY(meta = (BindWidget))
-    class UProgressBar* CastingBar_Fill;
-
-    UPROPERTY(meta = (BindWidget))
-    class UTextBlock* CastingBar_Text;
-
-    void ShowCastingBar(const FSkillState& CurrentState, uint64 ServerCastEnd = 0);
+    void StartCasting(const FSkillState& SkillState, uint64 ServerCastEndTick = 0);
     void CancelCasting();
 
 protected:
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
-    float CurrentCastTime = 0.f;
-    float TotalCastTime = 0.f;
+    void InitializeCast(const FSkillState& SkillState, uint64 ServerCastEndTick);
+    void UpdateCastBar(float DeltaTime);
+
+private:
+    UPROPERTY(meta = (BindWidget))
+    class UProgressBar* CastingBar_Fill;
+
+    UPROPERTY(meta = (BindWidget))
+    class UTextBlock* CastingBar_Text;
+
+    float ElapsedCastTime = 0.f;    // 경과 시간
+    float CastDuration = 0.f;       // 총 캐스팅 시간
+    bool bIsCasting = false;        // 캐스팅 중 여부
 };

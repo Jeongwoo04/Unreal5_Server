@@ -27,14 +27,19 @@ struct FSkillState
 	GENERATED_BODY()
 
 	int32 SkillID = -1;
+	int32 SlotIndex = -1;
 	FString name = "";
 	float CastTime = 0.f;
 	float CastElapsed = 0.f;
+	float CooldownDuration = 0.f;
 	bool bIsCasting = false;
 	TArray<FClientActionInstance> ActionInstances;
 	int32 CurrentActionIndex = 0;
 	FVector TargetPos = FVector::ZeroVector;
 	int32 CastID = 0;
+
+	uint64 ClientSendTick = 0;
+	uint64 ClientRecvTick = 0;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -58,7 +63,7 @@ public:
 	// 로컬 입력
 	void BeginSkillTargeting(int32 SkillID, float Distance, float Range);
 	void CancelSkillTargeting();
-	void ConfirmSkillTargeting();
+	void ConfirmSkillTargeting(int32 SlotIndex);
 
 	bool IsSkillTargeting();
 
@@ -85,7 +90,7 @@ private:
 	void ExecuteAction(const ClientAction& Action, const FVector& TargetPos);
 
 public:
-	FSkillState GetCurrentSkillState() { return CurrentSkillState; }
+	FSkillState& GetCurrentSkillState() { return CurrentSkillState; }
 
 private:
 	UPROPERTY()

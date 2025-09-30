@@ -23,6 +23,8 @@ public:
 
 	void Init(int32 mapId);
 	void UpdateTick();
+	void StartHeartbeat();
+	void CheckHeartbeat();
 
 	void SpawnInit();
 	void SpawnMonster(int32 spTableId);

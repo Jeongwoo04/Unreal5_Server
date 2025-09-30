@@ -136,17 +136,16 @@ void US1SkillComponent::CancelSkillTargeting()
 	ClearSkillMarkers();
 }
 
-void US1SkillComponent::ConfirmSkillTargeting()
+void US1SkillComponent::ConfirmSkillTargeting(int32 SlotIndex)
 {
 	if (!bIsSkillTargeting || !CachedPlayer)
 		return;
-
-	CachedPlayer->ChangeState(Protocol::STATE_MACHINE_CASTING);
 
 	bIsSkillTargeting = false;
 
 	CurrentSkillState = FSkillState();
 	CurrentSkillState.SkillID = CurrentSkillID;
+	CurrentSkillState.SlotIndex = SlotIndex;
 	CurrentSkillState.TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
 	CurrentSkillState.CastID = CachedPlayer->GetNextCastId(); // 클라이언트 고유 CastId
 
@@ -157,6 +156,7 @@ void US1SkillComponent::ConfirmSkillTargeting()
 		CurrentSkillState.name = SkillIt->second.name.c_str();
 		CurrentSkillState.CastTime = SkillIt->second.castTime;
 		CurrentSkillState.bIsCasting = CurrentSkillState.CastTime > 0.f;
+		CurrentSkillState.CooldownDuration = SkillIt->second.cooldown;
 
 		// ActionInstances 초기화
 		CurrentSkillState.ActionInstances.Empty();
@@ -174,6 +174,7 @@ void US1SkillComponent::ConfirmSkillTargeting()
 	{
 		// 캐스팅 시작
 		CachedPlayer->StartCasting(CurrentSkillState);
+		CachedPlayer->ChangeState(Protocol::STATE_MACHINE_CASTING);
 		// TODO : 액션 시작
 	}
 	else
@@ -185,13 +186,17 @@ void US1SkillComponent::ConfirmSkillTargeting()
 	}
 
 	// TODO : 서버 패킷 전송 -> 액션 핸들링쪽으로 이동
-	C_SKILL SkillPkt;
-	SkillPkt.set_skillid(CurrentSkillState.SkillID);
-	SkillPkt.set_castid(CurrentSkillState.CastID);
-	SkillPkt.mutable_targetpos()->set_x(CurrentSkillState.TargetPos.X);
-	SkillPkt.mutable_targetpos()->set_y(CurrentSkillState.TargetPos.Y);
-	SkillPkt.mutable_targetpos()->set_z(CurrentSkillState.TargetPos.Z);
+	uint64 ClientNowTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+	CurrentSkillState.ClientSendTick = ClientNowTick;
 
+	C_SKILL SkillPkt;
+	SkillPkt.mutable_skill_info()->set_skillid(CurrentSkillState.SkillID);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_x(CurrentSkillState.TargetPos.X);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_y(CurrentSkillState.TargetPos.Y);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_z(CurrentSkillState.TargetPos.Z);
+	SkillPkt.set_castid(CurrentSkillState.CastID);
+	SkillPkt.set_clientsend(ClientNowTick);
+	
 	SEND_PACKET(SkillPkt);
 
 	ClearSkillMarkers();

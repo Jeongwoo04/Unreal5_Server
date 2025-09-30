@@ -22,7 +22,6 @@ Player::~Player()
 void Player::OnDamaged(ObjectRef attacker, int32 damage)
 {
     Object::OnDamaged(attacker, damage);
-    cout << "Player " << this->GetId() << " OnDamaged by Monster " << attacker->GetId() << " damage : " << damage + attacker->_statInfo.attack() << endl;
 }
 
 void Player::OnDead(ObjectRef attacker)

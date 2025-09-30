@@ -131,7 +131,7 @@ inline vector<Vector2Int> SpatialHashGrid<T>::FindGridAroundFloat(const Vector2I
 template<typename T>
 inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, int32 radius, const Vector3& worldPos)
 {
-    T nearest = nullptr;
+    T nearest = {};
     float minDistSq = numeric_limits<float>::max();
 
     for (int32 y = -radius; y <= radius; ++y)
@@ -156,6 +156,9 @@ inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, int32 radius,
                 {
                     minDistSq = distSq;
                     nearest = obj;
+
+                    if (minDistSq < 10.f)
+                        return nearest;
                 }
             }
         }
@@ -172,7 +175,7 @@ inline T SpatialHashGrid<T>::FindNearestOnPath(Vector3& from, Vector3& to, float
 
     vector<T> candidates = FindAroundFloat(center, searchRadius);
 
-    T nearest = nullptr;
+    T nearest = {};
     float minT = 1.0f;
 
     for (T target : candidates)

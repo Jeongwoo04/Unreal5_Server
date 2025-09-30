@@ -8,7 +8,7 @@ Projectile::Projectile()
 
 Projectile::~Projectile()
 {
-
+    //cout << "Projectile " << GetId() << " Destructor" << endl;
 }
 
 void Projectile::Update(float deltaTime)
@@ -53,6 +53,17 @@ void Projectile::Update(float deltaTime)
     if (target)
     {
         target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data->damage);
+        {
+            Protocol::HpChange change;
+            change.set_object_id(target->GetId());
+            change.set_hp(target->_statInfo.hp());
+            Protocol::S_CHANGE_HP pkt;
+            *pkt.add_changes() = change;
+
+            auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+            room->Broadcast(sendBuffer);
+        }
+        
         room->AddRemoveList(shared_from_this());
         return;
     }

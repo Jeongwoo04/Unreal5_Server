@@ -31,13 +31,6 @@ void Object::OnDamaged(ObjectRef attacker, int32 damage)
 		OnDead(attacker);
 		return;
 	}
-
-	S_CHANGE_HP changeHpPkt;
-	changeHpPkt.set_object_id(GetId());
-	changeHpPkt.set_hp(_statInfo.hp());
-
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(changeHpPkt);
-	room->Broadcast(sendBuffer);
 }
 
 void Object::OnDead(ObjectRef attacker)

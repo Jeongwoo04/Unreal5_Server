@@ -231,7 +231,7 @@ void AS1MyPlayer::OnSkillSlotReleased(int32 SlotIndex)
 {
 	if (SkillComponent && SkillComponent->IsSkillTargeting())
 	{
-		SkillComponent->ConfirmSkillTargeting();
+		SkillComponent->ConfirmSkillTargeting(SlotIndex);
 	}
 }
 
@@ -316,9 +316,9 @@ void AS1MyPlayer::BindSkillBar(US1SkillBar* InSkillBar)
 	SkillBar = InSkillBar;
 }
 
-void AS1MyPlayer::StartCasting(const FSkillState& CurrentState, uint64 ServerCastEndTick)
+void AS1MyPlayer::StartCasting(const FSkillState& CurrentState, uint64 ClientCastEndTick)
 {
-	SkillBar->StartCastingBar(CurrentState, ServerCastEndTick);
+	SkillBar->StartCastingBar(CurrentState, ClientCastEndTick);
 }
 
 void AS1MyPlayer::CancelCasting()
@@ -328,7 +328,9 @@ void AS1MyPlayer::CancelCasting()
 
 void AS1MyPlayer::FinishCasting()
 {
+	FSkillState& State = this->SkillComponent->GetCurrentSkillState();
 	SkillBar->HideCastingBar();
+	SkillBar->StartSlotCooldown(State.SlotIndex, State.CooldownDuration);
 }
 
 void AS1MyPlayer::PossessedBy(AController* NewController)

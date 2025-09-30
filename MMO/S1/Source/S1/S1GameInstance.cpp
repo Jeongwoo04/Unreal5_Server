@@ -22,7 +22,29 @@ void US1GameInstance::Init()
 {
 	Super::Init();
 
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	// ------------------------------------------------------
+	// 1. NetMode 체크: 독립 서버 연결용 클라이언트만 초기화
+	ENetMode NetMode = World->GetNetMode();
+	if (NetMode == NM_DedicatedServer)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GameInstance Init skipped: NetMode=%d"), (int32)NetMode);
+		return;
+	}
+
+	// ------------------------------------------------------
+	// 2. PIE(Play In Editor) 체크: Editor에서 여러 인스턴스 생성 방지
 #if WITH_EDITOR
+	if (IsRunningDedicatedServer())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GameInstance Init skipped: Dedicated Server in Editor"));
+		return;
+	}
+#endif
+
 	if (BP_ObjectManagerClass)
 	{
 		ObjectManager = NewObject<US1ObjectManager>(this, BP_ObjectManagerClass);
@@ -47,14 +69,19 @@ void US1GameInstance::Init()
 	S1ConfigManager::Instance().LoadConfig("C:/Users/jeson/Desktop/unreal/MMO/S1/Source/S1/Data/config.json");
 	S1DataManager::Instance().LoadData("C:/Users/jeson/Desktop/unreal/MMO/S1/Source/S1/Data/");
 
-#endif
+	ConnectToGameServer();
+}
+
+void US1GameInstance::Shutdown()
+{
+	DisconnectFromGameServer();
+	Super::Shutdown();
 }
 
 void US1GameInstance::ConnectToGameServer()
 {
-#if WITH_EDITOR
-	// 에디터에서 PIE 실행 시 서버쪽 인스턴스는 제외
-	if (IsRunningDedicatedServer() || (GetWorld() && GetWorld()->GetNetMode() == NM_DedicatedServer))
+	UWorld* World = GetWorld();
+	if (!World)
 		return;
 
 	Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(TEXT("Stream"), TEXT("Client Socket"));
@@ -89,32 +116,31 @@ void US1GameInstance::ConnectToGameServer()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Connection Failed")));
 	}
-#endif
 }
 
 void US1GameInstance::DisconnectFromGameServer()
 {
-	if (Connected == false || Socket == nullptr || GameServerSession == nullptr)
-		return;
-
-	Protocol::C_LEAVE_GAME LeavePkt;
-	SEND_PACKET(LeavePkt);
+	if (Connected && Socket && GameServerSession.IsValid())
+	{
+		Protocol::C_LEAVE_GAME LeavePkt;
+		SEND_PACKET(LeavePkt);
+	}
 }
 
 void US1GameInstance::HandleRecvPackets()
 {
-	if (Connected == false || Socket == nullptr || GameServerSession == nullptr)
-		return;
-
-	GameServerSession->HandleRecvPackets();
+	if (Connected && Socket && GameServerSession.IsValid())
+	{
+		GameServerSession->HandleRecvPackets();
+	}
 }
 
 void US1GameInstance::SendPacket(SendBufferRef SendBuffer)
 {
-	if (Socket == nullptr || GameServerSession == nullptr)
-		return;
-
-	GameServerSession->SendPacket(SendBuffer);
+	if (Connected && Socket && GameServerSession.IsValid())
+	{
+		GameServerSession->SendPacket(SendBuffer);
+	}
 }
 
 void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool IsMine)
@@ -253,12 +279,13 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 		return;
 
 	const uint64 ObjectId = CastStartPkt.object_id();
-
 	AActor* FindActor = ObjectManager->FindObject(ObjectId);
 	if (FindActor == nullptr)
 		return;
 
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
+	if (Creature == nullptr)
+		return;
 
 	// CastId 검증
 	if (Creature == MyPlayer)
@@ -266,19 +293,28 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 		if (CastStartPkt.castid() < MyPlayer->SkillComponent->GetCurrentSkillState().CastID)
 			return; // 이미 더 최신 캐스팅 중이면 무시
 
+		FSkillState& LocalState = MyPlayer->SkillComponent->GetCurrentSkillState();
+
+		uint64 ClientRecvTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+		uint64 OneWayDelay = (ClientRecvTick - LocalState.ClientSendTick) / 2;
+		LocalState.ClientRecvTick = ClientRecvTick;
+
 		// MyPlayer는 서버 기준 보정 포함
 		FSkillState ServerState;
 		ServerState.SkillID = CastStartPkt.skillid();
-		ServerState.CastTime = CastStartPkt.castendtime() - CastStartPkt.servernow(); // 서버 기준 캐스팅 시간
 		ServerState.CastID = CastStartPkt.castid();
 
-		MyPlayer->StartCasting(ServerState, CastStartPkt.castendtime());
+		// 서버 캐스팅 종료를 클라 시계로 변환
+		uint64 CastDuration = CastStartPkt.castendtime() - CastStartPkt.servernow();
+		uint64 ClientCastEnd = ClientRecvTick + CastDuration - OneWayDelay;
+
+		MyPlayer->StartCasting(ServerState, ClientCastEnd);
 	}
 	else
 	{
 		// OtherPlayer / Monster는 단순 State 변경 + 애니메이션
 		Creature->ChangeState(Protocol::STATE_MACHINE_CASTING);
-		// Creature->UpdateAnim(CastStartPkt.skillid());
+		// Creature->UpdateAnim(CastStartPkt.skillid()); // 필요 시
 	}
 }
 
@@ -374,4 +410,21 @@ void US1GameInstance::HandleDie(const Protocol::S_DIE& DiePkt)
 
 	// TODO : Die anim
 	HandleDespawn(DiePkt.object_id());
+}
+
+void US1GameInstance::HandleHeartbeat(const Protocol::S_HEARTBEAT& pkt)
+{
+	if (Socket == nullptr || GameServerSession == nullptr)
+		return;
+
+	auto* World = GetWorld();
+	if (World == nullptr)
+		return;
+
+	uint64 clientTime = static_cast<uint64>(FPlatformTime::Cycles64() * 1000);
+
+	Protocol::C_HEARTBEAT responsePkt;
+	responsePkt.set_clienttime(clientTime);
+	auto sendBuffer = ClientPacketHandler::MakeSendBuffer(responsePkt);
+	SendPacket(sendBuffer);
 }

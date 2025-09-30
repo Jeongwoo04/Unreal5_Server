@@ -119,7 +119,7 @@ void SkillSystem::Update(float deltaTime)
 		{
 			if (now >= creature->GetSkillState(instance->skill->id)->GetCastEndTime())
 			{
-				cout << instance->skill->name << " 캐스팅 완료" << endl;
+				//cout << instance->skill->name << " 캐스팅 완료" << endl;
 				instance->isCasting = false;
 				instance->actionDelayElapsed = 0.f;
 				instance->caster->ChangeState(Protocol::STATE_MACHINE_IDLE);
@@ -130,7 +130,7 @@ void SkillSystem::Update(float deltaTime)
 					pkt.set_skillid(instance->skill->id);
 					pkt.set_castid(instance->castId);
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-					GetRoom()->Broadcast(sendBuffer, instance->caster->GetId());
+					GetRoom()->Broadcast(sendBuffer);
 				}
 				creature->StartSkillCooldown(instance->skill->id, now);
 
@@ -163,7 +163,7 @@ void SkillSystem::Update(float deltaTime)
 
 		if (instance->currentActionIndex >= (int32)instance->skill->actions.size())
 		{
-			cout << instance->skill->name << "스킬 완료" << endl;
+			//cout << instance->skill->name << "스킬 완료" << endl;
 			creature->SetActiveSkill(nullptr);
 
 			if (auto monster = dynamic_pointer_cast<Monster>(instance->caster))
@@ -179,7 +179,7 @@ void SkillSystem::Update(float deltaTime)
 
 void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action, SkillInstanceRef instance)
 {
-	cout << static_cast<int32>(action->actionType) << " Handle Action" << endl;
+	//cout << static_cast<int32>(action->actionType) << " Handle Action" << endl;
 
 	int32 idx = instance->currentActionIndex;
 

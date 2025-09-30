@@ -114,7 +114,7 @@ public:
 
 	int32 GetNextCastId() { return CastId++; }
 
-	void StartCasting(const FSkillState& CurrentState, uint64 ServerCastEndTick = 0);
+	void StartCasting(const FSkillState& CurrentState, uint64 ClientCastEndTick = 0);
 	void CancelCasting();
 	void FinishCasting();
 

@@ -33,9 +33,9 @@ void US1SkillBar::StartSlotCooldown(int32 SlotIndex, float CooldownTime)
     }
 }
 
-void US1SkillBar::StartCastingBar(const FSkillState& CurrentState, uint64 ServerCastEndTick)
+void US1SkillBar::StartCastingBar(const FSkillState& CurrentState, uint64 ClientCastEndTick)
 {
-    WBP_CastingBar->ShowCastingBar(CurrentState, ServerCastEndTick);
+    WBP_CastingBar->StartCasting(CurrentState, ClientCastEndTick);
 }
 
 void US1SkillBar::HideCastingBar()

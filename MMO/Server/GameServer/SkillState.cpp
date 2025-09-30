@@ -14,13 +14,13 @@ bool SkillState::IsCasting(uint64 now) const
 void SkillState::StartCooldown(uint64 now)
 {
 	_cooldownEndTime = now + static_cast<uint64>(_cooldownDuration * 1000);
-	cout << DataManager::Instance().SkillDict.find(this->_skillId)->second.name << " 쿨타임 적용 : " << _cooldownEndTime - now << " 초 후 완료" << endl;
+	//cout << DataManager::Instance().SkillDict.find(this->_skillId)->second.name << " 쿨타임 적용 : " << _cooldownEndTime - now << " 초 후 완료" << endl;
 }
 
 void SkillState::StartCasting(uint64 now, float castTime)
 {
 	_castEndTime = now + static_cast<uint64>(castTime * 1000);
-	cout << DataManager::Instance().SkillDict.find(this->_skillId)->second.name << " 캐스팅 시작 : " << _castEndTime - now << " 초 후 완료" << endl;
+	//cout << DataManager::Instance().SkillDict.find(this->_skillId)->second.name << " 캐스팅 시작 : " << _castEndTime - now << " 초 후 완료" << endl;
 }
 
 void SkillState::CancelCasting()

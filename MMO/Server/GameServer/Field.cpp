@@ -9,7 +9,7 @@ Field::Field()
 
 Field::~Field()
 {
-
+	//cout << "Field " << GetId() << " Destructor" << endl;
 }
 
 void Field::GridCaching()
@@ -46,6 +46,9 @@ void Field::Update(float deltaTime)
 		return;
 	}
 
+	Protocol::HpChange change;
+	Protocol::S_CHANGE_HP pkt;
+
 	for (const auto& grid : _cachedGrids)
 	{
 		if (GetOwner()->GetCreatureType() == CREATURE_TYPE_MONSTER)
@@ -58,13 +61,17 @@ void Field::Update(float deltaTime)
 					continue;
 
 				target->OnDamaged(GetOwner(), _data->damagePerTick);
+
+				change.set_object_id(target->GetId());
+				change.set_hp(target->_statInfo.hp());
+				*pkt.add_changes() = change;
+
 				if (_data->buffId > 0)
 					BuffSystem::Instance().ApplyBuff(target, _data->buffId);
 
 				_affectedTargets.insert(target);
 			}
-		}
-			
+		}			
 		else if (GetOwner()->GetCreatureType() == CREATURE_TYPE_PLAYER)
 		{
 			auto targets = room->_monsterGrid.FindAround(grid, 0);
@@ -78,6 +85,11 @@ void Field::Update(float deltaTime)
 					continue;
 
 				target->OnDamaged(GetOwner(), _data->damagePerTick);
+
+				change.set_object_id(target->GetId());
+				change.set_hp(target->_statInfo.hp());
+				*pkt.add_changes() = change;
+
 				if (_data->buffId > 0)
 					BuffSystem::Instance().ApplyBuff(target, _data->buffId);
 
@@ -85,4 +97,7 @@ void Field::Update(float deltaTime)
 			}
 		}
 	}
+
+	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+	room->Broadcast(sendBuffer);
 }
