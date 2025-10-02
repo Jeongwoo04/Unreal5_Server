@@ -50,7 +50,7 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())
-			room->Broadcast(sendBuffer, caster->GetId());
+			room->BroadcastNearby(sendBuffer, caster->_gridPos, caster->GetId());
 	}
 	else
 	{
@@ -85,7 +85,7 @@ void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(cancelPkt);
 		if (auto room = GetRoom())
-			room->Broadcast(sendBuffer);
+			room->BroadcastNearby(sendBuffer, caster->_gridPos);
 	}
 }
 
@@ -130,7 +130,7 @@ void SkillSystem::Update(float deltaTime)
 					pkt.set_skillid(instance->skill->id);
 					pkt.set_castid(instance->castId);
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-					GetRoom()->Broadcast(sendBuffer);
+					GetRoom()->BroadcastNearby(sendBuffer, instance->caster->_gridPos);
 				}
 				creature->StartSkillCooldown(instance->skill->id, now);
 
@@ -194,7 +194,7 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())
-			room->Broadcast(sendBuffer);
+			room->BroadcastNearby(sendBuffer, caster->_gridPos);
 	}
 
 	switch (action->actionType)

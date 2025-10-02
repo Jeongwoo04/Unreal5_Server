@@ -38,7 +38,7 @@ void Player::OnDead(ObjectRef attacker)
     diePkt.set_attacker_id(attacker->GetId());
 
     auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
-    room->Broadcast(sendBuffer);
+    GetSession()->Send(sendBuffer);
 
-    room->LeaveRoom(shared_from_this());
+    room->AddRemoveList(shared_from_this());
 }

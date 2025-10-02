@@ -34,6 +34,7 @@ public:
 public:
 	bool EnterRoom(ObjectRef object);
 	bool LeaveRoom(ObjectRef object);
+	bool LeaveGame(ObjectRef object, uint64 objectId);
 
 	bool HandleEnterPlayer(GameSessionRef gameSession);
 	bool HandleLeavePlayer(PlayerRef player);
@@ -49,10 +50,10 @@ private:
 
 public:
 	void Broadcast(SendBufferRef sendBuffer, uint64 exceptId = 0);
-	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 objectId = 0);
+	void BroadcastNearby(SendBufferRef sendBuffer, const Vector2Int& center, uint64 exceptId = 0);
+	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId = 0);
 
 	void NotifySpawn(ObjectRef object, bool success);
-	void NotifyDespawn(ObjectRef object, uint64 objectId);
 
 public:
 	void AddRemoveList(ObjectRef object);
@@ -77,4 +78,6 @@ private:
 
 	MapInfo _mapInfo;
 	int32 _roomId = 0;
+
+	const float BROADCAST_RANGE = 20.f; // 카메라뷰 + 여유분
 };

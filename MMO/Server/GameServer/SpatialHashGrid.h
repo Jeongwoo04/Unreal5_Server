@@ -16,7 +16,7 @@ public:
 	
     vector<T> FindAround(const Vector2Int& center, int32 radius);
     vector<T> FindAroundFloat(const Vector2Int& center, float radius);
-	T FindNearest(const Vector2Int& center, int32 radius, const Vector3& worldPos);
+	T FindNearest(const Vector2Int& center, float radius, const Vector3& worldPos);
     T FindNearestOnPath(Vector3& from, Vector3& end, float thisRadius);
     
     vector<Vector2Int> FindGridAroundFloat(const Vector2Int& center, float radius);
@@ -71,6 +71,9 @@ inline vector<T> SpatialHashGrid<T>::FindAround(const Vector2Int& center, int32 
     {
         for (int32 x = -radius; x <= radius; ++x)
         {
+            if ((x * x) + (y * y) > radius * radius)
+                continue;
+
             Vector2Int pos = center + Vector2Int(x, y);
             auto it = _cells.find(pos);
             if (it != _cells.end())
@@ -95,6 +98,9 @@ inline vector<T> SpatialHashGrid<T>::FindAroundFloat(const Vector2Int& center, f
     {
         for (int32 x = -range; x <= range; ++x)
         {
+            if ((x * CELL_SIZE * x * CELL_SIZE) + (y * CELL_SIZE * y * CELL_SIZE) > radius * radius)
+                continue;
+
             Vector2Int pos = center + Vector2Int(x, y);
 
             auto it = _cells.find(pos);
@@ -119,6 +125,8 @@ inline vector<Vector2Int> SpatialHashGrid<T>::FindGridAroundFloat(const Vector2I
     {
         for (int32 x = -range; x <= range; ++x)
         {
+            if ((x * CELL_SIZE * x * CELL_SIZE) + (y * CELL_SIZE * y * CELL_SIZE) > radius * radius)
+                continue;
             Vector2Int pos = center + Vector2Int(x, y);
 
             result.push_back(pos);
@@ -129,15 +137,21 @@ inline vector<Vector2Int> SpatialHashGrid<T>::FindGridAroundFloat(const Vector2I
 }
 
 template<typename T>
-inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, int32 radius, const Vector3& worldPos)
+inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, float radius, const Vector3& worldPos)
 {
     T nearest = {};
     float minDistSq = numeric_limits<float>::max();
+    float radiusSq = (radius * CELL_SIZE) * (radius * CELL_SIZE);
+    int32 range = static_cast<int32>(radius);
+    const float EARLY_EXIT_DIST = 50.f;
 
-    for (int32 y = -radius; y <= radius; ++y)
+    for (int32 y = -range; y <= range; ++y)
     {
-        for (int32 x = -radius; x <= radius; ++x)
+        for (int32 x = -range; x <= range; ++x)
         {
+            if ((x * x + y * y) > radiusSq)
+                continue;
+
             Vector2Int cellPos = center + Vector2Int(x, y);
 
             auto it = _cells.find(cellPos);
@@ -150,14 +164,16 @@ inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, int32 radius,
                     continue;
 
                 Vector3 objPos(obj->_posInfo);
-                float distSq = (objPos - worldPos).LengthSquared();
+                float distSq = (objPos - worldPos).LengthSquared2D();
+                if (distSq > radiusSq)
+                    continue;
 
                 if (distSq < minDistSq)
                 {
                     minDistSq = distSq;
                     nearest = obj;
 
-                    if (minDistSq < 10.f)
+                    if (minDistSq < EARLY_EXIT_DIST * EARLY_EXIT_DIST)
                         return nearest;
                 }
             }

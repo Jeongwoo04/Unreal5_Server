@@ -46,22 +46,34 @@ void Room::UpdateTick()
 	{
 		m.second->Update(deltaTime);
 	}
+	//auto monsDuration = GetTickCount64() - start;
+	//cout << "[Mons Tick] duration = " << monsDuration << " ms" << endl;
+
+	//auto projStart = GetTickCount64();
 	for (auto& p : _projectiles)
 	{
 		p.second->Update(deltaTime);
 	}
+	//auto projDuration = GetTickCount64() - projStart;
+	//cout << "[Proj Tick] duration = " << projDuration << " ms" << endl;
 	for (auto& f : _fields)
 	{
 		f.second->Update(deltaTime);
 	}
-
+	//auto sysStart = GetTickCount64();
 	_skillSystem->Update(deltaTime);
+	//auto systemDuration = GetTickCount64() - sysStart;
+	//cout << "[SSys Tick] duration = " << systemDuration << " ms" << endl;
+
+	//auto removeStart = GetTickCount64();
 	ClearRemoveList();
+	//auto removeDuration = GetTickCount64() - removeStart;
+	//cout << "[remo Tick] duration = " << removeDuration << " ms" << endl;
 
 	auto end = GetTickCount64();
 	auto duration = end - start;
 	cout << "[Room Tick] duration = " << duration << " ms, Players = "
-		<< _players.size() << ", Monsters = " << _monsters.size() << std::endl;
+		<< _players.size() << ", Monsters = " << _monsters.size() << ", Fields = " << _fields.size() << std::endl;
 
 	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
 }
@@ -159,9 +171,37 @@ bool Room::LeaveRoom(ObjectRef object)
 
 	bool success = RemoveObject(object, objectId);
 
-	NotifyDespawn(object, objectId);
-
 	return success;
+}
+
+bool Room::LeaveGame(ObjectRef object, uint64 objectId)
+{
+	if (object == nullptr)
+		return false;
+
+	bool removed = LeaveRoom(object);
+
+	// 나에게 퇴장 패킷 보내기
+	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
+	{
+		PlayerRef player = static_pointer_cast<Player>(object);
+
+		Protocol::S_LEAVE_GAME leaveGamePkt;
+
+		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(leaveGamePkt);
+		if (auto session = player->GetSession())
+			session->Send(sendBuffer);
+	}
+	if (removed)
+	{
+		// 성공적으로 Room에서 빠졌으니 클라에 알림
+		Protocol::S_DESPAWN pkt;
+		pkt.add_object_ids(object->GetId());
+		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+		Broadcast(sendBuffer);
+	}
+
+	return true;
 }
 
 bool Room::HandleEnterPlayer(GameSessionRef gameSession)
@@ -178,7 +218,7 @@ bool Room::HandleEnterPlayer(GameSessionRef gameSession)
 
 bool Room::HandleLeavePlayer(PlayerRef player)
 {	
-	return LeaveRoom(player);
+	return LeaveGame(static_pointer_cast<Object>(player), player->GetId());
 }
 
 void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
@@ -342,14 +382,28 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 	}
 }
 
-void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 objectId)
+void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector2Int& center, uint64 exceptId)
+{
+	vector<PlayerRef> nearbyPlayers = _playerGrid.FindAroundFloat(center, BROADCAST_RANGE);
+
+	for (auto& player : nearbyPlayers)
+	{
+		if (player->GetId() == exceptId)
+			continue;
+		if (auto session = player->GetSession())
+			session->Send(sendBuffer);
+	}
+}
+
+void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)
 {
 	Protocol::S_MOVE movePkt;
 
 	movePkt.mutable_info()->CopyFrom(posInfo);
 
 	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
-	Broadcast(sendBuffer, objectId);
+
+	BroadcastNearby(sendBuffer, Vector2Int(posInfo), exceptId);
 }
 
 void Room::NotifySpawn(ObjectRef object, bool success)
@@ -409,30 +463,6 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 	}
 }
 
-void Room::NotifyDespawn(ObjectRef object, uint64 objectId)
-{
-	// 나에게 퇴장 패킷 보내기
-	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
-	{
-		PlayerRef player = static_pointer_cast<Player>(object);
-
-		Protocol::S_LEAVE_GAME leaveGamePkt;
-
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(leaveGamePkt);
-		if (auto session = player->GetSession())
-			session->Send(sendBuffer);
-	}
-
-	// 다른 플레이어에게 object의 퇴장 알리기
-	{
-		Protocol::S_DESPAWN despawnPkt;
-		despawnPkt.add_object_ids(objectId);
-		
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(despawnPkt);
-		Broadcast(sendBuffer, objectId);
-	}
-}
-
 void Room::AddRemoveList(ObjectRef object)
 {
 	_removePending.push_back(object);
@@ -440,8 +470,19 @@ void Room::AddRemoveList(ObjectRef object)
 
 void Room::ClearRemoveList()
 {
-	for (auto it : _removePending)
-		LeaveRoom(it);
+	const int32 MAX_REMOVE_COUNT_PER_TICK = 100;
+	int32 count = (int32)_removePending.size() > 100 ? 100 : (int32)_removePending.size();
 
-	_removePending.clear();
+	Protocol::S_DESPAWN pkt;
+
+	for (int32 i = 0; i < count; i++)
+	{
+		LeaveRoom(_removePending[i]);
+		pkt.add_object_ids(_removePending[i]->GetId());
+	}
+
+	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+	Broadcast(sendBuffer);
+
+	_removePending.erase(_removePending.begin(), _removePending.begin() + count);
 }

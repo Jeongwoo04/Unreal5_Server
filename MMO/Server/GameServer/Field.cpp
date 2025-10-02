@@ -60,6 +60,9 @@ void Field::Update(float deltaTime)
 				if (_affectedTargets.find(target) != _affectedTargets.end())
 					continue;
 
+				if ((target->_worldPos - _worldPos).LengthSquared2D() > (_data->range * _data->range))
+					continue;
+
 				target->OnDamaged(GetOwner(), _data->damagePerTick);
 
 				change.set_object_id(target->GetId());
@@ -99,5 +102,5 @@ void Field::Update(float deltaTime)
 	}
 
 	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	room->Broadcast(sendBuffer);
+	room->BroadcastNearby(sendBuffer, _gridPos);
 }

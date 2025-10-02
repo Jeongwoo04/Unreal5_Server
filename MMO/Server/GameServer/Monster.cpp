@@ -12,6 +12,10 @@ Monster::Monster()
     for (auto& it : DataManager::Instance().SkillDict)
     {
         int32 id = it.first;
+        //
+        //if (id == 4)
+        //    continue;
+        //
         const Skill& s = it.second;
         _skillStates.emplace(id, make_shared<SkillState>(id, s.cooldown + 3.f));
     }
@@ -79,7 +83,7 @@ void Monster::UpdateIdle(float deltaTime)
         else
         {
             Vector3 dir = (target->_worldPos - _worldPos);
-            if (dir.Length2D() < _chaseDistance * CELL_SIZE)
+            if (dir.LengthSquared2D() < ((_chaseDistance * CELL_SIZE) + (_chaseDistance * CELL_SIZE)))
             {
                 _posInfo.set_yaw(Vector3::DirToYaw2D(dir.Normalized2D()));
                 ChangeState(Protocol::STATE_MACHINE_MOVING);
@@ -119,10 +123,10 @@ void Monster::UpdateMoving(float deltaTime)
     Vector3 myPos = _worldPos;
     Vector3 targetPos = target->_worldPos;
     Vector3 destPos;
-    float distance = (targetPos - myPos).Length2D();
+    float distanceSq = (targetPos - myPos).LengthSquared2D();
 
     // 사정거리 초과 시 추적 종료
-    if (distance > _chaseDistance * CELL_SIZE)
+    if (distanceSq > ((_chaseDistance * CELL_SIZE) + (_chaseDistance * CELL_SIZE)))
     {
         SetPlayer(nullptr);
         ChangeState(Protocol::STATE_MACHINE_IDLE);
@@ -139,9 +143,9 @@ void Monster::UpdateMoving(float deltaTime)
             if (it != DataManager::Instance().SkillDict.end())
             {
                 const Skill& skillData = it->second;
-
+                float skillDist = skillData.actions[0]->distance * CELL_SIZE;
                 // 스킬 사정거리 도달 + 직선 추적 가능 → 스킬 전환
-                if (distance <= (skillData.actions[0]->distance * CELL_SIZE))
+                if (distanceSq <= (skillDist * skillDist))
                 {
                     DoSkill();
                     ChangeState(Protocol::STATE_MACHINE_SKILL);
@@ -156,8 +160,8 @@ void Monster::UpdateMoving(float deltaTime)
     {
         Vector3 dir = (targetPos - myPos).Normalized2D();
         float moveDist = _statInfo.speed() * deltaTime;
-        if (moveDist > distance)
-            moveDist = distance;
+        if ((moveDist * moveDist) > distanceSq)
+            moveDist = (targetPos - myPos).Length2D();
 
         destPos = _worldPos + dir * moveDist;
 
@@ -196,21 +200,22 @@ void Monster::UpdateMoving(float deltaTime)
     {
         destPos = _simplifiedPath[_simplifiedIndex];
         Vector3 dir = destPos - _worldPos;
-        float segDist = dir.Length2D();
+        float segDistSq = dir.LengthSquared2D();
+        float moveDist = _statInfo.speed() * deltaTime;
 
-        if (segDist < 10.f)
+        if (moveDist * moveDist >= segDistSq)
         {
             MoveToNextPos(destPos, &dir);
             _simplifiedIndex++;
         }
         else
         {
-            dir = dir / segDist;
-            float moveDist = _statInfo.speed() * deltaTime;
-            if (moveDist > segDist)
-                moveDist = segDist;
+            if (segDistSq > 0.f)
+                dir = dir / sqrt(segDistSq);
+            else
+                return;
 
-            Vector3 destPos = _worldPos + dir * moveDist;
+            destPos = _worldPos + dir * moveDist;
             MoveToNextPos(destPos, &dir);
         }
         room->BroadcastMove(_posInfo, GetId());

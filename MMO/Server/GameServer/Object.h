@@ -61,6 +61,8 @@ public:
 
 	float _collisionRadius;
 
+	vector<PlayerRef> _nearbyPlayers;
+
 protected:
 	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험
 

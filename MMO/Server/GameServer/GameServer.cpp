@@ -18,15 +18,22 @@ enum
 	WORKER_TICK = 50
 };
 
-void DoWorkerJob(ServerServiceRef& service)
+void DoIOWorker(ServerServiceRef& service)
+{
+	while (true)
+	{
+		// 네트워크 입출력 처리 -> 인게임 로직까지 (패킷 핸들러에 의해)
+		service->GetIocpCore()->Dispatch(10);
+	}
+}
+
+void DoGameWorker()
 {
 	while (true)
 	{
 		LEndTickCount = ::GetTickCount64() + WORKER_TICK;
 
-		// 네트워크 입출력 처리 -> 인게임 로직까지 (패킷 핸들러에 의해)
-		service->GetIocpCore()->Dispatch(10);
-
+		// 인게임 로직
 		// 예약된 일감 처리
 		ThreadManager::DistributeReservedJobs();
 
@@ -55,7 +62,15 @@ int main()
 	{
 		GThreadManager->Launch([&service]()
 			{
-				DoWorkerJob(service);
+				DoIOWorker(service);
+			});
+	}
+
+	for (int32 i = 0; i < 1; i++)
+	{
+		GThreadManager->Launch([]()
+			{
+				DoGameWorker();
 			});
 	}
 

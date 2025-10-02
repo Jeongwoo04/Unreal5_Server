@@ -9,8 +9,8 @@
           "spawnId": 0,
           "dataId": 10201,
           "position": {
-            "x": 2000,
-            "y": 2000,
+            "x": 1000,
+            "y": 1000,
             "z": 100
           },
           "respawnInterval": 5000,
@@ -20,8 +20,8 @@
           "spawnId": 1,
           "dataId": 10202,
           "position": {
-            "x": -2000,
-            "y": -2000,
+            "x": -1000,
+            "y": -1000,
             "z": 100
           },
           "respawnInterval": 10000,
