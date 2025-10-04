@@ -60,7 +60,7 @@
       "name": "SkillC_FrozenField",
       "iconPath": "UI/Skill_Blizard.png",
       "cooldown": 20.0,
-      "castTime": 2.5,
+      "castTime": 2.0,
       "marker": true,
       "actions": [
         {

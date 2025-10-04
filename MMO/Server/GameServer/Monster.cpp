@@ -56,15 +56,15 @@ void Monster::UpdateIdle(float deltaTime)
     const uint64 tick = GetTickCount64();
 
     auto target = GetPlayer();
-    if (target == nullptr)
+    if (target == nullptr || target->IsDead())
     {
         if (_nextSearchTick > tick)
             return;
         _nextSearchTick = tick + 500;
 
-        PlayerRef target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
+        target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
 
-        if (target == nullptr)
+        if (target == nullptr || target->IsDead())
             return;
 
         SetPlayer(target);
@@ -83,9 +83,10 @@ void Monster::UpdateIdle(float deltaTime)
         else
         {
             Vector3 dir = (target->_worldPos - _worldPos);
-            if (dir.LengthSquared2D() < ((_chaseDistance * CELL_SIZE) + (_chaseDistance * CELL_SIZE)))
+            if (dir.LengthSquared2D() < ((_chaseDistance * CELL_SIZE) * (_chaseDistance * CELL_SIZE)))
             {
                 _posInfo.set_yaw(Vector3::DirToYaw2D(dir.Normalized2D()));
+                BroadcastMove();
                 ChangeState(Protocol::STATE_MACHINE_MOVING);
                 return;
             }
@@ -108,7 +109,7 @@ void Monster::UpdateMoving(float deltaTime)
     const uint64 tick = GetTickCount64();
     
     PlayerRef target = GetPlayer();
-    if (target == nullptr || target->GetRoom() != GetRoom())
+    if (target == nullptr || target->IsDead() || target->GetRoom() != GetRoom())
     {
         SetPlayer(nullptr);
         ChangeState(Protocol::STATE_MACHINE_IDLE);
@@ -126,7 +127,7 @@ void Monster::UpdateMoving(float deltaTime)
     float distanceSq = (targetPos - myPos).LengthSquared2D();
 
     // 사정거리 초과 시 추적 종료
-    if (distanceSq > ((_chaseDistance * CELL_SIZE) + (_chaseDistance * CELL_SIZE)))
+    if (distanceSq > ((_chaseDistance * CELL_SIZE) * (_chaseDistance * CELL_SIZE)))
     {
         SetPlayer(nullptr);
         ChangeState(Protocol::STATE_MACHINE_IDLE);
@@ -166,7 +167,7 @@ void Monster::UpdateMoving(float deltaTime)
         destPos = _worldPos + dir * moveDist;
 
         MoveToNextPos(destPos, &dir);
-        room->BroadcastMove(_posInfo, GetId());
+        BroadcastMove();
         return;
     }
 
@@ -218,7 +219,7 @@ void Monster::UpdateMoving(float deltaTime)
             destPos = _worldPos + dir * moveDist;
             MoveToNextPos(destPos, &dir);
         }
-        room->BroadcastMove(_posInfo, GetId());
+        BroadcastMove();
         return;
     }
 
@@ -292,7 +293,7 @@ void Monster::SelectSkill()
 void Monster::DoSkill()
 {
     PlayerRef target = GetPlayer();
-    if (target == nullptr)
+    if (target == nullptr || target->IsDead())
         return;
 
     Vector3 dir = target->_worldPos - _worldPos;
@@ -301,7 +302,7 @@ void Monster::DoSkill()
 
     if (auto room = GetRoom())
     {
-        room->BroadcastMove(_posInfo, GetId());
+        BroadcastMove();
         room->_skillSystem->ExecuteSkill(shared_from_this(), _currentSkillId, target->_worldPos, _castId);
         _coolTick = ::GetTickCount64() + 3000;
     }
@@ -323,7 +324,7 @@ bool Monster::CanUseSkill(int32 skillId, uint64 now) const
     const Skill* skill = &skillIt->second;
 
     PlayerRef target = GetPlayer();
-    if (target == nullptr)
+    if (target == nullptr || target->IsDead())
         return false;
 
     // 사거리 및 시야 체크

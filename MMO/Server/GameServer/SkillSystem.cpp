@@ -48,6 +48,7 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 		pkt.set_servernow(now);
 		pkt.set_castendtime(now + static_cast<uint64>(instance->skill->castTime * 1000));
 
+		cout << "Skill Cast Start !" << endl;
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())
 			room->BroadcastNearby(sendBuffer, caster->_gridPos, caster->GetId());
@@ -82,6 +83,8 @@ void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 
 		creature->GetActiveSkill()->canceled = true;
 		creature->SetActiveSkill(nullptr);
+
+		cout << "Skill Cast Cancel !" << endl;
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(cancelPkt);
 		if (auto room = GetRoom())
@@ -129,6 +132,8 @@ void SkillSystem::Update(float deltaTime)
 					pkt.set_object_id(instance->caster->GetId());
 					pkt.set_skillid(instance->skill->id);
 					pkt.set_castid(instance->castId);
+
+					cout << "Skill Cast Success !" << endl;
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 					GetRoom()->BroadcastNearby(sendBuffer, instance->caster->_gridPos);
 				}
@@ -191,6 +196,8 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 		pkt.mutable_skill_info()->mutable_targetpos()->set_x(targetPos._x);
 		pkt.mutable_skill_info()->mutable_targetpos()->set_y(targetPos._y);
 		pkt.mutable_skill_info()->mutable_targetpos()->set_z(targetPos._z);
+
+		cout << "Skill ! Action : " << idx << endl;
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())

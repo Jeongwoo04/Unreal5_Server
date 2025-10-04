@@ -20,11 +20,6 @@ void US1SkillBar::SetSkillSlot(int32 SlotIndex, UTexture2D* InIcon, const FText&
     }
 }
 
-bool US1SkillBar::CanUseSkill(int32 SlotIndex)
-{
-    return SkillSlots[SlotIndex]->CanUseSkill();
-}
-
 void US1SkillBar::StartSlotCooldown(int32 SlotIndex, float CooldownTime)
 {
     if (SkillSlots.IsValidIndex(SlotIndex))

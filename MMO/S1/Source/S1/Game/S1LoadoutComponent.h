@@ -15,7 +15,8 @@ public:
     US1LoadoutComponent();
 
     void InitializeDefaultSkills(const TMap<int32, int32>& SlotToSkillMap);
-    int32 GetSkillSlot(int32 SlotIndex) const;
+    int32 GetSkillIdWithSlot(int32 SlotIndex) const;
+    int32 GetSkillSlotWithId(int32 SkillID) const;
 
 private:
     // SlotIndex (0~3) ¡æ SkillID

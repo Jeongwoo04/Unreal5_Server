@@ -46,7 +46,7 @@ AS1MyPlayer::AS1MyPlayer()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -97,6 +97,9 @@ void AS1MyPlayer::UpdateMoving(float DeltaTime)
 
 	if (TargetLocation.IsZero())
 		return;
+
+	if (SkillComponent->IsCasting())
+		HandleLocalCancelCasting();
 
 	FVector CurrentLocation = GetActorLocation();
 	FVector ToTarget = TargetLocation - CurrentLocation;
@@ -194,11 +197,11 @@ void AS1MyPlayer::InputRightClickMove(const FInputActionValue& value)
 
 void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 {
-	int32 SkillID = LoadoutComponent->GetSkillSlot(SlotIndex);
+	int32 SkillID = LoadoutComponent->GetSkillIdWithSlot(SlotIndex);
 	if (SkillID <= 0)
 		return;
 
-	if (SkillBar->CanUseSkill(SlotIndex))
+	if (SkillComponent->CanUseSkill(SkillID))
 	{
 		auto SkillIt = S1DataManager::Instance().SkillDict.find(SkillID);
 		if (SkillIt == S1DataManager::Instance().SkillDict.end())
@@ -210,16 +213,6 @@ void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 			SkillComponent->BeginSkillTargeting(SkillID, SkillData.markerData.distance, SkillData.markerData.range);
 		else
 			;
-		//ChangeState(Protocol::STATE_MACHINE_CASTING); -> confirm skill 안으로
-		//SendMovePacket();
-
-		/*
-		C_SKILL SkillPkt;
-		SkillPkt.mutable_info()->set_skillid(SkillID);
-
-		SEND_PACKET(SkillPkt);
-		// TODO : 애니메이션 & S_Skill 패킷 받으면 SkillBar에 Cooldown 적용
-		*/
 	}
 	else
 	{
@@ -231,7 +224,8 @@ void AS1MyPlayer::OnSkillSlotReleased(int32 SlotIndex)
 {
 	if (SkillComponent && SkillComponent->IsSkillTargeting())
 	{
-		SkillComponent->ConfirmSkillTargeting(SlotIndex);
+		int32 SkillID = LoadoutComponent->GetSkillIdWithSlot(SlotIndex);
+		SkillComponent->ConfirmSkillTargeting(SkillID);
 	}
 }
 
@@ -287,7 +281,7 @@ void AS1MyPlayer::InitSkillBar()
 
 	for (int32 i = 0; i < MaxSlots; i++)
 	{
-		int32 SkillId = LoadoutComponent->GetSkillSlot(i);
+		int32 SkillId = LoadoutComponent->GetSkillIdWithSlot(i);
 		if (SkillId <= 0)
 			continue;
 
@@ -308,6 +302,28 @@ void AS1MyPlayer::InitSkillBar()
 		// 입력키 세팅: 1~4, 별도 InputMapping에서 가져올 수도 있음
 		FText KeyText = FText::AsNumber(i + 1);
 		SkillBar->SetSkillSlot(i, IconTexture, KeyText);
+
+		if (SkillComponent)
+		{
+			FSkillState State;
+			State.SkillID = SkillId;
+			State.name = Skill.name.c_str();
+			State.CastTime = Skill.castTime;
+			State.CooldownDuration = Skill.cooldown;
+			State.bIsCooldown = false;
+
+			State.ActionInstances.Empty();
+			for (const auto& Action : SkillIt->second.actions)
+			{
+				FClientActionInstance Instance;
+				Instance.Action = &Action;
+				Instance.Elapsed = 0.f;
+				Instance.bTriggered = false;
+				State.ActionInstances.Add(Instance);
+			}
+
+			SkillComponent->AddSkillState(SkillId, State);
+		}
 	}
 }
 
@@ -316,21 +332,34 @@ void AS1MyPlayer::BindSkillBar(US1SkillBar* InSkillBar)
 	SkillBar = InSkillBar;
 }
 
-void AS1MyPlayer::StartCasting(const FSkillState& CurrentState, uint64 ClientCastEndTick)
+void AS1MyPlayer::HandleStartLocalCasting(const FSkillState& State)
 {
-	SkillBar->StartCastingBar(CurrentState, ClientCastEndTick);
+	SkillBar->StartCastingBar(State, 0);
 }
 
-void AS1MyPlayer::CancelCasting()
+void AS1MyPlayer::HandleStartServerCasting(const FSkillState& State, uint64 ServerCastEndTick)
 {
-	SkillBar->HideCastingBar();
+	SkillBar->StartCastingBar(State, ServerCastEndTick);
 }
 
-void AS1MyPlayer::FinishCasting()
+void AS1MyPlayer::HandleLocalCancelCasting()
 {
-	FSkillState& State = this->SkillComponent->GetCurrentSkillState();
 	SkillBar->HideCastingBar();
-	SkillBar->StartSlotCooldown(State.SlotIndex, State.CooldownDuration);
+	SkillComponent->LocalCancelCasting();
+}
+
+void AS1MyPlayer::HandleServerCancelCasting(int32 SkillID)
+{
+	SkillBar->HideCastingBar();
+	SkillComponent->ServerCancelCasting(SkillID);
+}
+
+void AS1MyPlayer::HandleServerFinishCasting(int32 SkillID)
+{
+	FSkillState* State = SkillComponent->GetSkillState(SkillID);
+	SkillBar->HideCastingBar();
+	SkillBar->StartSlotCooldown(
+		LoadoutComponent->GetSkillSlotWithId(SkillID), State->CooldownDuration);
 }
 
 void AS1MyPlayer::PossessedBy(AController* NewController)

@@ -27,16 +27,17 @@ struct FSkillState
 	GENERATED_BODY()
 
 	int32 SkillID = -1;
-	int32 SlotIndex = -1;
 	FString name = "";
+	int32 CastID = 0;
 	float CastTime = 0.f;
 	float CastElapsed = 0.f;
 	float CooldownDuration = 0.f;
+	float CooldownElapsed = 0.f;
 	bool bIsCasting = false;
+	bool bIsCooldown = false;
 	TArray<FClientActionInstance> ActionInstances;
 	int32 CurrentActionIndex = 0;
 	FVector TargetPos = FVector::ZeroVector;
-	int32 CastID = 0;
 
 	uint64 ClientSendTick = 0;
 	uint64 ClientRecvTick = 0;
@@ -63,14 +64,15 @@ public:
 	// 로컬 입력
 	void BeginSkillTargeting(int32 SkillID, float Distance, float Range);
 	void CancelSkillTargeting();
-	void ConfirmSkillTargeting(int32 SlotIndex);
+	void ConfirmSkillTargeting(int32 SkillID);
 
 	bool IsSkillTargeting();
 
-	// 서버 패킷 입력
-	void StartCasting(const FSkillState& SkillState);
-	void CancelCasting();
-	void FinishCasting();
+public:
+	bool CanUseSkill(int32 SkillID);
+	bool IsCasting();
+	void LocalCancelCasting();
+	void ServerCancelCasting(int32 SkillID);
 
 	void HandleActionPkt(const Protocol::S_SKILL& Pkt);
 
@@ -90,7 +92,10 @@ private:
 	void ExecuteAction(const ClientAction& Action, const FVector& TargetPos);
 
 public:
-	FSkillState& GetCurrentSkillState() { return CurrentSkillState; }
+	FSkillState* GetCurrentSkillState() { return SkillStates.Find(CurrentSkillID); }
+
+	FSkillState* GetSkillState(int32 SkillID) { return SkillStates.Find(SkillID); }
+	void AddSkillState(int32 SkillID, FSkillState State) { SkillStates.Add(SkillID, State); }
 
 private:
 	UPROPERTY()
@@ -114,7 +119,7 @@ private:
 	FTimerHandle SkillAreaUpdateTimer;
 	float SkillAreaUpdateInterval = 0.05f;
 
-	FSkillState CurrentSkillState;
+	TMap<int32, FSkillState> SkillStates;
 
 	int32 CurrentSkillID = -1;
 	bool bIsSkillTargeting = false;

@@ -79,5 +79,5 @@ private:
 	MapInfo _mapInfo;
 	int32 _roomId = 0;
 
-	const float BROADCAST_RANGE = 20.f; // 카메라뷰 + 여유분
+	const float BROADCAST_RANGE = 2000.f; // 카메라뷰 + 여유분
 };

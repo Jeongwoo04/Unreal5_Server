@@ -227,8 +227,8 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	{
 		FVector ServerPos = FVector(MovePkt.info().x(), MovePkt.info().y(), MovePkt.info().z());
 		
-		float DistSq = FVector::DistSquared(ServerPos, MyPlayer->GetActorLocation());
-		const float Allow = FMath::Square(5.f);
+		float DistSq = FVector::DistSquared2D(ServerPos, MyPlayer->GetActorLocation());
+		const float Allow = FMath::Square(25.f);
 
 		if (DistSq > Allow)
 		{
@@ -290,25 +290,20 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 	// CastId 검증
 	if (Creature == MyPlayer)
 	{
-		if (CastStartPkt.castid() < MyPlayer->SkillComponent->GetCurrentSkillState().CastID)
+		if (CastStartPkt.castid() < MyPlayer->SkillComponent->GetSkillState(CastStartPkt.skillid())->CastID)
 			return; // 이미 더 최신 캐스팅 중이면 무시
 
-		FSkillState& LocalState = MyPlayer->SkillComponent->GetCurrentSkillState();
+		FSkillState* LocalState = MyPlayer->SkillComponent->GetSkillState(CastStartPkt.skillid());
 
 		uint64 ClientRecvTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
-		uint64 OneWayDelay = (ClientRecvTick - LocalState.ClientSendTick) / 2;
-		LocalState.ClientRecvTick = ClientRecvTick;
-
-		// MyPlayer는 서버 기준 보정 포함
-		FSkillState ServerState;
-		ServerState.SkillID = CastStartPkt.skillid();
-		ServerState.CastID = CastStartPkt.castid();
+		uint64 OneWayDelay = (ClientRecvTick - LocalState->ClientSendTick) / 2;
+		LocalState->ClientRecvTick = ClientRecvTick;
 
 		// 서버 캐스팅 종료를 클라 시계로 변환
 		uint64 CastDuration = CastStartPkt.castendtime() - CastStartPkt.servernow();
 		uint64 ClientCastEnd = ClientRecvTick + CastDuration - OneWayDelay;
 
-		MyPlayer->StartCasting(ServerState, ClientCastEnd);
+		MyPlayer->HandleStartServerCasting(*LocalState, ClientCastEnd);
 	}
 	else
 	{
@@ -340,10 +335,10 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 	if (Creature == MyPlayer)
 	{
 		// CastId 검증
-		if (CastSuccessPkt.castid() != MyPlayer->SkillComponent->GetCurrentSkillState().CastID)
+		if (CastSuccessPkt.castid() != MyPlayer->SkillComponent->GetSkillState(CastSuccessPkt.skillid())->CastID)
 			return;
 
-		MyPlayer->FinishCasting(); // 캐스팅바 UI 정리
+		MyPlayer->HandleServerFinishCasting(CastSuccessPkt.skillid()); // 캐스팅바 UI 정리
 	}
 	else
 	{
@@ -374,10 +369,10 @@ void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL&
 	if (Creature == MyPlayer)
 	{
 		// CastId 검증
-		if (CastCancelPkt.castid() != MyPlayer->SkillComponent->GetCurrentSkillState().CastID)
+		if (CastCancelPkt.castid() != MyPlayer->SkillComponent->GetSkillState(CastCancelPkt.skillid())->CastID)
 			return;
 
-		MyPlayer->CancelCasting(); // 캐스팅바 UI 정리
+		MyPlayer->HandleServerCancelCasting(CastCancelPkt.skillid()); // 캐스팅바 UI 정리
 	}
 	else
 	{

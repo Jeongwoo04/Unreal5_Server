@@ -13,11 +13,21 @@ void US1LoadoutComponent::InitializeDefaultSkills(const TMap<int32, int32>& Slot
     SlotSkillMap = SlotToSkillMap;
 }
 
-int32 US1LoadoutComponent::GetSkillSlot(int32 SlotIndex) const
+int32 US1LoadoutComponent::GetSkillIdWithSlot(int32 SlotIndex) const
 {
-    if (const int32* FoundSkill = SlotSkillMap.Find(SlotIndex))
+    if (const auto& FoundSkill = SlotSkillMap.Find(SlotIndex))
     {
         return *FoundSkill;
+    }
+    return -1;
+}
+
+int32 US1LoadoutComponent::GetSkillSlotWithId(int32 SkillID) const
+{
+    for (const auto& It : SlotSkillMap)
+    {
+        if (It.Value == SkillID)
+            return It.Key;
     }
     return -1;
 }

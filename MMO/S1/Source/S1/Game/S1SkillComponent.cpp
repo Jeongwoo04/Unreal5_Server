@@ -34,6 +34,8 @@ void US1SkillComponent::BeginPlay()
 	// ...
 	OwnerCreature = Cast<AS1Creature>(GetOwner());
 	CachedPlayer = Cast<AS1MyPlayer>(GetOwner());
+
+
 }
 
 
@@ -42,7 +44,7 @@ void US1SkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (CachedPlayer && CurrentSkillState.SkillID > 0)
+	if (CachedPlayer)
 	{
 		TickSkillState(DeltaTime);
 	}
@@ -136,65 +138,47 @@ void US1SkillComponent::CancelSkillTargeting()
 	ClearSkillMarkers();
 }
 
-void US1SkillComponent::ConfirmSkillTargeting(int32 SlotIndex)
+void US1SkillComponent::ConfirmSkillTargeting(int32 SkillID)
 {
 	if (!bIsSkillTargeting || !CachedPlayer)
 		return;
 
 	bIsSkillTargeting = false;
 
-	CurrentSkillState = FSkillState();
-	CurrentSkillState.SkillID = CurrentSkillID;
-	CurrentSkillState.SlotIndex = SlotIndex;
-	CurrentSkillState.TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
-	CurrentSkillState.CastID = CachedPlayer->GetNextCastId(); // 클라이언트 고유 CastId
+	FSkillState* State = GetSkillState(SkillID);
+	State->TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
+	State->CastID = CachedPlayer->GetNextCastId(); // 클라이언트 고유 CastId
+	CurrentSkillID = SkillID;
 
-	// TODO: CastTime 설정 필요
-	auto SkillIt = S1DataManager::Instance().SkillDict.find(CurrentSkillID);
-	if (SkillIt != S1DataManager::Instance().SkillDict.end())
+	// 캐스팅 시작
+	if (State->CastTime > 0.f)
 	{
-		CurrentSkillState.name = SkillIt->second.name.c_str();
-		CurrentSkillState.CastTime = SkillIt->second.castTime;
-		CurrentSkillState.bIsCasting = CurrentSkillState.CastTime > 0.f;
-		CurrentSkillState.CooldownDuration = SkillIt->second.cooldown;
-
-		// ActionInstances 초기화
-		CurrentSkillState.ActionInstances.Empty();
-		for (const auto& Action : SkillIt->second.actions)
-		{
-			FClientActionInstance Instance;
-			Instance.Action = &Action;
-			Instance.Elapsed = 0.f;
-			Instance.bTriggered = false;
-			CurrentSkillState.ActionInstances.Add(Instance);
-		}
-	}
-
-	if (CurrentSkillState.bIsCasting)
-	{
-		// 캐스팅 시작
-		CachedPlayer->StartCasting(CurrentSkillState);
+		State->bIsCasting = true;
+		State->CastElapsed = 0.f;
+		CachedPlayer->HandleStartLocalCasting(*State);
 		CachedPlayer->ChangeState(Protocol::STATE_MACHINE_CASTING);
 		// TODO : 액션 시작
 	}
 	else
 	{
 		// 즉발이면 바로 액션 Tick 수행
-		CurrentSkillState.bIsCasting = false;
-		CurrentSkillState.CurrentActionIndex = 0;
+		State->bIsCasting = false;
+		State->CurrentActionIndex = 0;
+		State->bIsCooldown = true;
+		State->CooldownElapsed = 0.f;
 		// TODO : 액션 시작
 	}
 
 	// TODO : 서버 패킷 전송 -> 액션 핸들링쪽으로 이동
 	uint64 ClientNowTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
-	CurrentSkillState.ClientSendTick = ClientNowTick;
+	State->ClientSendTick = ClientNowTick;
 
 	C_SKILL SkillPkt;
-	SkillPkt.mutable_skill_info()->set_skillid(CurrentSkillState.SkillID);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_x(CurrentSkillState.TargetPos.X);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_y(CurrentSkillState.TargetPos.Y);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_z(CurrentSkillState.TargetPos.Z);
-	SkillPkt.set_castid(CurrentSkillState.CastID);
+	SkillPkt.mutable_skill_info()->set_skillid(State->SkillID);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_x(State->TargetPos.X);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_y(State->TargetPos.Y);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_z(State->TargetPos.Z);
+	SkillPkt.set_castid(State->CastID);
 	SkillPkt.set_clientsend(ClientNowTick);
 	
 	SEND_PACKET(SkillPkt);
@@ -207,32 +191,27 @@ bool US1SkillComponent::IsSkillTargeting()
 	return bIsSkillTargeting;
 }
 
-void US1SkillComponent::StartCasting(const FSkillState& SkillState)
+bool US1SkillComponent::CanUseSkill(int32 SkillID)
 {
-	if (OwnerCreature)
-	{
-		CurrentSkillState = SkillState;
-		OwnerCreature->ChangeState(Protocol::STATE_MACHINE_CASTING);
-
-		// 캐스팅 애니메이션/이펙트 처리
-		//OwnerCreature->PlayCastingAnimation(SkillState.SkillID);
-	}
-
-	// MyPlayer일 경우 캐스팅바 표시
-	if (CachedPlayer)
-	{
-		CachedPlayer->StartCasting(SkillState);
-	}
+	return GetSkillState(SkillID)->bIsCooldown == false
+		&& GetSkillState(SkillID)->bIsCasting == false;
 }
 
-void US1SkillComponent::CancelCasting()
+bool US1SkillComponent::IsCasting()
 {
-	CurrentSkillState = FSkillState();
+	return GetCurrentSkillState()->bIsCasting == true;
 }
 
-void US1SkillComponent::FinishCasting()
+void US1SkillComponent::LocalCancelCasting()
 {
+	GetCurrentSkillState()->bIsCasting = false;
+	GetCurrentSkillState()->CastElapsed = 0.f;
+}
 
+void US1SkillComponent::ServerCancelCasting(int32 SkillID)
+{
+	GetSkillState(SkillID)->bIsCasting = false;
+	GetSkillState(SkillID)->CastElapsed = 0.f;
 }
 
 void US1SkillComponent::HandleActionPkt(const Protocol::S_SKILL& Pkt)
@@ -312,56 +291,78 @@ void US1SkillComponent::ClearSkillMarkers()
 	}
 
 	bIsSkillTargeting = false;
-	CurrentSkillID = -1;
 	CurrentSkillDistance = 0.f;
 }
 
 void US1SkillComponent::TickSkillState(float DeltaTime)
 {
-	if (CurrentSkillState.SkillID <= 0 || !CachedPlayer)
+	if (!CachedPlayer)
 		return;
 
 	// 캐스팅 진행
-	if (CurrentSkillState.bIsCasting)
+	if (CurrentSkillID > 0)
 	{
-		CurrentSkillState.CastElapsed += DeltaTime;
-		if (CurrentSkillState.CastElapsed >= CurrentSkillState.CastTime)
+		FSkillState* State = GetSkillState(CurrentSkillID);
+		if (State->bIsCasting)
 		{
-			CurrentSkillState.bIsCasting = false;
-			CurrentSkillState.CurrentActionIndex = 0;
-		}
-	}
-	else
-	{
-		// Action 순차 실행
-		if (CurrentSkillState.CurrentActionIndex < CurrentSkillState.ActionInstances.Num())
-		{
-			FClientActionInstance& ActionInst = CurrentSkillState.ActionInstances[CurrentSkillState.CurrentActionIndex];
-			ActionInst.Elapsed += DeltaTime;
-
-			if (!ActionInst.bTriggered && ActionInst.Elapsed >= ActionInst.Action->actionDelay)
+			State->CastElapsed += DeltaTime;
+			if (State->CastElapsed >= State->CastTime)
 			{
-				HandleExecuteAction(ActionInst);
-				ActionInst.bTriggered = true;
-			}
-
-			// 다음 액션으로 이동
-			if (ActionInst.bTriggered)
-			{
-				CurrentSkillState.CurrentActionIndex++;
+				State->bIsCasting = false;
+				State->CastElapsed = 0.f;
+				State->CurrentActionIndex = 0;
+				State->bIsCooldown = true;
+				State->CooldownElapsed = 0.f;
 			}
 		}
 		else
 		{
-			// 스킬 종료
-			CurrentSkillState = FSkillState();
+			// Action 순차 실행
+			if (State->CurrentActionIndex < State->ActionInstances.Num())
+			{
+				FClientActionInstance& ActionInst = State->ActionInstances[State->CurrentActionIndex];
+				ActionInst.Elapsed += DeltaTime;
+
+				if (!ActionInst.bTriggered && ActionInst.Elapsed >= ActionInst.Action->actionDelay)
+				{
+					HandleExecuteAction(ActionInst);
+					ActionInst.bTriggered = true;
+				}
+
+				// 다음 액션으로 이동
+				if (ActionInst.bTriggered)
+				{
+					State->CurrentActionIndex++;
+				}
+			}
+			else
+			{
+				// 스킬 종료
+				CurrentSkillID = 0;
+			}
+		}
+	}
+
+	for (auto& It : SkillStates)
+	{
+		FSkillState& StateIter = It.Value;
+		
+		if (StateIter.bIsCooldown)
+		{
+			StateIter.CooldownElapsed += DeltaTime;
+			if (StateIter.CooldownElapsed >= StateIter.CooldownDuration)
+			{
+				StateIter.bIsCooldown = false;
+				StateIter.CooldownElapsed = 0.f;
+			}
+
 		}
 	}
 }
 
 void US1SkillComponent::HandleExecuteAction(FClientActionInstance& ActionInstance)
 {
-	if (!ActionInstance.Action || !CachedPlayer)
+	if (!ActionInstance.Action || !CachedPlayer || CurrentSkillID <= 0)
 		return;
 
 	// 이미 실행된 액션이면 스킵
@@ -369,13 +370,12 @@ void US1SkillComponent::HandleExecuteAction(FClientActionInstance& ActionInstanc
 		return;
 
 	const ClientAction& Action = *ActionInstance.Action;
-	FVector TargetPos = CurrentSkillState.TargetPos;
+	FVector TargetPos = GetSkillState(CurrentSkillID)->TargetPos;
 
 	ExecuteAction(Action, TargetPos);
 
 	// 액션 완료 처리
 	ActionInstance.bTriggered = true;
-	CurrentSkillState.CurrentActionIndex++;
 }
 
 void US1SkillComponent::ExecuteAction(const ClientAction& Action, const FVector& TargetPos)

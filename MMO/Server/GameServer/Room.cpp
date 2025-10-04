@@ -72,8 +72,8 @@ void Room::UpdateTick()
 
 	auto end = GetTickCount64();
 	auto duration = end - start;
-	cout << "[Room Tick] duration = " << duration << " ms, Players = "
-		<< _players.size() << ", Monsters = " << _monsters.size() << ", Fields = " << _fields.size() << std::endl;
+	//cout << "[Room Tick] duration = " << duration << " ms, Players = "
+		//<< _players.size() << ", Monsters = " << _monsters.size() << ", Fields = " << _fields.size() << std::endl;
 
 	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
 }
@@ -263,10 +263,21 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	const Skill& skillData = it->second;
 	uint64 now = ::GetTickCount64();
 
+	if (player->GetState() == Protocol::STATE_MACHINE_CASTING)
+	{
+		auto activeSkill = player->GetActiveSkill();
+		if (activeSkill && pkt.castid() != activeSkill->castId)
+		{
+			_skillSystem->CancelCasting(player, activeSkill->castId);
+		}
+	}
+	else if (player->GetState() == Protocol::STATE_MACHINE_SKILL)
+		return;
+
 	// 1. 사용 가능 여부 체크 (쿨타임, 캐스팅, 자원)
 	if (!player->CanUseSkill(skillId, now))
 	{
-		// 실패 패킷 전송
+		cout << "Can't Use Skill" << endl;
 		return;
 	}
 

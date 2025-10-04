@@ -149,7 +149,7 @@ inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, float radius,
     {
         for (int32 x = -range; x <= range; ++x)
         {
-            if ((x * x + y * y) > radiusSq)
+            if ((x * CELL_SIZE * x * CELL_SIZE + y * CELL_SIZE * y * CELL_SIZE) > radiusSq)
                 continue;
 
             Vector2Int cellPos = center + Vector2Int(x, y);

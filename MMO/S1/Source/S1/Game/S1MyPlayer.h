@@ -114,9 +114,13 @@ public:
 
 	int32 GetNextCastId() { return CastId++; }
 
-	void StartCasting(const FSkillState& CurrentState, uint64 ClientCastEndTick = 0);
-	void CancelCasting();
-	void FinishCasting();
+	void HandleStartLocalCasting(const FSkillState& State);
+	void HandleStartServerCasting(const FSkillState& State, uint64 ServerCastEndTick);
+
+	void HandleLocalCancelCasting();
+	void HandleServerCancelCasting(int32 SkillID);
+
+	void HandleServerFinishCasting(int32 SkillID);
 
 protected:
 	FVector TargetLocation;

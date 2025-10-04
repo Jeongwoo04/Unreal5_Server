@@ -13,7 +13,6 @@ public:
 	void StartCasting(uint64 now, float castTime);
 	void CancelCasting();
 
-	float GetRemainingCooldown(uint64 now) const { return max(0.f, static_cast<float>(_cooldownEndTime - now) / 1000.f); };
 	uint64 GetCastEndTime() const { return _castEndTime; }
 
 private:

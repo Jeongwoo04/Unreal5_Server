@@ -49,3 +49,9 @@ void AS1Monster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
+void AS1Monster::UpdateIdle(float DeltaTime)
+{
+	if (!GetActorRotation().Equals(TargetRot, 1.f))
+		SetActorRotation(TargetRot);
+}

@@ -18,4 +18,6 @@ public:
 	virtual ~AS1Monster();
 
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void UpdateIdle(float DeltaTime) override;
 };

@@ -45,7 +45,7 @@
       "id": 4,
       "name": "SkillC_FrozenField",
       "cooldown": 20.0,
-      "castTime": 2.5,
+      "castTime": 2.0,
       "actions": [
         {
           "actionType": "SpawnField",
