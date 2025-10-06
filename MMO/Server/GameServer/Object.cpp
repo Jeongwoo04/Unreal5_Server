@@ -79,11 +79,6 @@ void Object::ChangeState(const Protocol::StateMachine& state)
 		return;
 
 	_posInfo.set_state(state);
-	auto room = GetRoom();
-	if (room == nullptr)
-		return;
-
-	room->BroadcastMove(_posInfo, GetId());
 }
 
 void Object::SetId(uint64 id)

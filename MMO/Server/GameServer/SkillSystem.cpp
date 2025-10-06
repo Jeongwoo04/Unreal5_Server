@@ -48,7 +48,6 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 		pkt.set_servernow(now);
 		pkt.set_castendtime(now + static_cast<uint64>(instance->skill->castTime * 1000));
 
-		cout << "Skill Cast Start !" << endl;
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())
 			room->BroadcastNearby(sendBuffer, caster->_gridPos, caster->GetId());
@@ -61,7 +60,6 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 			HandleAction(caster, targetPos, action, instance);
 			
 			creature->StartSkillCooldown(skillId, now);
-			creature->ChangeState(Protocol::STATE_MACHINE_SKILL);
 		}
 	}
 
@@ -83,8 +81,6 @@ void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 
 		creature->GetActiveSkill()->canceled = true;
 		creature->SetActiveSkill(nullptr);
-
-		cout << "Skill Cast Cancel !" << endl;
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(cancelPkt);
 		if (auto room = GetRoom())
@@ -125,7 +121,7 @@ void SkillSystem::Update(float deltaTime)
 				//cout << instance->skill->name << " 캐스팅 완료" << endl;
 				instance->isCasting = false;
 				instance->actionDelayElapsed = 0.f;
-				instance->caster->ChangeState(Protocol::STATE_MACHINE_IDLE);
+				//instance->caster->ChangeState(Protocol::STATE_MACHINE_IDLE);
 				// 캐스팅 완료 패킷 전송
 				{
 					S_SKILL_CAST_SUCCESS pkt;
@@ -133,7 +129,6 @@ void SkillSystem::Update(float deltaTime)
 					pkt.set_skillid(instance->skill->id);
 					pkt.set_castid(instance->castId);
 
-					cout << "Skill Cast Success !" << endl;
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 					GetRoom()->BroadcastNearby(sendBuffer, instance->caster->_gridPos);
 				}
@@ -170,11 +165,11 @@ void SkillSystem::Update(float deltaTime)
 		{
 			//cout << instance->skill->name << "스킬 완료" << endl;
 			creature->SetActiveSkill(nullptr);
+			creature->ChangeState(Protocol::STATE_MACHINE_IDLE);
 
 			if (auto monster = dynamic_pointer_cast<Monster>(instance->caster))
 			{
 				monster->_currentSkillId = -1;
-				monster->ChangeState(Protocol::STATE_MACHINE_IDLE);
 			}
 
 			it = activeSkills.erase(it);
@@ -187,6 +182,7 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 	//cout << static_cast<int32>(action->actionType) << " Handle Action" << endl;
 
 	int32 idx = instance->currentActionIndex;
+	caster->ChangeState(Protocol::STATE_MACHINE_SKILL);
 
 	{
 		Protocol::S_SKILL pkt;
@@ -196,8 +192,6 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 		pkt.mutable_skill_info()->mutable_targetpos()->set_x(targetPos._x);
 		pkt.mutable_skill_info()->mutable_targetpos()->set_y(targetPos._y);
 		pkt.mutable_skill_info()->mutable_targetpos()->set_z(targetPos._z);
-
-		cout << "Skill ! Action : " << idx << endl;
 
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())

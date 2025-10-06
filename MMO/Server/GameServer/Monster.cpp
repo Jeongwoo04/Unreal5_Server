@@ -69,6 +69,7 @@ void Monster::UpdateIdle(float deltaTime)
 
         SetPlayer(target);
         ChangeState(Protocol::STATE_MACHINE_MOVING);
+        BroadcastMove();
         return;
     }
 
@@ -86,8 +87,8 @@ void Monster::UpdateIdle(float deltaTime)
             if (dir.LengthSquared2D() < ((_chaseDistance * CELL_SIZE) * (_chaseDistance * CELL_SIZE)))
             {
                 _posInfo.set_yaw(Vector3::DirToYaw2D(dir.Normalized2D()));
-                BroadcastMove();
                 ChangeState(Protocol::STATE_MACHINE_MOVING);
+                BroadcastMove();
                 return;
             }
         }
@@ -113,6 +114,7 @@ void Monster::UpdateMoving(float deltaTime)
     {
         SetPlayer(nullptr);
         ChangeState(Protocol::STATE_MACHINE_IDLE);
+        BroadcastMove();
         return;
     }
 
@@ -131,6 +133,7 @@ void Monster::UpdateMoving(float deltaTime)
     {
         SetPlayer(nullptr);
         ChangeState(Protocol::STATE_MACHINE_IDLE);
+        BroadcastMove();
         return;
     }
     

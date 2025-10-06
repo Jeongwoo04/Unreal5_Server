@@ -262,7 +262,7 @@ void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
 	if (Creature == nullptr)
 		return;
 	
-	Creature->ChangeState(Protocol::STATE_MACHINE_SKILL);
+	//Creature->ChangeState(Protocol::STATE_MACHINE_SKILL);
 	// Creature->UpdateAnim(SkillPkt.skillid());
 
 	// ActionIndex에 맞게 ExecuteAction
@@ -334,15 +334,11 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 
 	if (Creature == MyPlayer)
 	{
-		// CastId 검증
-		if (CastSuccessPkt.castid() != MyPlayer->SkillComponent->GetSkillState(CastSuccessPkt.skillid())->CastID)
-			return;
-
 		MyPlayer->HandleServerFinishCasting(CastSuccessPkt.skillid()); // 캐스팅바 UI 정리
+		// Cooldown 서버에서 받아오기
 	}
 	else
 	{
-		Creature->ChangeState(Protocol::STATE_MACHINE_IDLE);
 		// Creature->UpdateAnim(CastSuccessPkt.skillid());
 	}
 }
@@ -369,7 +365,7 @@ void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL&
 	if (Creature == MyPlayer)
 	{
 		// CastId 검증
-		if (CastCancelPkt.castid() != MyPlayer->SkillComponent->GetSkillState(CastCancelPkt.skillid())->CastID)
+		if (CastCancelPkt.castid() != MyPlayer->GetCurrentCastId())
 			return;
 
 		MyPlayer->HandleServerCancelCasting(CastCancelPkt.skillid()); // 캐스팅바 UI 정리

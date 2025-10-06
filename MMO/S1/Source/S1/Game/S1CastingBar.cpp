@@ -8,9 +8,14 @@
 
 void US1CastingBar::StartCasting(const FSkillState& SkillState, uint64 ClientCastEndTick)
 {
+    if (ClientCastEndTick <= 0)
+        CancelCasting();
+
     SetVisibility(ESlateVisibility::Visible);
     CastingBar_Fill->SetPercent(0.f);
     CastingBar_Text->SetText(FText::FromString(SkillState.name));
+
+    ElapsedCastTime = 0.f;
 
     InitializeCast(SkillState, ClientCastEndTick);
 }

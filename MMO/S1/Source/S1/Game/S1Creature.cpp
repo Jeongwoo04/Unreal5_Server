@@ -70,7 +70,14 @@ void AS1Creature::ChangeState(Protocol::StateMachine NewState)
 	if (PosInfo.state() == NewState)
 		return;
 
+	UEnum* EnumPtr = StaticEnum<EStateMachine>();
+	FString OldStateName = EnumPtr ? EnumPtr->GetNameStringByValue((int64)PosInfo.state()) : FString("Unknown");
+	FString NewStateName = EnumPtr ? EnumPtr->GetNameStringByValue((int64)NewState) : FString("Unknown");
+
+	UE_LOG(LogTemp, Warning, TEXT("[ChangeState] %s -> %s"), *OldStateName, *NewStateName);
+
 	PosInfo.set_state(NewState);
+
 	//UpdateAnim();
 }
 

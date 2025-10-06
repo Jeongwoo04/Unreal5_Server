@@ -86,7 +86,9 @@ private:
 	// 마커 삭제
 	void ClearSkillMarkers();
 
-	void TickSkillState(float DeltaTime);
+	void DoCastTick(float DeltaTime);
+	void DoSkillStart(int32 SkillID);
+	void DoSkillStateTick(float DeltaTime);
 
 	void HandleExecuteAction(FClientActionInstance& ActionInstance);
 	void ExecuteAction(const ClientAction& Action, const FVector& TargetPos);
@@ -121,7 +123,9 @@ private:
 
 	TMap<int32, FSkillState> SkillStates;
 
+	TQueue<int32> PendingSkillQueue;
 	int32 CurrentSkillID = -1;
+
 	bool bIsSkillTargeting = false;
 
 	float CurrentSkillDistance = 0.f; // distance

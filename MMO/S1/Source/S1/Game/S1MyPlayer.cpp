@@ -90,6 +90,11 @@ void AS1MyPlayer::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+void AS1MyPlayer::UpdateIdle(float DeltaTime)
+{
+
+}
+
 void AS1MyPlayer::UpdateMoving(float DeltaTime)
 {
 	if (!DirtyFlag)
@@ -98,7 +103,7 @@ void AS1MyPlayer::UpdateMoving(float DeltaTime)
 	if (TargetLocation.IsZero())
 		return;
 
-	if (SkillComponent->IsCasting())
+	if (SkillComponent && SkillComponent->IsCasting())
 		HandleLocalCancelCasting();
 
 	FVector CurrentLocation = GetActorLocation();
@@ -186,6 +191,11 @@ void AS1MyPlayer::InputRightClickMove(const FInputActionValue& value)
 					FRotator NewRot = Direction.Rotation();
 					SetActorRotation(NewRot); // PosInfo에도 Yaw 저장
 					PosInfo.set_yaw(NewRot.Yaw);
+
+					if (PosInfo.state() == Protocol::STATE_MACHINE_CASTING)
+					{
+						HandleLocalCancelCasting();
+					}
 				}
 				// 이동 시작하면 서버로 패킷 전송
 				ChangeState(Protocol::STATE_MACHINE_MOVING);
@@ -344,14 +354,14 @@ void AS1MyPlayer::HandleStartServerCasting(const FSkillState& State, uint64 Serv
 
 void AS1MyPlayer::HandleLocalCancelCasting()
 {
-	SkillBar->HideCastingBar();
 	SkillComponent->LocalCancelCasting();
+	SkillBar->HideCastingBar();
 }
 
 void AS1MyPlayer::HandleServerCancelCasting(int32 SkillID)
 {
-	SkillBar->HideCastingBar();
 	SkillComponent->ServerCancelCasting(SkillID);
+	SkillBar->HideCastingBar();
 }
 
 void AS1MyPlayer::HandleServerFinishCasting(int32 SkillID)
@@ -360,6 +370,7 @@ void AS1MyPlayer::HandleServerFinishCasting(int32 SkillID)
 	SkillBar->HideCastingBar();
 	SkillBar->StartSlotCooldown(
 		LoadoutComponent->GetSkillSlotWithId(SkillID), State->CooldownDuration);
+	//State->CooldownDuration = ;
 }
 
 void AS1MyPlayer::PossessedBy(AController* NewController)

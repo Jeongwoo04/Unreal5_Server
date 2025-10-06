@@ -72,8 +72,8 @@ void Room::UpdateTick()
 
 	auto end = GetTickCount64();
 	auto duration = end - start;
-	//cout << "[Room Tick] duration = " << duration << " ms, Players = "
-		//<< _players.size() << ", Monsters = " << _monsters.size() << ", Fields = " << _fields.size() << std::endl;
+	cout << "[Room Tick] duration = " << duration << " ms, Players = "
+		<< _players.size() << ", Monsters = " << _monsters.size() << ", Projectiles = " << _projectiles.size() << ", Fields = " << _fields.size() << std::endl;
 
 	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
 }

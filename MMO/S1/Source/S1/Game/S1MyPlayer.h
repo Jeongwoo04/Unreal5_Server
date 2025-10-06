@@ -33,6 +33,7 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void UpdateIdle(float DeltaTime) override;
 	virtual void UpdateMoving(float DeltaTime) override;
 
 public:
@@ -112,7 +113,8 @@ public:
 	void TrySetupInput(AS1PlayerController* PC);
 	UInputMappingContext* GetDefaultMappingContext() const { return DefaultMappingContext; }
 
-	int32 GetNextCastId() { return CastId++; }
+	int32 GetNextCastId() { return ++CastId; }
+	int32 GetCurrentCastId() { return CastId; }
 
 	void HandleStartLocalCasting(const FSkillState& State);
 	void HandleStartServerCasting(const FSkillState& State, uint64 ServerCastEndTick);

@@ -44,10 +44,31 @@ void US1SkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (CachedPlayer)
+	if (!CachedPlayer)
+		return;
+
+	if (CurrentSkillID > 0)
 	{
-		TickSkillState(DeltaTime);
+		DoCastTick(DeltaTime);
 	}
+
+	if (!PendingSkillQueue.IsEmpty())
+	{
+		int32 NewSkillID;
+		while (PendingSkillQueue.Dequeue(NewSkillID))
+			;
+
+		if (!(NewSkillID <= 0 || CurrentSkillID == NewSkillID))
+		{
+			if (CurrentSkillID > 0)
+			{
+				CachedPlayer->HandleLocalCancelCasting();
+			}
+			DoSkillStart(NewSkillID);
+		}
+	}
+
+	DoSkillStateTick(DeltaTime);
 }
 
 void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float Range)
@@ -57,7 +78,6 @@ void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float
 	if (!CachedPlayer)
 		return;
 
-	CurrentSkillID = SkillID;
 	bIsSkillTargeting = true;
 	CurrentSkillDistance = Distance;
 	CurrentSkillRange = Range;
@@ -145,43 +165,7 @@ void US1SkillComponent::ConfirmSkillTargeting(int32 SkillID)
 
 	bIsSkillTargeting = false;
 
-	FSkillState* State = GetSkillState(SkillID);
-	State->TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
-	State->CastID = CachedPlayer->GetNextCastId(); // 클라이언트 고유 CastId
-	CurrentSkillID = SkillID;
-
-	// 캐스팅 시작
-	if (State->CastTime > 0.f)
-	{
-		State->bIsCasting = true;
-		State->CastElapsed = 0.f;
-		CachedPlayer->HandleStartLocalCasting(*State);
-		CachedPlayer->ChangeState(Protocol::STATE_MACHINE_CASTING);
-		// TODO : 액션 시작
-	}
-	else
-	{
-		// 즉발이면 바로 액션 Tick 수행
-		State->bIsCasting = false;
-		State->CurrentActionIndex = 0;
-		State->bIsCooldown = true;
-		State->CooldownElapsed = 0.f;
-		// TODO : 액션 시작
-	}
-
-	// TODO : 서버 패킷 전송 -> 액션 핸들링쪽으로 이동
-	uint64 ClientNowTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
-	State->ClientSendTick = ClientNowTick;
-
-	C_SKILL SkillPkt;
-	SkillPkt.mutable_skill_info()->set_skillid(State->SkillID);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_x(State->TargetPos.X);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_y(State->TargetPos.Y);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_z(State->TargetPos.Z);
-	SkillPkt.set_castid(State->CastID);
-	SkillPkt.set_clientsend(ClientNowTick);
-	
-	SEND_PACKET(SkillPkt);
+	PendingSkillQueue.Enqueue(SkillID);
 
 	ClearSkillMarkers();
 }
@@ -193,25 +177,40 @@ bool US1SkillComponent::IsSkillTargeting()
 
 bool US1SkillComponent::CanUseSkill(int32 SkillID)
 {
-	return GetSkillState(SkillID)->bIsCooldown == false
-		&& GetSkillState(SkillID)->bIsCasting == false;
+	FSkillState* State = GetSkillState(SkillID);
+	return State && !State->bIsCooldown && !State->bIsCasting;
 }
 
 bool US1SkillComponent::IsCasting()
 {
-	return GetCurrentSkillState()->bIsCasting == true;
+	return CurrentSkillID > 0 && GetCurrentSkillState()->bIsCasting == true;
 }
 
 void US1SkillComponent::LocalCancelCasting()
 {
-	GetCurrentSkillState()->bIsCasting = false;
-	GetCurrentSkillState()->CastElapsed = 0.f;
+	if (CurrentSkillID <= 0)
+		return;
+
+	FSkillState* State = GetCurrentSkillState();
+
+	{
+		State->bIsCasting = false;
+		State->CastElapsed = 0.f;
+		State->CurrentActionIndex = 0;
+		State->bIsCooldown = false;
+		State->CooldownElapsed = 0.f;
+	}
+	CurrentSkillID = 0;
 }
 
 void US1SkillComponent::ServerCancelCasting(int32 SkillID)
 {
 	GetSkillState(SkillID)->bIsCasting = false;
 	GetSkillState(SkillID)->CastElapsed = 0.f;
+	GetSkillState(SkillID)->CooldownElapsed = 0.f;
+	GetSkillState(SkillID)->CurrentActionIndex = 0;
+	GetSkillState(SkillID)->bIsCooldown = false;
+	//CurrentSkillID = 0;
 }
 
 void US1SkillComponent::HandleActionPkt(const Protocol::S_SKILL& Pkt)
@@ -294,55 +293,110 @@ void US1SkillComponent::ClearSkillMarkers()
 	CurrentSkillDistance = 0.f;
 }
 
-void US1SkillComponent::TickSkillState(float DeltaTime)
+void US1SkillComponent::DoCastTick(float DeltaTime)
 {
-	if (!CachedPlayer)
+	if (CurrentSkillID <= 0)
 		return;
 
-	// 캐스팅 진행
-	if (CurrentSkillID > 0)
+	FSkillState* State = GetSkillState(CurrentSkillID);
+	if (State->bIsCasting)
 	{
-		FSkillState* State = GetSkillState(CurrentSkillID);
-		if (State->bIsCasting)
+		State->CastElapsed += DeltaTime;
+		if (State->CastElapsed >= State->CastTime)
 		{
-			State->CastElapsed += DeltaTime;
-			if (State->CastElapsed >= State->CastTime)
+			State->bIsCasting = false;
+			State->CastElapsed = 0.f;
+			State->CurrentActionIndex = 0;
+			State->bIsCooldown = true;
+			State->CooldownElapsed = 0.f;
+
+			FClientActionInstance& ActionInst = State->ActionInstances[State->CurrentActionIndex];
+			HandleExecuteAction(ActionInst);
+			ActionInst.bTriggered = true;
+
+			State->CurrentActionIndex++;
+
+			if (State->CurrentActionIndex >= State->ActionInstances.Num())
 			{
-				State->bIsCasting = false;
-				State->CastElapsed = 0.f;
-				State->CurrentActionIndex = 0;
-				State->bIsCooldown = true;
-				State->CooldownElapsed = 0.f;
+				CurrentSkillID = 0;
+				if (CachedPlayer->GetPosInfo().state() != Protocol::STATE_MACHINE_MOVING)
+					CachedPlayer->ChangeState(Protocol::STATE_MACHINE_IDLE);
+			}
+		}
+	}
+	else
+	{
+		// Action 순차 실행
+		if (State->CurrentActionIndex < State->ActionInstances.Num())
+		{
+			FClientActionInstance& ActionInst = State->ActionInstances[State->CurrentActionIndex];
+			ActionInst.Elapsed += DeltaTime;
+
+			if (!ActionInst.bTriggered && ActionInst.Elapsed >= ActionInst.Action->actionDelay)
+			{
+				HandleExecuteAction(ActionInst);
+				ActionInst.bTriggered = true;
+			}
+
+			// 다음 액션으로 이동
+			if (ActionInst.bTriggered)
+			{
+				State->CurrentActionIndex++;
 			}
 		}
 		else
 		{
-			// Action 순차 실행
-			if (State->CurrentActionIndex < State->ActionInstances.Num())
-			{
-				FClientActionInstance& ActionInst = State->ActionInstances[State->CurrentActionIndex];
-				ActionInst.Elapsed += DeltaTime;
-
-				if (!ActionInst.bTriggered && ActionInst.Elapsed >= ActionInst.Action->actionDelay)
-				{
-					HandleExecuteAction(ActionInst);
-					ActionInst.bTriggered = true;
-				}
-
-				// 다음 액션으로 이동
-				if (ActionInst.bTriggered)
-				{
-					State->CurrentActionIndex++;
-				}
-			}
-			else
-			{
-				// 스킬 종료
-				CurrentSkillID = 0;
-			}
+			// 스킬 종료
+			CurrentSkillID = 0;
+			if (CachedPlayer->GetPosInfo().state() != Protocol::STATE_MACHINE_MOVING)
+				CachedPlayer->ChangeState(Protocol::STATE_MACHINE_IDLE);
 		}
 	}
+}
 
+void US1SkillComponent::DoSkillStart(int32 SkillID)
+{
+	FSkillState* State = GetSkillState(SkillID);
+	State->TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
+	State->CastID = CachedPlayer->GetNextCastId(); // 클라이언트 고유 CastId
+	CurrentSkillID = SkillID;
+
+	// 캐스팅 시작
+	if (State->CastTime > 0.f)
+	{
+		State->bIsCasting = true;
+		State->CastElapsed = 0.f;
+		CachedPlayer->HandleStartLocalCasting(*State);
+		CachedPlayer->ChangeState(Protocol::STATE_MACHINE_CASTING);
+		// TODO : 액션 시작
+	}
+	else
+	{
+		// 즉발이면 바로 액션 Tick 수행
+		State->bIsCasting = false;
+		State->CurrentActionIndex = 0;
+		State->bIsCooldown = true;
+		State->CooldownElapsed = 0.f;
+		// TODO : 액션 시작
+	}
+
+	// TODO : 서버 패킷 전송 -> 액션 핸들링쪽으로 이동
+	uint64 ClientNowTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+	State->ClientSendTick = ClientNowTick;
+
+	C_SKILL SkillPkt;
+	SkillPkt.mutable_skill_info()->set_skillid(State->SkillID);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_x(State->TargetPos.X);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_y(State->TargetPos.Y);
+	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_z(State->TargetPos.Z);
+	SkillPkt.set_castid(State->CastID);
+	SkillPkt.set_clientsend(ClientNowTick);
+	
+	SEND_PACKET(SkillPkt);
+}
+
+void US1SkillComponent::DoSkillStateTick(float DeltaTime)
+{
 	for (auto& It : SkillStates)
 	{
 		FSkillState& StateIter = It.Value;
@@ -372,6 +426,7 @@ void US1SkillComponent::HandleExecuteAction(FClientActionInstance& ActionInstanc
 	const ClientAction& Action = *ActionInstance.Action;
 	FVector TargetPos = GetSkillState(CurrentSkillID)->TargetPos;
 
+	CachedPlayer->ChangeState(Protocol::STATE_MACHINE_SKILL);
 	ExecuteAction(Action, TargetPos);
 
 	// 액션 완료 처리
