@@ -17,14 +17,14 @@ class S1_API US1CastingBar : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-    void StartCasting(const FSkillState& SkillState, uint64 ServerCastEndTick = 0);
+    void StartCasting(const FSkillState& SkillState, uint64 CastEndTick = 0);
     void CancelCasting();
 
 protected:
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
-    void InitializeCast(const FSkillState& SkillState, uint64 ServerCastEndTick);
+    void InitializeCast(const FSkillState& SkillState, uint64 CastEndTick);
     void UpdateCastBar(float DeltaTime);
 
 private:

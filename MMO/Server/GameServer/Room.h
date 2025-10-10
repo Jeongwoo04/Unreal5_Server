@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "SpatialHashGrid.h"
+#include "BenchmarkLogger.h"
 
 using GameMapRef = shared_ptr<class GameMap>;
 using ObjectManagerRef = shared_ptr<class ObjectManager>;
@@ -80,4 +81,8 @@ private:
 	int32 _roomId = 0;
 
 	const float BROADCAST_RANGE = 2000.f; // 카메라뷰 + 여유분
+
+public:
+	BenchmarkStat _bench;
+	uint64 _tickCount;
 };

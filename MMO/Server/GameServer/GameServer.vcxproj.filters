@@ -114,6 +114,7 @@
     <ClCompile Include="Field.cpp">
       <Filter>Game\Object</Filter>
     </ClCompile>
+    <ClCompile Include="BenchmarkLogger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -197,6 +198,7 @@
     <ClInclude Include="Field.h">
       <Filter>Game\Object</Filter>
     </ClInclude>
+    <ClInclude Include="BenchmarkLogger.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Common\protoc-21.12-win64\bin\Protocol.proto">

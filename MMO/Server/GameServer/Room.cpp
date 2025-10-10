@@ -38,42 +38,36 @@ void Room::Init(int32 mapId)
 
 void Room::UpdateTick()
 {
-	auto start = GetTickCount64();
-
 	constexpr float deltaTime = 0.1f;
 
+	_bench.Begin("Monster");
 	for (auto& m : _monsters)
 	{
 		m.second->Update(deltaTime);
-	}
-	//auto monsDuration = GetTickCount64() - start;
-	//cout << "[Mons Tick] duration = " << monsDuration << " ms" << endl;
+	} _bench.End("Monster");
 
-	//auto projStart = GetTickCount64();
+	_bench.Begin("Projectile");
 	for (auto& p : _projectiles)
 	{
 		p.second->Update(deltaTime);
-	}
-	//auto projDuration = GetTickCount64() - projStart;
-	//cout << "[Proj Tick] duration = " << projDuration << " ms" << endl;
+	} _bench.End("Projectile");
+	
+	_bench.Begin("Field");
 	for (auto& f : _fields)
 	{
 		f.second->Update(deltaTime);
-	}
-	//auto sysStart = GetTickCount64();
+	} _bench.End("Field");
+
+	_bench.Begin("SkillSystem");
 	_skillSystem->Update(deltaTime);
-	//auto systemDuration = GetTickCount64() - sysStart;
-	//cout << "[SSys Tick] duration = " << systemDuration << " ms" << endl;
+	_bench.End("SkillSystem");
 
-	//auto removeStart = GetTickCount64();
+	_bench.Begin("RemoveList");
 	ClearRemoveList();
-	//auto removeDuration = GetTickCount64() - removeStart;
-	//cout << "[remo Tick] duration = " << removeDuration << " ms" << endl;
+	_bench.End("RemoveList");
 
-	auto end = GetTickCount64();
-	auto duration = end - start;
-	cout << "[Room Tick] duration = " << duration << " ms, Players = "
-		<< _players.size() << ", Monsters = " << _monsters.size() << ", Projectiles = " << _projectiles.size() << ", Fields = " << _fields.size() << std::endl;
+	if (++_tickCount % 100 == 0)
+		_bench.PrintAndSaveSummary("RoomBenchmark.csv");
 
 	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
 }
@@ -86,14 +80,14 @@ void Room::StartHeartbeat()
 
 void Room::CheckHeartbeat()
 {
-	S_HEARTBEAT pkt;
+	//S_HEARTBEAT pkt;
 
-	pkt.set_servertime(GetTickCount64());
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	Broadcast(sendBuffer);
+	//pkt.set_servertime(GetTickCount64());
+	//auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+	//Broadcast(sendBuffer);
 
-	constexpr uint64 Tick = 10000;
-	DoTimer(Tick, &Room::CheckHeartbeat);
+	//constexpr uint64 Tick = 10000;
+	//DoTimer(Tick, &Room::CheckHeartbeat);
 }
 
 void Room::SpawnInit()
@@ -263,7 +257,8 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	const Skill& skillData = it->second;
 	uint64 now = ::GetTickCount64();
 
-	if (player->GetState() == Protocol::STATE_MACHINE_CASTING)
+	if (player->GetState() == Protocol::STATE_MACHINE_CASTING
+		|| player->GetState() == Protocol::STATE_MACHINE_SKILL)
 	{
 		auto activeSkill = player->GetActiveSkill();
 		if (activeSkill && pkt.castid() != activeSkill->castId)
@@ -271,8 +266,6 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 			_skillSystem->CancelCasting(player, activeSkill->castId);
 		}
 	}
-	else if (player->GetState() == Protocol::STATE_MACHINE_SKILL)
-		return;
 
 	// 1. 사용 가능 여부 체크 (쿨타임, 캐스팅, 자원)
 	if (!player->CanUseSkill(skillId, now))
@@ -281,7 +274,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		return;
 	}
 
-	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.skill_info().targetpos()), pkt.castid());
+	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.skill_info().targetpos()), pkt.castid(), pkt.clientsend());
 }
 
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const

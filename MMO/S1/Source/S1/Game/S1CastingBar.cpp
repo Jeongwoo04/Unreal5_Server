@@ -6,38 +6,34 @@
 #include "Components/ProgressBar.h"
 #include "S1SkillComponent.h"
 
-void US1CastingBar::StartCasting(const FSkillState& SkillState, uint64 ClientCastEndTick)
+void US1CastingBar::StartCasting(const FSkillState& SkillState, uint64 CastEndTick)
 {
-    if (ClientCastEndTick <= 0)
-        CancelCasting();
-
     SetVisibility(ESlateVisibility::Visible);
     CastingBar_Fill->SetPercent(0.f);
     CastingBar_Text->SetText(FText::FromString(SkillState.name));
 
     ElapsedCastTime = 0.f;
 
-    InitializeCast(SkillState, ClientCastEndTick);
+    InitializeCast(SkillState, CastEndTick);
 }
 
-void US1CastingBar::InitializeCast(const FSkillState& SkillState, uint64 ClientCastEndTick)
+void US1CastingBar::InitializeCast(const FSkillState& SkillState, uint64 CastEndTick)
 {
-    CastDuration = SkillState.CastTime;
+    CastDuration = SkillState.CastTime * 1000.f;
 
     // 서버 보정이 있는 경우
-    if (ClientCastEndTick > 0)
+    if (CastEndTick > 0)
     {
-        float ClientTimeSec = FPlatformTime::Seconds(); // 플랫폼 타임 기준
-        float ServerEndTimeSec = (float)ClientCastEndTick / 1000.f;
+        uint64 ClientTimeSec = FPlatformTime::Seconds() * 1000; // 플랫폼 타임 기준
+        uint64 ServerEndTimeSec = CastEndTick;
 
         // 경과시간 = 총시간 - 남은시간
-        ElapsedCastTime = FMath::Clamp(CastDuration - (ServerEndTimeSec - ClientTimeSec), 0.f, CastDuration);
+        ElapsedCastTime = FMath::Clamp(CastDuration - static_cast<float>(ServerEndTimeSec - ClientTimeSec), 0.f, CastDuration);
     }
     else
     {
         ElapsedCastTime = 0.f;
     }
-
     bIsCasting = true;
 }
 
@@ -61,7 +57,7 @@ void US1CastingBar::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void US1CastingBar::UpdateCastBar(float DeltaTime)
 {
-    ElapsedCastTime += DeltaTime;
+    ElapsedCastTime += DeltaTime * 1000.f;
     float Percent = FMath::Clamp(ElapsedCastTime / CastDuration, 0.f, 1.f);
     CastingBar_Fill->SetPercent(Percent);
 

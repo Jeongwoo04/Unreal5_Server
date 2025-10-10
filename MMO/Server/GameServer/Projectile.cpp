@@ -61,7 +61,7 @@ void Projectile::Update(float deltaTime)
             *pkt.add_changes() = change;
 
             auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-            room->Broadcast(sendBuffer);
+            room->BroadcastNearby(sendBuffer, _gridPos, GetId());
         }
         
         room->AddRemoveList(shared_from_this());

@@ -12,10 +12,10 @@ Monster::Monster()
     for (auto& it : DataManager::Instance().SkillDict)
     {
         int32 id = it.first;
-        //
-        //if (id == 4)
+        
+        //if (id == 1)
         //    continue;
-        //
+        
         const Skill& s = it.second;
         _skillStates.emplace(id, make_shared<SkillState>(id, s.cooldown + 3.f));
     }
@@ -122,7 +122,7 @@ void Monster::UpdateMoving(float deltaTime)
     if (room == nullptr)
         return;
     
-    GameMapRef map = GetRoom()->GetGameMap();
+    GameMapRef map = room->GetGameMap();
     Vector3 myPos = _worldPos;
     Vector3 targetPos = target->_worldPos;
     Vector3 destPos;

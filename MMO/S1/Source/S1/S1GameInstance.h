@@ -84,4 +84,5 @@ public:
 	AS1MyPlayer* MyPlayer = nullptr;
 
 	bool Connected = false;
+	uint64 OneWayDelay = 0;
 };

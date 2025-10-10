@@ -23,7 +23,7 @@ class SkillSystem
 {
 public:
 	void Init();
-	void ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId);
+	void ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId, uint64 clientSend = 0);
 
 	void Update(float deltaTime);
 	void CancelCasting(ObjectRef caster, int32 castId);

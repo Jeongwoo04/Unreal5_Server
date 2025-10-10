@@ -107,6 +107,7 @@ bool Handle_C_SKILL(PacketSessionRef& session, Protocol::C_SKILL& pkt)
 	if (room == nullptr)
 		return false;
 
+	cout << "C_SKILL recv : " << GetTickCount64() << endl;
 	room->DoAsync(&Room::HandleSkill, player, pkt);
 	return true;
 }
@@ -115,10 +116,5 @@ bool Handle_C_HEARTBEAT(PacketSessionRef& session, Protocol::C_HEARTBEAT& pkt)
 {
 	auto gameSession = static_pointer_cast<GameSession>(session);
 
-	return true;
-}
-
-bool Handle_C_CHAT(PacketSessionRef& session, Protocol::C_CHAT& pkt)
-{
 	return true;
 }

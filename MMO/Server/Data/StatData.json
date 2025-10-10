@@ -3,40 +3,40 @@
     {
       "dataId": 10101,
       "level": 1,
-      "maxHp": 500,
-      "attack": 20,
+      "maxHp": 5000,
+      "attack": 0,
       "speed": 500.0,
       "totalExp": 0
     },
     {
       "dataId": 10102,
       "level": 1,
-      "maxHp": 300,
-      "attack": 15,
+      "maxHp": 3000,
+      "attack": 0,
       "speed": 600.0,
       "totalExp": 0
     },
     {
       "dataId": 10103,
       "level": 1,
-      "maxHp": 400,
-      "attack": 10,
+      "maxHp": 4000,
+      "attack": 0,
       "speed": 400.0,
       "totalExp": 0
     },
     {
       "dataId": 10201,
       "level": 1,
-      "maxHp": 500,
-      "attack": 20,
+      "maxHp": 5000,
+      "attack": 0,
       "speed": 200.0,
       "totalExp": 0
     },
     {
       "dataId": 10202,
       "level": 1,
-      "maxHp": 300,
-      "attack": 10,
+      "maxHp": 3000,
+      "attack": 0,
       "speed": 300.0,
       "totalExp": 0
     }

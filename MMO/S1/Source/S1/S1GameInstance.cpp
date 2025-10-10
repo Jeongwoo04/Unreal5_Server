@@ -296,8 +296,7 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 		FSkillState* LocalState = MyPlayer->SkillComponent->GetSkillState(CastStartPkt.skillid());
 
 		uint64 ClientRecvTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
-		uint64 OneWayDelay = (ClientRecvTick - LocalState->ClientSendTick) / 2;
-		LocalState->ClientRecvTick = ClientRecvTick;
+		OneWayDelay = (ClientRecvTick - CastStartPkt.clientsend()) / 2;
 
 		// 서버 캐스팅 종료를 클라 시계로 변환
 		uint64 CastDuration = CastStartPkt.castendtime() - CastStartPkt.servernow();
@@ -334,7 +333,17 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 
 	if (Creature == MyPlayer)
 	{
-		MyPlayer->HandleServerFinishCasting(CastSuccessPkt.skillid()); // 캐스팅바 UI 정리
+		FSkillState* LocalState = MyPlayer->SkillComponent->GetSkillState(CastSuccessPkt.skillid());
+
+		uint64 ClientRecvTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+
+		// 서버 캐스팅 종료를 클라 시계로 변환
+		uint64 CooldownTick = CastSuccessPkt.cooldownendtime() - CastSuccessPkt.servernow();
+		float CooldownRemainTime = static_cast<float>(CooldownTick - OneWayDelay) / 1000;
+
+		UE_LOG(LogTemp, Log, TEXT("CooldownTick. duration: %d OneWayDelay %d RemainTime %f"), CooldownTick, OneWayDelay, CooldownRemainTime);
+
+		MyPlayer->HandleServerFinishCasting(CastSuccessPkt.skillid(), CooldownRemainTime); // 캐스팅바 UI 정리
 		// Cooldown 서버에서 받아오기
 	}
 	else

@@ -35,31 +35,26 @@ void AS1Projectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (MoveFlag == false)
-		return;
+	FVector PreviousLoc = GetActorLocation();
 
-	// 보간 이동
-	FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetPos, DeltaTime, 10.f);
-	SetActorLocation(NewLocation);
+	SetActorRotation(TargetRot);
 
-	FRotator NewRot = FMath::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 10.f);
-	SetActorRotation(NewRot);
+	FVector NewLoc = FMath::VInterpConstantTo(PreviousLoc, TargetPos, DeltaTime, PosInfo.speed());
+	SetActorLocation(NewLoc);
 
-	if (FVector::DistSquared(NewLocation, TargetPos) < FMath::Square(1.f)) // 1cm 이내
+	float DistToTarget = FVector::Dist(NewLoc, TargetPos);
+	if (DistToTarget <= PosInfo.speed() * DeltaTime)
 	{
-		SetActorLocation(TargetPos);
-		SetActorRotation(TargetRot);
+		NewLoc = TargetPos;
 	}
 
-	MoveFlag = false;
+	SetActorLocation(NewLoc);
 }
 
 void AS1Projectile::Move(const Protocol::PosInfo& Info)
 {
 	TargetPos = FVector(Info.x(), Info.y(), Info.z());
 	TargetRot = FRotator(0.f, Info.yaw(), 0.f);
-
-	MoveFlag = true;
 }
 
 void AS1Projectile::SetPosInfo(const Protocol::PosInfo& Info)

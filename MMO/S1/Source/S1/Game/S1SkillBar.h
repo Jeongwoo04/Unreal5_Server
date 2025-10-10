@@ -25,7 +25,7 @@ public:
     void SetSkillSlot(int32 SlotIndex, UTexture2D* InIcon, const FText& InKey);
     void StartSlotCooldown(int32 SlotIndex, float CooldownTime);
 
-    void StartCastingBar(const FSkillState& CurrentState, uint64 ServerCastEndTick = 0);
+    void StartCastingBar(const FSkillState& CurrentState, uint64 CastEndTick = 0);
     void HideCastingBar();
 
 

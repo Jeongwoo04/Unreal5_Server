@@ -38,9 +38,6 @@ struct FSkillState
 	TArray<FClientActionInstance> ActionInstances;
 	int32 CurrentActionIndex = 0;
 	FVector TargetPos = FVector::ZeroVector;
-
-	uint64 ClientSendTick = 0;
-	uint64 ClientRecvTick = 0;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

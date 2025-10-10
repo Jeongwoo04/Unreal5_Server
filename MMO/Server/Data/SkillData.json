@@ -9,7 +9,7 @@
         {
           "actionType": "Attack",
           "shape": "Circle",
-          "damage": 10,
+          "damage": 1,
           "radius": 100.0,
           "distance": 1.0
         }
@@ -68,7 +68,7 @@
         {
           "actionType": "Attack",
           "shape": "Circle",
-          "damage": 15,
+          "damage": 1,
           "radius": 100.0,
           "distance": 1.0
         }

@@ -380,9 +380,10 @@ void US1SkillComponent::DoSkillStart(int32 SkillID)
 		// TODO : 액션 시작
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("SkillID : %d"), SkillID);
+
 	// TODO : 서버 패킷 전송 -> 액션 핸들링쪽으로 이동
 	uint64 ClientNowTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
-	State->ClientSendTick = ClientNowTick;
 
 	C_SKILL SkillPkt;
 	SkillPkt.mutable_skill_info()->set_skillid(State->SkillID);
