@@ -149,6 +149,6 @@ void Object::SetSpawnPos(const Vector3& pos, float yaw)
 
 void Object::SetSpawnRandomPos(Vector3 pos, float yaw)
 {
-	pos = pos + Utils::GetRandom(0.f, 3000.f);
+	pos = pos + Utils::GetRandom(-3000.f, 3000.f);
 	SetSpawnPos(pos, yaw);
 }

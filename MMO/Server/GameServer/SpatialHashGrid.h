@@ -13,9 +13,10 @@ public:
 	void ApplyAdd(T object, Vector2Int gridPos);
     void ApplyRemove(T object, Vector2Int gridPos);
     void ApplyMove(T object, Vector2Int from, Vector2Int to);
-	
+	    
+    vector<T> Find(const Vector2Int& cell);
     vector<T> FindAround(const Vector2Int& center, int32 radius);
-    vector<T> FindAroundFloat(const Vector2Int& center, float radius);
+    vector<T> FindAroundFloat(const Vector3& center, float radius);
 	T FindNearest(const Vector2Int& center, float radius, const Vector3& worldPos);
     T FindNearestOnPath(Vector3& from, Vector3& end, float thisRadius);
     
@@ -63,6 +64,17 @@ inline void SpatialHashGrid<T>::ApplyMove(T object, Vector2Int from, Vector2Int 
 }
 
 template<typename T>
+inline vector<T> SpatialHashGrid<T>::Find(const Vector2Int& cell)
+{
+    vector<T> results;
+    auto it = _cells.find(cell);
+    if (it != _cells.end())
+        return it->second;
+    else
+        return results;
+}
+
+template<typename T>
 inline vector<T> SpatialHashGrid<T>::FindAround(const Vector2Int& center, int32 radius)
 {
     vector<T> result;
@@ -88,7 +100,7 @@ inline vector<T> SpatialHashGrid<T>::FindAround(const Vector2Int& center, int32 
 }
 
 template<typename T>
-inline vector<T> SpatialHashGrid<T>::FindAroundFloat(const Vector2Int& center, float radius)
+inline vector<T> SpatialHashGrid<T>::FindAroundFloat(const Vector3& center, float radius)
 {
     vector<T> result;
 
@@ -98,15 +110,18 @@ inline vector<T> SpatialHashGrid<T>::FindAroundFloat(const Vector2Int& center, f
     {
         for (int32 x = -range; x <= range; ++x)
         {
-            if ((x * CELL_SIZE * x * CELL_SIZE) + (y * CELL_SIZE * y * CELL_SIZE) > radius * radius)
-                continue;
-
-            Vector2Int pos = center + Vector2Int(x, y);
+            Vector2Int pos = WorldToGrid(center) + Vector2Int(x, y);
 
             auto it = _cells.find(pos);
-            if (it != _cells.end())
+            if (it == _cells.end())
+                continue;
+
+            float totalRadius = 0.f;
+            for (auto& obj : it->second)
             {
-                result.insert(result.end(), it->second.begin(), it->second.end());
+                totalRadius = radius + obj->_collisionRadius;
+                if ((obj->_worldPos - center).LengthSquared2D() <= totalRadius * totalRadius)
+                    result.push_back(obj);
             }
         }
     }
@@ -143,7 +158,7 @@ inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, float radius,
     float minDistSq = numeric_limits<float>::max();
     float radiusSq = (radius * CELL_SIZE) * (radius * CELL_SIZE);
     int32 range = static_cast<int32>(radius);
-    const float EARLY_EXIT_DIST = 50.f;
+    const float EARLY_EXIT_DIST = 100.f;
 
     for (int32 y = -range; y <= range; ++y)
     {
@@ -160,11 +175,10 @@ inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, float radius,
 
             for (const T& obj : it->second)
             {
-                if (!obj)
+                if (!obj || obj->IsDead())
                     continue;
 
-                Vector3 objPos(obj->_posInfo);
-                float distSq = (objPos - worldPos).LengthSquared2D();
+                float distSq = (obj->_worldPos - worldPos).LengthSquared2D();
                 if (distSq > radiusSq)
                     continue;
 
@@ -186,7 +200,7 @@ inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, float radius,
 template<typename T>
 inline T SpatialHashGrid<T>::FindNearestOnPath(Vector3& from, Vector3& to, float thisRadius)
 {
-    Vector2Int center = WorldToGrid((from + to) * 0.5f);
+    Vector3 center = (from + to) * 0.5f;
     float searchRadius = thisRadius + 42.f; // monster capsule
 
     vector<T> candidates = FindAroundFloat(center, searchRadius);

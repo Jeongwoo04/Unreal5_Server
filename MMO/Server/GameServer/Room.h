@@ -51,7 +51,7 @@ private:
 
 public:
 	void Broadcast(SendBufferRef sendBuffer, uint64 exceptId = 0);
-	void BroadcastNearby(SendBufferRef sendBuffer, const Vector2Int& center, uint64 exceptId = 0);
+	void BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId = 0);
 	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId = 0);
 
 	void NotifySpawn(ObjectRef object, bool success);
@@ -69,12 +69,13 @@ public:
 	ObjectManagerRef _objectManager;
 	SkillSystemRef _skillSystem;
 
-private:
+public:
 	unordered_map<uint64, PlayerRef> _players;
 	unordered_map<uint64, MonsterRef> _monsters;
 	unordered_map<uint64, ProjectileRef> _projectiles;
 	unordered_map<uint64, FieldRef> _fields;
 
+private:
 	vector<ObjectRef> _removePending;
 
 	MapInfo _mapInfo;
@@ -85,4 +86,7 @@ private:
 public:
 	BenchmarkStat _bench;
 	uint64 _tickCount;
+
+private:
+	shared_ptr<JobQueue> _broadcastQueue;
 };

@@ -6,25 +6,6 @@
 class GeometryUtil
 {
 public:
-    // 원형 범위
-    template<typename T>
-    static vector<T> FindInCircle2D(const vector<T>& candidates,
-        const Vector3& center, float radius)
-    {
-        vector<T> result;
-        float radiusSq = radius * radius;
-        for (T obj : candidates)
-        {
-            if (!obj)
-                continue;
-            Vector3 pos(obj->_posInfo);
-            float distSq = (pos - center).LengthSquared2D();
-            if (distSq <= radiusSq)
-                result.push_back(obj);
-        }
-        return result;
-    }
-
     // 전방 부채꼴 (시야각 fov, 거리 range)
     template<typename T>
     static vector<T> FindInCone2D(const vector<T>& candidates,
@@ -39,11 +20,9 @@ public:
 
         for (T obj : candidates)
         {
-            if (!obj) continue;
-            Vector3 dir = Vector3(obj->_posInfo) - center;
-            float distSq = dir.LengthSquared2D();
-            if (distSq > rangeSq)
+            if (obj == nullptr || obj->IsDead())
                 continue;
+            Vector3 dir = Vector3(obj->_posInfo) - center;
 
             dir.Normalized2D();
             float dot = Vector3::Dot2D(forward2D, dir);
@@ -66,7 +45,8 @@ public:
 
         for (T obj : candidates)
         {
-            if (!obj) continue;
+            if (obj == nullptr || obj->IsDead())
+                continue;
 
             Vector3 dir = Vector3(obj->_posInfo) - center;
 
@@ -90,7 +70,8 @@ public:
         vector<T> result;
         for (T obj : candidates)
         {
-            if (!obj) continue;
+            if (obj == nullptr || obj->IsDead())
+                continue;
 
             Vector3 objPos(obj->_posInfo);
             float totalRadius = radius + obj->_collisionRadius;

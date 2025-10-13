@@ -127,4 +127,6 @@ private:
 
 	float CurrentSkillDistance = 0.f; // distance
 	float CurrentSkillRange = 0.f;
+
+	FVector CachedTargetLoc;
 };

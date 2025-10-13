@@ -259,6 +259,8 @@ void US1SkillComponent::UpdateSkillAreaMarker()
 				Target = OwnerPos + Dir * CurrentSkillDistance;
 
 			SkillAreaMarker->SetActorLocation(Target + FVector(0, 0, 2.f));
+
+			CachedTargetLoc = Target;
 		}
 	}
 }
@@ -356,8 +358,15 @@ void US1SkillComponent::DoCastTick(float DeltaTime)
 
 void US1SkillComponent::DoSkillStart(int32 SkillID)
 {
+	{
+		FVector Dir = CachedTargetLoc - CachedPlayer->GetActorLocation();
+		Dir.Z = 0;
+		FRotator NewRot = Dir.Rotation();
+		CachedPlayer->SetActorRotation(NewRot);
+	}
+
 	FSkillState* State = GetSkillState(SkillID);
-	State->TargetPos = SkillAreaMarker ? SkillAreaMarker->GetActorLocation() : CachedPlayer->GetActorLocation();
+	State->TargetPos = CachedTargetLoc;
 	State->CastID = CachedPlayer->GetNextCastId(); // 클라이언트 고유 CastId
 	CurrentSkillID = SkillID;
 

@@ -38,6 +38,8 @@ void Field::Update(float deltaTime)
 
 	_affectedTargets.clear();
 	auto room = GetRoom();
+	if (room == nullptr)
+		return;
 
 	_elapsedTime += deltaTime;
 	if (_elapsedTime >= _data->duration)
@@ -53,13 +55,16 @@ void Field::Update(float deltaTime)
 	{
 		if (GetOwner()->GetCreatureType() == CREATURE_TYPE_MONSTER)
 		{
-			auto targets = room->_playerGrid.FindAround(grid, 0);
+			auto targets = room->_playerGrid.Find(grid);
+			if (targets.empty())
+				continue;
 
 			for (auto target : targets)
 			{
+				if (target == nullptr || target->IsDead())
+					continue;
 				if (_affectedTargets.find(target) != _affectedTargets.end())
 					continue;
-
 				if ((target->_worldPos - _worldPos).LengthSquared2D() > (_data->range * _data->range))
 					continue;
 
@@ -77,14 +82,15 @@ void Field::Update(float deltaTime)
 		}			
 		else if (GetOwner()->GetCreatureType() == CREATURE_TYPE_PLAYER)
 		{
-			auto targets = room->_monsterGrid.FindAround(grid, 0);
+			auto targets = room->_monsterGrid.Find(grid);
 			
 			for (auto target : targets)
 			{
+				if (target == nullptr || target->IsDead())
+					continue;
 				if (_affectedTargets.find(target) != _affectedTargets.end())
 					continue;
-
-				if ((target->_worldPos - _worldPos).Length2D() > _data->range + target->_collisionRadius)
+				if ((target->_worldPos - _worldPos).LengthSquared2D() > (_data->range * _data->range))
 					continue;
 
 				target->OnDamaged(GetOwner(), _data->damagePerTick);
@@ -101,6 +107,9 @@ void Field::Update(float deltaTime)
 		}
 	}
 
+	auto copyPos = _worldPos;
 	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	room->BroadcastNearby(sendBuffer, _gridPos);
+	room->DoAsync([room, sendBuffer, copyPos, id = GetId()] {
+		room->BroadcastNearby(sendBuffer, copyPos, id);
+		});
 }

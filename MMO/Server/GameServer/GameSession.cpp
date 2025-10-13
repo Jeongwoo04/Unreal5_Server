@@ -16,18 +16,18 @@ void GameSession::OnDisconnected()
 
 void GameSession::OnRecvPacket(BYTE* buffer, int32 len)
 {
-    static int packetCount = 0;
-    static DWORD64 lastLog = GetTickCount64();
+    //static int packetCount = 0;
+    //static DWORD64 lastLog = GetTickCount64();
 
-    packetCount++;
+    //packetCount++;
 
-    DWORD64 now = GetTickCount64();
-    if (now - lastLog >= 1000) // 1초가 지났으면
-    {
-        std::cout << "[TPS] Packets per second: " << packetCount << std::endl;
-        packetCount = 0;      // 카운트 초기화
-        lastLog = now;        // 마지막 로그 시간 갱신
-    }
+    //DWORD64 now = GetTickCount64();
+    //if (now - lastLog >= 1000) // 1초가 지났으면
+    //{
+    //    std::cout << "[TPS] Packets per second: " << packetCount << std::endl;
+    //    packetCount = 0;      // 카운트 초기화
+    //    lastLog = now;        // 마지막 로그 시간 갱신
+    //}
 
 
 	PacketSessionRef session = GetPacketSessionRef();

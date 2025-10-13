@@ -11,7 +11,7 @@
     {
       "dataId": 10102,
       "level": 1,
-      "maxHp": 3000,
+      "maxHp": 5000,
       "attack": 0,
       "speed": 600.0,
       "totalExp": 0
@@ -19,7 +19,7 @@
     {
       "dataId": 10103,
       "level": 1,
-      "maxHp": 4000,
+      "maxHp": 5000,
       "attack": 0,
       "speed": 400.0,
       "totalExp": 0

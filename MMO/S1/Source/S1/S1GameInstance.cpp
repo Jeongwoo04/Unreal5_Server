@@ -331,6 +331,17 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 	if (Creature == nullptr)
 		return;
 
+	Vec3 Vec = CastSuccessPkt.skill_info().targetpos();
+	FVector TargetLoc = {Vec.x(), Vec.y(), Vec.z()};
+	FVector Direction = (TargetLoc - Creature->GetActorLocation());
+	Direction.Z = 0;
+	Direction.Normalize();
+	
+	float Rad = FMath::Atan2(Direction.Y, Direction.X);
+	float Degree = FMath::RadiansToDegrees(Rad);
+
+	FRotator NewRot(0.f, Degree, 0.f);
+
 	if (Creature == MyPlayer)
 	{
 		FSkillState* LocalState = MyPlayer->SkillComponent->GetSkillState(CastSuccessPkt.skillid());
@@ -344,10 +355,22 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 		UE_LOG(LogTemp, Log, TEXT("CooldownTick. duration: %d OneWayDelay %d RemainTime %f"), CooldownTick, OneWayDelay, CooldownRemainTime);
 
 		MyPlayer->HandleServerFinishCasting(CastSuccessPkt.skillid(), CooldownRemainTime); // 캐스팅바 UI 정리
-		// Cooldown 서버에서 받아오기
+
+		const float CurrentYaw = MyPlayer->GetActorRotation().Yaw;
+		const float TargetYaw = NewRot.Yaw;
+
+		float DeltaYaw = FMath::Abs(FRotator::NormalizeAxis(TargetYaw - CurrentYaw));
+
+		if (DeltaYaw > 1.f)
+		{
+			MyPlayer->SetActorRotation(NewRot);
+			MyPlayer->SetYaw(NewRot.Yaw);
+		}
 	}
 	else
 	{
+		Creature->SetActorRotation(NewRot);
+		Creature->SetYaw(NewRot.Yaw);
 		// Creature->UpdateAnim(CastSuccessPkt.skillid());
 	}
 }

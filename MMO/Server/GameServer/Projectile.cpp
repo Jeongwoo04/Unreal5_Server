@@ -36,7 +36,7 @@ void Projectile::Update(float deltaTime)
     if (GetOwner()->GetCreatureType() == Protocol::CREATURE_TYPE_MONSTER)
     {
         PlayerRef playerTarget = room->_playerGrid.FindNearestOnPath(currentPos, destPos, _data->radius);
-        if (playerTarget)
+        if (playerTarget && !playerTarget->IsDead())
         {
             target = playerTarget;
         }
@@ -44,24 +44,27 @@ void Projectile::Update(float deltaTime)
     else if (GetOwner()->GetCreatureType() == Protocol::CREATURE_TYPE_PLAYER)
     {
         MonsterRef monsterTarget = room->_monsterGrid.FindNearestOnPath(currentPos, destPos, _data->radius);
-        if (monsterTarget)
+        if (monsterTarget && !monsterTarget->IsDead())
         {
             target = monsterTarget;
         }
     }
 
-    if (target)
+    if (target && !target->IsDead())
     {
         target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data->damage);
         {
+            auto posCopy = _worldPos;
             Protocol::HpChange change;
             change.set_object_id(target->GetId());
             change.set_hp(target->_statInfo.hp());
             Protocol::S_CHANGE_HP pkt;
             *pkt.add_changes() = change;
-
             auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-            room->BroadcastNearby(sendBuffer, _gridPos, GetId());
+
+            room->DoAsync([room, sendBuffer, posCopy, id=GetId()]() {
+                room->BroadcastNearby(sendBuffer, posCopy, id);
+                });
         }
         
         room->AddRemoveList(shared_from_this());

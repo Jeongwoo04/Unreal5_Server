@@ -8,6 +8,8 @@
 
 Room::Room()
 {
+	_broadcastQueue = make_shared<JobQueue>();
+
 	_gameMap = make_shared<GameMap>();
 	_objectManager = make_shared<ObjectManager>();
 	_skillSystem = make_shared<SkillSystem>();
@@ -33,30 +35,49 @@ void Room::Init(int32 mapId)
 	SpawnInit();
 
 	UpdateTick();
-	StartHeartbeat();
+	//StartHeartbeat();
 }
 
 void Room::UpdateTick()
 {
+	using namespace std::chrono;
+
+	static auto prevTime = high_resolution_clock::now();
+	auto now = high_resolution_clock::now();
+	auto diff = duration_cast<milliseconds>(now - prevTime).count();
+	prevTime = now;
+
+	// 실제 Tick 간격 출력
+	if (diff > 0)
+		std::cout << "[RoomTick] Interval: " << diff << " ms\n";
+
 	constexpr float deltaTime = 0.1f;
+	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
+
+	_bench.Begin("Room");
+
+	//cout << "======================\n";
 
 	_bench.Begin("Monster");
 	for (auto& m : _monsters)
 	{
 		m.second->Update(deltaTime);
-	} _bench.End("Monster");
+	}
+	_bench.End("Monster");
 
 	_bench.Begin("Projectile");
 	for (auto& p : _projectiles)
 	{
 		p.second->Update(deltaTime);
-	} _bench.End("Projectile");
+	}
+	_bench.End("Projectile");
 	
 	_bench.Begin("Field");
 	for (auto& f : _fields)
 	{
 		f.second->Update(deltaTime);
-	} _bench.End("Field");
+	}
+	_bench.End("Field");
 
 	_bench.Begin("SkillSystem");
 	_skillSystem->Update(deltaTime);
@@ -65,11 +86,15 @@ void Room::UpdateTick()
 	_bench.Begin("RemoveList");
 	ClearRemoveList();
 	_bench.End("RemoveList");
+	
+	_bench.End("Room");
+	//cout << "P: " << _players.size() << ", M: " << _monsters.size() << ", P: " << _projectiles.size() << ", F: " << _fields.size() << ", R: " << _removePending.size() << endl;
+	//cout << "======================\n";
 
-	if (++_tickCount % 100 == 0)
-		_bench.PrintAndSaveSummary("RoomBenchmark.csv");
-
-	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
+	//if (++_tickCount % 100 == 0)
+	//{
+	//	_bench.PrintAndSaveSummary("RoomJobQueue + BroadcastQueue 병렬처리", "RoomBenchmark.csv");
+	//}
 }
 
 void Room::StartHeartbeat()
@@ -175,6 +200,15 @@ bool Room::LeaveGame(ObjectRef object, uint64 objectId)
 
 	bool removed = LeaveRoom(object);
 
+	if (removed)
+	{
+		// 성공적으로 Room에서 빠졌으니 클라에 알림
+		Protocol::S_DESPAWN pkt;
+		pkt.add_object_ids(object->GetId());
+		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+		Broadcast(sendBuffer);
+	}
+
 	// 나에게 퇴장 패킷 보내기
 	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
 	{
@@ -185,14 +219,6 @@ bool Room::LeaveGame(ObjectRef object, uint64 objectId)
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(leaveGamePkt);
 		if (auto session = player->GetSession())
 			session->Send(sendBuffer);
-	}
-	if (removed)
-	{
-		// 성공적으로 Room에서 빠졌으니 클라에 알림
-		Protocol::S_DESPAWN pkt;
-		pkt.add_object_ids(object->GetId());
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-		Broadcast(sendBuffer);
 	}
 
 	return true;
@@ -270,10 +296,10 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	// 1. 사용 가능 여부 체크 (쿨타임, 캐스팅, 자원)
 	if (!player->CanUseSkill(skillId, now))
 	{
-		cout << "Can't Use Skill" << endl;
 		return;
 	}
 
+	player->_posInfo.set_yaw(Vector3::DirToYaw2D(Vector3(pkt.mutable_skill_info()->targetpos()) - player->_worldPos));
 	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.skill_info().targetpos()), pkt.castid(), pkt.clientsend());
 }
 
@@ -375,28 +401,59 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 
 void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 {
-	for (auto& it : _players)
+	std::vector<PlayerRef> snapshot;
+	snapshot.reserve(_players.size());
+
+	for (auto& [id, player] : _players)
 	{
-		PlayerRef player = it.second;
 		if (player->_objectInfo.object_id() == exceptId)
 			continue;
-		
-		if (auto session = player->GetSession())
-			session->Send(sendBuffer);
+
+		snapshot.push_back(player);
 	}
+
+	_broadcastQueue->Push(make_shared<Job>([snapshot = std::move(snapshot), sendBuffer]()
+		{
+			for (auto& player : snapshot)
+			{
+				if (auto session = player->GetSession())
+					session->Send(sendBuffer);
+			}
+		}));
+
+	//for (auto& it : _players)
+	//{
+	//	PlayerRef player = it.second;
+	//	if (player->_objectInfo.object_id() == exceptId)
+	//		continue;
+	//	
+	//	if (auto session = player->GetSession())
+	//		session->Send(sendBuffer);
+	//}
 }
 
-void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector2Int& center, uint64 exceptId)
+void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId)
 {
 	vector<PlayerRef> nearbyPlayers = _playerGrid.FindAroundFloat(center, BROADCAST_RANGE);
 
-	for (auto& player : nearbyPlayers)
-	{
-		if (player->GetId() == exceptId)
-			continue;
-		if (auto session = player->GetSession())
-			session->Send(sendBuffer);
-	}
+	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId]()
+		{
+			for (auto& player : nearbyPlayers)
+			{
+				if (player->GetId() == exceptId)
+					continue;
+				if (auto session = player->GetSession())
+					session->Send(sendBuffer);
+			}
+		}));
+
+	//for (auto& player : nearbyPlayers)
+	//{
+	//	if (player->GetId() == exceptId)
+	//		continue;
+	//	if (auto session = player->GetSession())
+	//		session->Send(sendBuffer);
+	//}
 }
 
 void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)
@@ -407,7 +464,7 @@ void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)
 
 	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
 
-	BroadcastNearby(sendBuffer, Vector2Int(posInfo), exceptId);
+	BroadcastNearby(sendBuffer, Vector3(posInfo), exceptId);
 }
 
 void Room::NotifySpawn(ObjectRef object, bool success)

@@ -107,7 +107,6 @@ bool Handle_C_SKILL(PacketSessionRef& session, Protocol::C_SKILL& pkt)
 	if (room == nullptr)
 		return false;
 
-	cout << "C_SKILL recv : " << GetTickCount64() << endl;
 	room->DoAsync(&Room::HandleSkill, player, pkt);
 	return true;
 }

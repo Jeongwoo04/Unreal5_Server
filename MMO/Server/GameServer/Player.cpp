@@ -30,6 +30,7 @@ void Player::OnDead(ObjectRef attacker)
     if (room == nullptr)
         return;
 
+    _posInfo.set_state(Protocol::STATE_MACHINE_DEAD);
     if (attacker->GetCreatureType() == CREATURE_TYPE_MONSTER)
         static_pointer_cast<Monster>(attacker)->SetPlayer(nullptr);
 

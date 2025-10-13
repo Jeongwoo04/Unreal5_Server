@@ -42,6 +42,8 @@ public:
 	virtual void SetPosInfo(const Protocol::PosInfo& Info);
 	Protocol::PosInfo GetPosInfo() const { return PosInfo; }
 
+	void SetYaw(float Yaw) { PosInfo.set_yaw(Yaw); }
+
 	EStateMachine GetCurrentState() const { return StaticCast<EStateMachine>(PosInfo.state()); }
 
 	void HandleActionPkt(const Protocol::S_SKILL& Pkt);

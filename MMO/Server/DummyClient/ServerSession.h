@@ -5,6 +5,11 @@
 class ServerSession : public PacketSession
 {
 public:
+	ServerSession()
+	{
+		
+	}
+
 	~ServerSession()
 	{
 		cout << "~ServerSession" << endl;
@@ -55,13 +60,15 @@ public:
 	void SendRandomMove()
 	{
 
-		int32 dx = (rand() % 3 - 1) * 100;
-		int32 dy = (rand() % 3 - 1) * 100;
+		float dx = (rand() % 3 - 1) * 100;
+		float dy = (rand() % 3 - 1) * 100;
 
 		Protocol::C_MOVE pkt;
-		_posInfo.set_x(dx);
-		_posInfo.set_y(dy);
-		pkt.mutable_info()->CopyFrom(_posInfo);
+		{
+			_posInfo.set_x(dx);
+			_posInfo.set_y(dy);
+			pkt.mutable_info()->CopyFrom(_posInfo);
+		}
 
 		auto sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
 		Send(sendBuffer);

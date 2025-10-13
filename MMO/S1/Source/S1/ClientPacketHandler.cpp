@@ -143,11 +143,3 @@ bool Handle_S_HEARTBEAT(PacketSessionRef& session, Protocol::S_HEARTBEAT& pkt)
 
 	return true;
 }
-
-bool Handle_S_CHAT(PacketSessionRef& session, Protocol::S_CHAT& pkt)
-{
-	auto Msg = pkt.msg();
-
-
-	return true;
-}

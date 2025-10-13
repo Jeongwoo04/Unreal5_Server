@@ -18,11 +18,12 @@ public:
         if (it == _startTimes.end()) return;
 
         double duration = now - it->second;
+        //cout << name << " duration = " << duration << endl;
         _records[name].push_back(duration);
         _startTimes.erase(it);
     }
 
-    void PrintAndSaveSummary(const std::string& filename = "BenchmarkResult.csv")
+    void PrintAndSaveSummary(const string& benchWhat, const std::string& filename = "BenchmarkResult.csv")
     {
         std::ofstream file(filename, std::ios::app);
         if (!file.is_open())
@@ -31,8 +32,8 @@ public:
             return;
         }
 
-        std::cout << "\n========== BENCHMARK SUMMARY ==========\n";
-        file << "========== BENCHMARK SUMMARY ==========\n";
+        std::cout << "\n========== " << benchWhat << " BENCHMARK SUMMARY ==========\n";
+        file << "========== " << benchWhat << " BENCHMARK SUMMARY ==========\n";
 
         for (auto& [name, samples] : _records)
         {

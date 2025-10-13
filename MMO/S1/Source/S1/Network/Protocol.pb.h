@@ -2076,6 +2076,7 @@ class S_SKILL_CAST_START final :
     kClientSendFieldNumber = 4,
     kServerNowFieldNumber = 5,
     kCastEndTimeFieldNumber = 6,
+    kYawFieldNumber = 7,
   };
   // uint64 object_id = 1;
   void clear_object_id();
@@ -2131,6 +2132,15 @@ class S_SKILL_CAST_START final :
   void _internal_set_castendtime(uint64_t value);
   public:
 
+  // float yaw = 7;
+  void clear_yaw();
+  float yaw() const;
+  void set_yaw(float value);
+  private:
+  float _internal_yaw() const;
+  void _internal_set_yaw(float value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.S_SKILL_CAST_START)
  private:
   class _Internal;
@@ -2145,6 +2155,7 @@ class S_SKILL_CAST_START final :
     uint64_t clientsend_;
     uint64_t servernow_;
     uint64_t castendtime_;
+    float yaw_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -2273,12 +2284,31 @@ class S_SKILL_CAST_SUCCESS final :
   // accessors -------------------------------------------------------
 
   enum : int {
+    kSkillInfoFieldNumber = 6,
     kObjectIdFieldNumber = 1,
     kSkillIdFieldNumber = 2,
     kCastIdFieldNumber = 3,
     kServerNowFieldNumber = 4,
     kCooldownEndTimeFieldNumber = 5,
   };
+  // optional .Protocol.SkillInfo skill_info = 6;
+  bool has_skill_info() const;
+  private:
+  bool _internal_has_skill_info() const;
+  public:
+  void clear_skill_info();
+  const ::Protocol::SkillInfo& skill_info() const;
+  PROTOBUF_NODISCARD ::Protocol::SkillInfo* release_skill_info();
+  ::Protocol::SkillInfo* mutable_skill_info();
+  void set_allocated_skill_info(::Protocol::SkillInfo* skill_info);
+  private:
+  const ::Protocol::SkillInfo& _internal_skill_info() const;
+  ::Protocol::SkillInfo* _internal_mutable_skill_info();
+  public:
+  void unsafe_arena_set_allocated_skill_info(
+      ::Protocol::SkillInfo* skill_info);
+  ::Protocol::SkillInfo* unsafe_arena_release_skill_info();
+
   // uint64 object_id = 1;
   void clear_object_id();
   uint64_t object_id() const;
@@ -2332,12 +2362,14 @@ class S_SKILL_CAST_SUCCESS final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    ::Protocol::SkillInfo* skill_info_;
     uint64_t object_id_;
     int32_t skillid_;
     int32_t castid_;
     uint64_t servernow_;
     uint64_t cooldownendtime_;
-    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
   friend struct ::TableStruct_Protocol_2eproto;
@@ -3969,6 +4001,26 @@ inline void S_SKILL_CAST_START::set_castendtime(uint64_t value) {
   // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_START.castEndTime)
 }
 
+// float yaw = 7;
+inline void S_SKILL_CAST_START::clear_yaw() {
+  _impl_.yaw_ = 0;
+}
+inline float S_SKILL_CAST_START::_internal_yaw() const {
+  return _impl_.yaw_;
+}
+inline float S_SKILL_CAST_START::yaw() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_SKILL_CAST_START.yaw)
+  return _internal_yaw();
+}
+inline void S_SKILL_CAST_START::_internal_set_yaw(float value) {
+  
+  _impl_.yaw_ = value;
+}
+inline void S_SKILL_CAST_START::set_yaw(float value) {
+  _internal_set_yaw(value);
+  // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_START.yaw)
+}
+
 // -------------------------------------------------------------------
 
 // S_SKILL_CAST_SUCCESS
@@ -4071,6 +4123,93 @@ inline void S_SKILL_CAST_SUCCESS::_internal_set_cooldownendtime(uint64_t value) 
 inline void S_SKILL_CAST_SUCCESS::set_cooldownendtime(uint64_t value) {
   _internal_set_cooldownendtime(value);
   // @@protoc_insertion_point(field_set:Protocol.S_SKILL_CAST_SUCCESS.cooldownEndTime)
+}
+
+// optional .Protocol.SkillInfo skill_info = 6;
+inline bool S_SKILL_CAST_SUCCESS::_internal_has_skill_info() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.skill_info_ != nullptr);
+  return value;
+}
+inline bool S_SKILL_CAST_SUCCESS::has_skill_info() const {
+  return _internal_has_skill_info();
+}
+inline const ::Protocol::SkillInfo& S_SKILL_CAST_SUCCESS::_internal_skill_info() const {
+  const ::Protocol::SkillInfo* p = _impl_.skill_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::Protocol::SkillInfo&>(
+      ::Protocol::_SkillInfo_default_instance_);
+}
+inline const ::Protocol::SkillInfo& S_SKILL_CAST_SUCCESS::skill_info() const {
+  // @@protoc_insertion_point(field_get:Protocol.S_SKILL_CAST_SUCCESS.skill_info)
+  return _internal_skill_info();
+}
+inline void S_SKILL_CAST_SUCCESS::unsafe_arena_set_allocated_skill_info(
+    ::Protocol::SkillInfo* skill_info) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.skill_info_);
+  }
+  _impl_.skill_info_ = skill_info;
+  if (skill_info) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:Protocol.S_SKILL_CAST_SUCCESS.skill_info)
+}
+inline ::Protocol::SkillInfo* S_SKILL_CAST_SUCCESS::release_skill_info() {
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::Protocol::SkillInfo* temp = _impl_.skill_info_;
+  _impl_.skill_info_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::Protocol::SkillInfo* S_SKILL_CAST_SUCCESS::unsafe_arena_release_skill_info() {
+  // @@protoc_insertion_point(field_release:Protocol.S_SKILL_CAST_SUCCESS.skill_info)
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::Protocol::SkillInfo* temp = _impl_.skill_info_;
+  _impl_.skill_info_ = nullptr;
+  return temp;
+}
+inline ::Protocol::SkillInfo* S_SKILL_CAST_SUCCESS::_internal_mutable_skill_info() {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  if (_impl_.skill_info_ == nullptr) {
+    auto* p = CreateMaybeMessage<::Protocol::SkillInfo>(GetArenaForAllocation());
+    _impl_.skill_info_ = p;
+  }
+  return _impl_.skill_info_;
+}
+inline ::Protocol::SkillInfo* S_SKILL_CAST_SUCCESS::mutable_skill_info() {
+  ::Protocol::SkillInfo* _msg = _internal_mutable_skill_info();
+  // @@protoc_insertion_point(field_mutable:Protocol.S_SKILL_CAST_SUCCESS.skill_info)
+  return _msg;
+}
+inline void S_SKILL_CAST_SUCCESS::set_allocated_skill_info(::Protocol::SkillInfo* skill_info) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.skill_info_);
+  }
+  if (skill_info) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(
+                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(skill_info));
+    if (message_arena != submessage_arena) {
+      skill_info = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, skill_info, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.skill_info_ = skill_info;
+  // @@protoc_insertion_point(field_set_allocated:Protocol.S_SKILL_CAST_SUCCESS.skill_info)
 }
 
 // -------------------------------------------------------------------

@@ -79,6 +79,7 @@ message S_SKILL_CAST_START
 	uint64 clientSend = 4;
 	uint64 serverNow = 5;
 	uint64 castEndTime = 6;
+	float yaw = 7;
 }
 
 message S_SKILL_CAST_SUCCESS
@@ -88,6 +89,7 @@ message S_SKILL_CAST_SUCCESS
 	int32 castId = 3;
 	uint64 serverNow = 4;
 	uint64 cooldownEndTime = 5;
+	optional SkillInfo skill_info = 6;
 }
 
 

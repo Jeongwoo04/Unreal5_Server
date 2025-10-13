@@ -6,16 +6,16 @@
 
 Monster::Monster()
 {
-	_objectInfo.set_creature_type(Protocol::CREATURE_TYPE_MONSTER);
+    _objectInfo.set_creature_type(Protocol::CREATURE_TYPE_MONSTER);
 
     // 스킬 데이터 가져오기 (ID 1 고정)
     for (auto& it : DataManager::Instance().SkillDict)
     {
         int32 id = it.first;
-        
+
         //if (id == 1)
         //    continue;
-        
+
         const Skill& s = it.second;
         _skillStates.emplace(id, make_shared<SkillState>(id, s.cooldown + 3.f));
     }
@@ -56,13 +56,15 @@ void Monster::UpdateIdle(float deltaTime)
     const uint64 tick = GetTickCount64();
 
     auto target = GetPlayer();
+    auto room = GetRoom();
+
     if (target == nullptr || target->IsDead())
     {
         if (_nextSearchTick > tick)
             return;
-        _nextSearchTick = tick + 500;
+        _nextSearchTick = tick + 500 + Utils::GetRandom(-200, 500);
 
-        target = GetRoom()->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
+        target = room->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
 
         if (target == nullptr || target->IsDead())
             return;
@@ -184,7 +186,7 @@ void Monster::UpdateMoving(float deltaTime)
 
     if (needRepath && tick > _nextPathUpdateTick)
     {
-        _nextPathUpdateTick = tick + 1000;
+        _nextPathUpdateTick = tick + 1000 + Utils::GetRandom(-200, 500);
 
         _path = map->FindPath(_gridPos, target->_gridPos, false);
         if (_path.size() < 2)
@@ -228,6 +230,7 @@ void Monster::UpdateMoving(float deltaTime)
 
     // 그 외: Idle 전환
     ChangeState(Protocol::STATE_MACHINE_IDLE);
+    BroadcastMove();
 }
 
 void Monster::UpdateSkill(float deltaTime)
@@ -252,6 +255,7 @@ void Monster::OnDead(ObjectRef attacker)
         return;
 
     //_selectedSkill = nullptr;
+    _posInfo.set_state(Protocol::STATE_MACHINE_DEAD);
     room->_skillSystem->CancelCasting(shared_from_this(), _castId);
 
     S_DIE diePkt;
@@ -305,9 +309,8 @@ void Monster::DoSkill()
 
     if (auto room = GetRoom())
     {
-        BroadcastMove();
         room->_skillSystem->ExecuteSkill(shared_from_this(), _currentSkillId, target->_worldPos, _castId);
-        _coolTick = ::GetTickCount64() + 3000;
+        _coolTick = ::GetTickCount64() + 3000 + Utils::GetRandom(-200, 500);
     }
 }
 
