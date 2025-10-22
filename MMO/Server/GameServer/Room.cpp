@@ -8,7 +8,11 @@
 
 Room::Room()
 {
+	// TEMP
+	_prevTime = std::chrono::high_resolution_clock::now();
+
 	_broadcastQueue = make_shared<JobQueue>();
+	_broadcastQueue->_flag = JobQueueFlag::BCQ;
 
 	_gameMap = make_shared<GameMap>();
 	_objectManager = make_shared<ObjectManager>();
@@ -42,58 +46,58 @@ void Room::UpdateTick()
 {
 	using namespace std::chrono;
 
-	static auto prevTime = high_resolution_clock::now();
 	auto now = high_resolution_clock::now();
-	auto diff = duration_cast<milliseconds>(now - prevTime).count();
-	prevTime = now;
+	auto diff = duration_cast<milliseconds>(now - _prevTime).count();
+	_prevTime = now;
 
-	// 실제 Tick 간격 출력
 	if (diff > 0)
 		std::cout << "[RoomTick] Interval: " << diff << " ms\n";
 
 	constexpr float deltaTime = 0.1f;
-	DoTimer(static_cast<int32>(deltaTime * 1000), &Room::UpdateTick);
+	uint64 tick = static_cast<uint64>(deltaTime * 1000);
+	uint64 nowTick = GetTickCount64();
+	DoTimer(tick, &Room::UpdateTick);
 
 	_bench.Begin("Room");
 
 	//cout << "======================\n";
 
-	_bench.Begin("Monster");
+	//_bench.Begin("Monster");
 	for (auto& m : _monsters)
 	{
 		m.second->Update(deltaTime);
 	}
-	_bench.End("Monster");
+	//_bench.End("Monster");
 
-	_bench.Begin("Projectile");
+	//_bench.Begin("Projectile");
 	for (auto& p : _projectiles)
 	{
 		p.second->Update(deltaTime);
 	}
-	_bench.End("Projectile");
+	//_bench.End("Projectile");
 	
-	_bench.Begin("Field");
+	//_bench.Begin("Field");
 	for (auto& f : _fields)
 	{
 		f.second->Update(deltaTime);
 	}
-	_bench.End("Field");
+	//_bench.End("Field");
 
-	_bench.Begin("SkillSystem");
+	//_bench.Begin("SkillSystem");
 	_skillSystem->Update(deltaTime);
-	_bench.End("SkillSystem");
+	//_bench.End("SkillSystem");
 
-	_bench.Begin("RemoveList");
+	//_bench.Begin("RemoveList");
 	ClearRemoveList();
-	_bench.End("RemoveList");
+	//_bench.End("RemoveList");
 	
-	_bench.End("Room");
-	//cout << "P: " << _players.size() << ", M: " << _monsters.size() << ", P: " << _projectiles.size() << ", F: " << _fields.size() << ", R: " << _removePending.size() << endl;
-	//cout << "======================\n";
+	_bench.End("Room", this->GetRoomId());
+	if (++_tickCount % 10 == 0)
+		cout << "Player : " << _players.size() << ", Monster : " << _monsters.size() << endl;
 
 	//if (++_tickCount % 100 == 0)
 	//{
-	//	_bench.PrintAndSaveSummary("RoomJobQueue + BroadcastQueue 병렬처리", "RoomBenchmark.csv");
+	//	_bench.PrintAndSaveSummary("Monster raycasting 로직 step 최적화", "RoomBenchmark.csv");
 	//}
 }
 
@@ -261,7 +265,7 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 	}
 	else if (player->GetState() == Protocol::STATE_MACHINE_SKILL)
 		return;
-		
+
 	Vector3 destPos = Vector3(pkt.info());
 
 	player->_posInfo.set_state(pkt.info().state());
@@ -401,7 +405,7 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 
 void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 {
-	std::vector<PlayerRef> snapshot;
+	vector<PlayerRef> snapshot;
 	snapshot.reserve(_players.size());
 
 	for (auto& [id, player] : _players)
@@ -412,7 +416,8 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 		snapshot.push_back(player);
 	}
 
-	_broadcastQueue->Push(make_shared<Job>([snapshot = std::move(snapshot), sendBuffer]()
+	_broadcastQueue->Push(make_shared<Job>(
+		[snapshot = std::move(snapshot), sendBuffer]()
 		{
 			for (auto& player : snapshot)
 			{
@@ -420,21 +425,12 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 					session->Send(sendBuffer);
 			}
 		}));
-
-	//for (auto& it : _players)
-	//{
-	//	PlayerRef player = it.second;
-	//	if (player->_objectInfo.object_id() == exceptId)
-	//		continue;
-	//	
-	//	if (auto session = player->GetSession())
-	//		session->Send(sendBuffer);
-	//}
 }
 
 void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId)
 {
-	vector<PlayerRef> nearbyPlayers = _playerGrid.FindAroundFloat(center, BROADCAST_RANGE);
+	vector<PlayerRef> nearbyPlayers =
+		_playerGrid.FindAroundFloat(center, BROADCAST_RANGE);
 
 	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId]()
 		{
@@ -446,14 +442,6 @@ void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint
 					session->Send(sendBuffer);
 			}
 		}));
-
-	//for (auto& player : nearbyPlayers)
-	//{
-	//	if (player->GetId() == exceptId)
-	//		continue;
-	//	if (auto session = player->GetSession())
-	//		session->Send(sendBuffer);
-	//}
 }
 
 void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)
@@ -491,18 +479,15 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 				if (playerIt.first == object->_objectInfo.object_id())
 					continue;
 
-				auto info = spawnPkt.add_objects();
-				info->CopyFrom(playerIt.second->_objectInfo);
+				*spawnPkt.add_objects() = playerIt.second->_objectInfo;
 			}
 			for (auto& monsterIt : _monsters)
 			{
-				auto info = spawnPkt.add_objects();
-				info->CopyFrom(monsterIt.second->_objectInfo);
+				*spawnPkt.add_objects() = monsterIt.second->_objectInfo;
 			}
 			for (auto& projectileIt : _projectiles)
 			{
-				auto info = spawnPkt.add_objects();
-				info->CopyFrom(projectileIt.second->_objectInfo);
+				*spawnPkt.add_objects() = projectileIt.second->_objectInfo;
 			}
 
 			SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
@@ -515,9 +500,7 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 	{
 		Protocol::S_SPAWN spawnPkt;
 
-		auto info = spawnPkt.add_objects();
-		info->CopyFrom(object->_objectInfo);
-		info->mutable_pos_info()->CopyFrom(object->_posInfo);
+		*spawnPkt.add_objects() = object->_objectInfo;
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
 		Broadcast(sendBuffer, object->_objectInfo.object_id());

@@ -162,7 +162,7 @@ void Monster::UpdateMoving(float deltaTime)
     }
 
     // 직선 추적 가능 시 바로 이동
-    if (map->HasLineOfSightRayCast(myPos, targetPos))
+    if (map->HasLineOfSightRayCast(myPos, targetPos, _statInfo.speed() * deltaTime))
     {
         Vector3 dir = (targetPos - myPos).Normalized2D();
         float moveDist = _statInfo.speed() * deltaTime;
@@ -196,7 +196,7 @@ void Monster::UpdateMoving(float deltaTime)
             return;
         }
 
-        _simplifiedPath = map->SimplifyPathRaycast(_worldPos, _path);
+        _simplifiedPath = map->SimplifyPathRaycast(_worldPos, _path, _statInfo.speed() * deltaTime);
         _simplifiedIndex = 1;
         _lastTargetPos = targetPos;
     }
@@ -338,7 +338,7 @@ bool Monster::CanUseSkill(int32 skillId, uint64 now) const
         return false;
 
     auto map = GetRoom() ? GetRoom()->GetGameMap() : nullptr;
-    if (map && !map->HasLineOfSightRayCast(_worldPos, target->_worldPos))
+    if (map && !map->HasLineOfSightRayCast(_worldPos, target->_worldPos, _statInfo.speed() * 0.1f))
         return false;
 
     // 자원 체크

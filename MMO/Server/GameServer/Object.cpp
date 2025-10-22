@@ -149,6 +149,16 @@ void Object::SetSpawnPos(const Vector3& pos, float yaw)
 
 void Object::SetSpawnRandomPos(Vector3 pos, float yaw)
 {
-	pos = pos + Utils::GetRandom(-3000.f, 3000.f);
+	pos._x = pos._x + Utils::GetRandom(-3000.f, 3000.f);
+	pos._y = pos._y + Utils::GetRandom(-3000.f, 3000.f);
 	SetSpawnPos(pos, yaw);
+}
+
+void Object::ApplyBuffEffect(BuffInstance& buff, float deltaTime)
+{
+	int32 hp = _statInfo.hp();
+	hp += buff.effectPerTick * deltaTime;
+
+	_statInfo.set_hp(hp);
+	// TODO: 다른 스탯, 효과 처리
 }

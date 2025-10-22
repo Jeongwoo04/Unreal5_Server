@@ -195,10 +195,9 @@ void US1SkillComponent::LocalCancelCasting()
 
 	{
 		State->bIsCasting = false;
-		State->CastElapsed = 0.f;
+		State->CastStartTick = 0;
 		State->CurrentActionIndex = 0;
 		State->bIsCooldown = false;
-		State->CooldownElapsed = 0.f;
 	}
 	CurrentSkillID = 0;
 }
@@ -206,8 +205,7 @@ void US1SkillComponent::LocalCancelCasting()
 void US1SkillComponent::ServerCancelCasting(int32 SkillID)
 {
 	GetSkillState(SkillID)->bIsCasting = false;
-	GetSkillState(SkillID)->CastElapsed = 0.f;
-	GetSkillState(SkillID)->CooldownElapsed = 0.f;
+	GetSkillState(SkillID)->CastStartTick = 0;
 	GetSkillState(SkillID)->CurrentActionIndex = 0;
 	GetSkillState(SkillID)->bIsCooldown = false;
 	//CurrentSkillID = 0;
@@ -303,16 +301,18 @@ void US1SkillComponent::DoCastTick(float DeltaTime)
 	FSkillState* State = GetSkillState(CurrentSkillID);
 	if (State->bIsCasting)
 	{
-		State->CastElapsed += DeltaTime;
-		if (State->CastElapsed >= State->CastTime)
+		uint64 CurrentTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+		uint64 Elapsed = CurrentTick - State->CastStartTick;
+		if (Elapsed >= State->CastDuration)
 		{
 			State->bIsCasting = false;
-			State->CastElapsed = 0.f;
+			State->CastStartTick = 0;
 			State->CurrentActionIndex = 0;
 			State->bIsCooldown = true;
-			State->CooldownElapsed = 0.f;
 
 			FClientActionInstance& ActionInst = State->ActionInstances[State->CurrentActionIndex];
+			ActionInst.StartTick = CurrentTick;
+			ActionInst.Elapsed = 0;
 			HandleExecuteAction(ActionInst);
 			ActionInst.bTriggered = true;
 
@@ -332,10 +332,13 @@ void US1SkillComponent::DoCastTick(float DeltaTime)
 		if (State->CurrentActionIndex < State->ActionInstances.Num())
 		{
 			FClientActionInstance& ActionInst = State->ActionInstances[State->CurrentActionIndex];
-			ActionInst.Elapsed += DeltaTime;
+			uint64 CurrentTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+			ActionInst.Elapsed = CurrentTick - ActionInst.StartTick;
 
 			if (!ActionInst.bTriggered && ActionInst.Elapsed >= ActionInst.Action->actionDelay)
 			{
+				ActionInst.StartTick = CurrentTick;
+				ActionInst.Elapsed = 0;
 				HandleExecuteAction(ActionInst);
 				ActionInst.bTriggered = true;
 			}
@@ -371,10 +374,10 @@ void US1SkillComponent::DoSkillStart(int32 SkillID)
 	CurrentSkillID = SkillID;
 
 	// 캐스팅 시작
-	if (State->CastTime > 0.f)
+	if (State->CastDuration > 0)
 	{
 		State->bIsCasting = true;
-		State->CastElapsed = 0.f;
+		State->CastStartTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
 		CachedPlayer->HandleStartLocalCasting(*State);
 		CachedPlayer->ChangeState(Protocol::STATE_MACHINE_CASTING);
 		// TODO : 액션 시작
@@ -385,7 +388,6 @@ void US1SkillComponent::DoSkillStart(int32 SkillID)
 		State->bIsCasting = false;
 		State->CurrentActionIndex = 0;
 		State->bIsCooldown = true;
-		State->CooldownElapsed = 0.f;
 		// TODO : 액션 시작
 	}
 
@@ -407,19 +409,20 @@ void US1SkillComponent::DoSkillStart(int32 SkillID)
 
 void US1SkillComponent::DoSkillStateTick(float DeltaTime)
 {
+	uint64 CurrentTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
 	for (auto& It : SkillStates)
 	{
 		FSkillState& StateIter = It.Value;
 		
 		if (StateIter.bIsCooldown)
 		{
-			StateIter.CooldownElapsed += DeltaTime;
-			if (StateIter.CooldownElapsed >= StateIter.CooldownDuration)
+			uint64 Elapsed = CurrentTick - StateIter.CooldownStartTick;
+
+			if (Elapsed >= StateIter.CooldownDuration)
 			{
 				StateIter.bIsCooldown = false;
-				StateIter.CooldownElapsed = 0.f;
+				Elapsed = StateIter.CooldownDuration;
 			}
-
 		}
 	}
 }

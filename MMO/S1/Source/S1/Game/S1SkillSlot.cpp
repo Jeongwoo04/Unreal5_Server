@@ -18,11 +18,11 @@ void US1SkillSlot::SetSkill(UTexture2D* InIcon, const FText& InKey)
     }
 }
 
-void US1SkillSlot::StartCooldown(float CooldownTime)
+void US1SkillSlot::StartCooldown(uint64 CooldownTick)
 {
-    Cooldown = CooldownTime;
-    RemainCooldown = CooldownTime;
+    CooldownDurationTick = CooldownTick;
     bIsOnCooldown = true;
+    CooldownStartTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
 
     if (ProgressBar)
     {
@@ -42,21 +42,39 @@ void US1SkillSlot::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
     if (bIsOnCooldown)
     {
-        RemainCooldown -= InDeltaTime;
-        float Ratio = FMath::Clamp(RemainCooldown / Cooldown, 0.f, 1.f);
+        uint64 CurrentTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+        uint64 Elapsed = CurrentTick - CooldownStartTick;
+
+        float Ratio = FMath::Clamp(1.f - float(Elapsed) / float(CooldownDurationTick), 0.f, 1.f);
 
         if (ProgressBar)
-        {
             ProgressBar->SetPercent(Ratio);
-        }
 
-        if (RemainCooldown <= 0.f)
+        if (Elapsed >= CooldownDurationTick)
         {
             bIsOnCooldown = false;
             if (ProgressBar)
-            {
                 ProgressBar->SetVisibility(ESlateVisibility::Hidden);
-            }
         }
     }
+
+    //if (bIsOnCooldown)
+    //{
+    //    RemainCooldown -= InDeltaTime;
+    //    float Ratio = FMath::Clamp(RemainCooldown / Cooldown, 0.f, 1.f);
+
+    //    if (ProgressBar)
+    //    {
+    //        ProgressBar->SetPercent(Ratio);
+    //    }
+
+    //    if (RemainCooldown <= 0.f)
+    //    {
+    //        bIsOnCooldown = false;
+    //        if (ProgressBar)
+    //        {
+    //            ProgressBar->SetVisibility(ESlateVisibility::Hidden);
+    //        }
+    //    }
+    //}
 }

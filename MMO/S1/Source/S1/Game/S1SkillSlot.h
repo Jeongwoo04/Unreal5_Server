@@ -21,7 +21,7 @@ class S1_API US1SkillSlot : public UUserWidget
 
 public:
     void SetSkill(UTexture2D* InIcon, const FText& InKey);
-    void StartCooldown(float CooldownTime);
+    void StartCooldown(uint64 CooldownTick);
     bool CanUseSkill();
 
 protected:
@@ -39,6 +39,6 @@ protected:
 
 private:
     bool bIsOnCooldown = false;
-    float Cooldown = 0.f;
-    float RemainCooldown = 0.f;
+    uint64 CooldownStartTick = 0;
+    uint64 CooldownDurationTick = 0;
 };

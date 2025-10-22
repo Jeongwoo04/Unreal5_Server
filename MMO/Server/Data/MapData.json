@@ -14,7 +14,7 @@
             "z": 100
           },
           "respawnInterval": 5000,
-          "count": 4
+          "count": 20
         },
         {
           "spawnId": 1,
@@ -25,7 +25,7 @@
             "z": 100
           },
           "respawnInterval": 10000,
-          "count": 4
+          "count": 20
         }
       ]
     }

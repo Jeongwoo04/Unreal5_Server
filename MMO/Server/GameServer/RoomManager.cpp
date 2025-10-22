@@ -13,7 +13,7 @@ RoomRef RoomManager::Add(int32 mapId)
 		_roomId++;
 	}
 
-	room->DoAsync(&Room::Init, mapId);
+	room->DoAsyncPushOnly(&Room::Init, mapId);
 
 	return room;
 }

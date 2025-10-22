@@ -61,21 +61,12 @@ public:
 
 	float _collisionRadius;
 
-	vector<PlayerRef> _nearbyPlayers;
-
 protected:
-	weak_ptr<Room> _room; // 스마트포인터는 set 할때 멀티스레드에서 위험
+	weak_ptr<Room> _room;
 
+	// TEMP : BuffSystem
 private:
 	vector<BuffInstance> _activeBuffs;
-
-	void ApplyBuffEffect(BuffInstance& buff, float deltaTime)
-	{
-		int32 hp = _statInfo.hp();
-		hp += buff.effectPerTick * deltaTime;
-
-		_statInfo.set_hp(hp);
-		// TODO: 다른 스탯, 효과 처리
-	}
+	void ApplyBuffEffect(BuffInstance& buff, float deltaTime);
 };
 

@@ -122,7 +122,7 @@ public:
 	void HandleLocalCancelCasting();
 	void HandleServerCancelCasting(int32 SkillID);
 
-	void HandleServerFinishCasting(int32 SkillID, float CooldownTime);
+	void HandleServerFinishCasting(int32 SkillID, uint64 CooldownRemainTick);
 
 protected:
 	FVector TargetLocation;

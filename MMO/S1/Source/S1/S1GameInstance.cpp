@@ -346,15 +346,16 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 	{
 		FSkillState* LocalState = MyPlayer->SkillComponent->GetSkillState(CastSuccessPkt.skillid());
 
+		if (LocalState->CastID != CastSuccessPkt.castid())
+			return;
+
 		uint64 ClientRecvTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
 
 		// 서버 캐스팅 종료를 클라 시계로 변환
 		uint64 CooldownTick = CastSuccessPkt.cooldownendtime() - CastSuccessPkt.servernow();
-		float CooldownRemainTime = static_cast<float>(CooldownTick - OneWayDelay) / 1000;
+		uint64 CooldownRemainTick = CooldownTick - OneWayDelay;
 
-		UE_LOG(LogTemp, Log, TEXT("CooldownTick. duration: %d OneWayDelay %d RemainTime %f"), CooldownTick, OneWayDelay, CooldownRemainTime);
-
-		MyPlayer->HandleServerFinishCasting(CastSuccessPkt.skillid(), CooldownRemainTime); // 캐스팅바 UI 정리
+		MyPlayer->HandleServerFinishCasting(CastSuccessPkt.skillid(), CooldownRemainTick); // 캐스팅바 UI 정리
 
 		const float CurrentYaw = MyPlayer->GetActorRotation().Yaw;
 		const float TargetYaw = NewRot.Yaw;

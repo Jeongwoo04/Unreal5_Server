@@ -2,8 +2,8 @@
 
 #include "DataManager.h"
 
-class Room;
-class Player;
+class Object;
+using ObjectRef = shared_ptr<class Object>;
 
 class CombatSystem
 {
@@ -14,9 +14,6 @@ public:
 		return instance;
 	}
 
-	void ApplyDamage(ObjectRef attacker, ObjectRef target, int32 damage)
-	{
-		target->OnDamaged(attacker, damage);
-	}
+	void ApplyDamage(ObjectRef attacker, ObjectRef target, int32 damage);
 };
 

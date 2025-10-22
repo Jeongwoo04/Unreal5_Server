@@ -115,7 +115,6 @@ void SkillSystem::Update(float deltaTime)
 			it = activeSkills.erase(it);
 			continue;
 		}
-
 		// 캐스팅 중이면 캐스팅 처리
 		if (instance->isCasting)
 		{
@@ -150,7 +149,7 @@ void SkillSystem::Update(float deltaTime)
 				continue;
 			}
 		}
-
+		// 액션 처리 시간 Update 후 Index에 따라 HandleAction호출
 		while(instance->currentActionIndex < (int32)actions.size())
 		{
 			ActionData* action = actions[instance->currentActionIndex];
@@ -163,7 +162,7 @@ void SkillSystem::Update(float deltaTime)
 			instance->currentActionIndex++;
 			instance->actionDelayElapsed = 0.f;
 		}
-
+		// Action 종료 -> 제거
 		if (instance->currentActionIndex >= (int32)actions.size())
 		{
 			creature->SetActiveSkill(nullptr);

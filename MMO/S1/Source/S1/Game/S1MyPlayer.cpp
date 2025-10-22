@@ -318,7 +318,8 @@ void AS1MyPlayer::InitSkillBar()
 			FSkillState State;
 			State.SkillID = SkillId;
 			State.name = Skill.name.c_str();
-			State.CastTime = Skill.castTime;
+			State.CastStartTick = 0;
+			State.CastDuration = static_cast<uint64>(Skill.castTime * 1000);
 			State.CooldownDuration = Skill.cooldown;
 			State.bIsCooldown = false;
 
@@ -364,21 +365,21 @@ void AS1MyPlayer::HandleServerCancelCasting(int32 SkillID)
 	SkillBar->HideCastingBar();
 }
 
-void AS1MyPlayer::HandleServerFinishCasting(int32 SkillID, float CooldownTime)
+void AS1MyPlayer::HandleServerFinishCasting(int32 SkillID, uint64 CooldownRemainTick)
 {
 	FSkillState* State = SkillComponent->GetSkillState(SkillID);
 
 	{
 		State->bIsCasting = false;
-		State->CastElapsed = 0.f;
+		State->CastStartTick = 0;
 		State->bIsCooldown = true;
-		State->CooldownElapsed = 0.f;
-		State->CooldownDuration = CooldownTime;
+		State->CooldownStartTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
+		State->CooldownDuration = CooldownRemainTick;
 	}
 
 	SkillBar->HideCastingBar();
 	SkillBar->StartSlotCooldown(
-		LoadoutComponent->GetSkillSlotWithId(SkillID), CooldownTime);
+		LoadoutComponent->GetSkillSlotWithId(SkillID), CooldownRemainTick);
 	//State->CooldownDuration = ;
 }
 

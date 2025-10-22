@@ -18,6 +18,7 @@ message S_LOGIN
 message C_ENTER_GAME
 {
 	uint64 playerIndex = 1;
+	int32 roomNumber = 2;
 }
 
 message S_ENTER_GAME

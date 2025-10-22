@@ -17,7 +17,8 @@ struct FClientActionInstance
 	GENERATED_BODY()
 
 	const struct ClientAction* Action = nullptr;
-	float Elapsed = 0.f;
+	uint64 StartTick = 0;
+	uint64 Elapsed = 0;
 	bool bTriggered = false;
 };
 
@@ -29,10 +30,10 @@ struct FSkillState
 	int32 SkillID = -1;
 	FString name = "";
 	int32 CastID = 0;
-	float CastTime = 0.f;
-	float CastElapsed = 0.f;
-	float CooldownDuration = 0.f;
-	float CooldownElapsed = 0.f;
+	uint64 CastStartTick = 0;
+	uint64 CastDuration = 0;
+	uint64 CooldownStartTick = 0;
+	uint64 CooldownDuration = 0;
 	bool bIsCasting = false;
 	bool bIsCooldown = false;
 	TArray<FClientActionInstance> ActionInstances;

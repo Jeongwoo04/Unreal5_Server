@@ -47,7 +47,6 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 		return false;
 
 	RoomRef room = nullptr;
-
 	if (!RoomManager::Instance().FindUsableRoom())
 	{
 		room = RoomManager::Instance().Add(1);
@@ -55,8 +54,11 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 	else
 		room = RoomManager::Instance().Find(1);
 
+	// TEMP : MultiRoom 테스트
+	//room = RoomManager::Instance().Find(pkt.roomnumber());
+
 	// 입장
-	room->DoAsync(&Room::HandleEnterPlayer, gameSession);
+	room->DoAsyncPushOnly(&Room::HandleEnterPlayer, gameSession);
 
 	return true;
 }
@@ -73,7 +75,7 @@ bool Handle_C_LEAVE_GAME(PacketSessionRef& session, Protocol::C_LEAVE_GAME& pkt)
 	if (room == nullptr)
 		return false;
 
-	room->DoAsync(&Room::HandleLeavePlayer, player);
+	room->DoAsyncPushOnly(&Room::HandleLeavePlayer, player);
 
 	return true;
 }
@@ -90,7 +92,7 @@ bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt)
 	if (room == nullptr)
 		return false;
 
-	room->DoAsync(&Room::HandleMovePlayer, pkt);
+	room->DoAsyncPushOnly(&Room::HandleMovePlayer, pkt);
 
 	return true;
 }
@@ -107,7 +109,7 @@ bool Handle_C_SKILL(PacketSessionRef& session, Protocol::C_SKILL& pkt)
 	if (room == nullptr)
 		return false;
 
-	room->DoAsync(&Room::HandleSkill, player, pkt);
+	room->DoAsyncPushOnly(&Room::HandleSkill, player, pkt);
 	return true;
 }
 

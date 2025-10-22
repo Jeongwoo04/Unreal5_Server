@@ -34,7 +34,8 @@ private:
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* CastingBar_Text;
 
-    float ElapsedCastTime = 0.f;    // 경과 시간
-    float CastDuration = 0.f;       // 총 캐스팅 시간
+    uint64 ElapsedCastTime = 0;    // 경과 시간
+    uint64 CastStartTick = 0;
+    uint64 CastDuration = 0;       // 총 캐스팅 시간
     bool bIsCasting = false;        // 캐스팅 중 여부
 };

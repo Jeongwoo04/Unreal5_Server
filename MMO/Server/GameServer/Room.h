@@ -89,4 +89,8 @@ public:
 
 private:
 	shared_ptr<JobQueue> _broadcastQueue;
+
+	//TEMP
+public:
+	std::chrono::high_resolution_clock::time_point _prevTime;
 };

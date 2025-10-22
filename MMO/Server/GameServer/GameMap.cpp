@@ -83,7 +83,7 @@ vector<Vector2Int> GameMap::FindPath(const Vector2Int& startCellPos, const Vecto
     return CalcCellPathFromParent(parent, dest);
 }
 
-vector<Vector3> GameMap::SimplifyPathRaycast(const Vector3& start, const vector<Vector2Int>& path)
+vector<Vector3> GameMap::SimplifyPathRaycast(const Vector3& start, const vector<Vector2Int>& path, float deltaStep)
 {
     std::vector<Vector3> result;
     if (path.empty())
@@ -97,7 +97,7 @@ vector<Vector3> GameMap::SimplifyPathRaycast(const Vector3& start, const vector<
     {
         Vector3 to = GridToWorld(path[i]);
 
-        if (HasLineOfSightRayCast(anchorPos, to))
+        if (HasLineOfSightRayCast(anchorPos, to, deltaStep))
         {
             continue; // 아직 직선 가능
         }
@@ -120,12 +120,16 @@ vector<Vector3> GameMap::SimplifyPathRaycast(const Vector3& start, const vector<
     return result;
 }
 
-bool GameMap::HasLineOfSightRayCast(const Vector3& from, const Vector3& to)
+bool GameMap::HasLineOfSightRayCast(const Vector3& from, const Vector3& to, float deltaStep)
 {
     // float 기반 RayCast
+    float stepSize = std::min(deltaStep, CELL_SIZE * 0.25f);
+
     Vector3 dir = (to - from);
-    int32 steps = static_cast<int32>(dir.Length2D() / 0.1f);
-    Vector3 step = dir * (1.f / steps);
+    float distance = dir.Length2D();
+    int32 steps = static_cast<int32>(distance / stepSize);
+    steps = std::max(steps, 1);
+    Vector3 step = dir / static_cast<float>(steps);
 
     Vector3 current = from;
     for (int32 i = 0; i <= steps; ++i)
@@ -135,6 +139,11 @@ bool GameMap::HasLineOfSightRayCast(const Vector3& from, const Vector3& to)
             return false;
         current += step;
     }
+
+    Vector2Int endCell = WorldToGrid(to);
+    if (!CanGo(endCell, false))
+        return false;
+
     return true;
 }
 

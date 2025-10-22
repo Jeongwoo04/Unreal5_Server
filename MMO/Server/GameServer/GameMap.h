@@ -41,9 +41,9 @@ public:
     void LoadGameMap(string path);
 
     vector<Vector2Int> FindPath(const Vector2Int& startCellPos, const Vector2Int& destCellPos, bool checkObjects = true);
-    vector<Vector3> SimplifyPathRaycast(const Vector3& start, const vector<Vector2Int>& path);
+    vector<Vector3> SimplifyPathRaycast(const Vector3& start, const vector<Vector2Int>& path, float deltaStep);
     // RayCast로 장애물 사이의 시야 확인
-    bool HasLineOfSightRayCast(const Vector3& from, const Vector3& to);
+    bool HasLineOfSightRayCast(const Vector3& from, const Vector3& to, float deltaStep);
     Vector3 GetSafePosRayCast(const Vector3& from, const Vector3& to, Vector2Int* blocked);
 
 private:

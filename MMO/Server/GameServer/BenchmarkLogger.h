@@ -11,14 +11,14 @@ public:
         _startTimes[name] = GetTimeMs();
     }
 
-    void End(const std::string& name)
+    void End(const std::string& name, int32 roomId)
     {
         double now = GetTimeMs();
         auto it = _startTimes.find(name);
         if (it == _startTimes.end()) return;
 
         double duration = now - it->second;
-        //cout << name << " duration = " << duration << endl;
+        cout << name <<" No." << roomId << " Tick duration = " << duration << endl;
         _records[name].push_back(duration);
         _startTimes.erase(it);
     }

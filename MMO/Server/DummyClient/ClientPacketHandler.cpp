@@ -28,7 +28,7 @@ bool Handle_S_LOGIN(PacketSessionRef& session, Protocol::S_LOGIN& pkt)
 
 bool Handle_S_ENTER_GAME(PacketSessionRef& session, Protocol::S_ENTER_GAME& pkt)
 {
-	cout << "S_ENTER_GAME" << endl;
+	//cout << "S_ENTER_GAME" << endl;
 
 	ServerSessionRef serverSession = static_pointer_cast<ServerSession>(session);
 	serverSession->_enter = true;
@@ -38,7 +38,7 @@ bool Handle_S_ENTER_GAME(PacketSessionRef& session, Protocol::S_ENTER_GAME& pkt)
 
 bool Handle_S_LEAVE_GAME(PacketSessionRef& session, Protocol::S_LEAVE_GAME& pkt)
 {
-	cout << "S_LEAVE_GAME" << endl;
+	//cout << "S_LEAVE_GAME" << endl;
 
 	ServerSessionRef serverSession = static_pointer_cast<ServerSession>(session);
 
@@ -47,7 +47,7 @@ bool Handle_S_LEAVE_GAME(PacketSessionRef& session, Protocol::S_LEAVE_GAME& pkt)
 
 bool Handle_S_SPAWN(PacketSessionRef& session, Protocol::S_SPAWN& pkt)
 {
-	cout << "S_SPAWN" << endl;
+	//cout << "S_SPAWN" << endl;
 
 	ServerSessionRef serverSession = static_pointer_cast<ServerSession>(session);
 
@@ -56,7 +56,7 @@ bool Handle_S_SPAWN(PacketSessionRef& session, Protocol::S_SPAWN& pkt)
 
 bool Handle_S_DESPAWN(PacketSessionRef& session, Protocol::S_DESPAWN& pkt)
 {
-	cout << "S_DESPAWN" << endl;
+	//cout << "S_DESPAWN" << endl;
 
 	ServerSessionRef serverSession = static_pointer_cast<ServerSession>(session);
 
