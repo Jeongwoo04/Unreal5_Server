@@ -21,6 +21,8 @@
 void US1GameInstance::Init()
 {
 	Super::Init();
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("GameInstance Init"));
 
 	UWorld* World = GetWorld();
 	if (!World)
@@ -45,6 +47,39 @@ void US1GameInstance::Init()
 	}
 #endif
 
+	MapManager = NewObject<US1MapManager>(this);
+	if (MapManager)
+	{
+		MapManager->LoadMap(1, 100.f);
+	}
+
+	FString ConfigPath;
+	FString DataPath;
+
+#if WITH_EDITOR
+	// Editor, PIE
+	ConfigPath = FPaths::ProjectContentDir() / TEXT("Data/config.json");
+	DataPath = FPaths::ProjectContentDir() / TEXT("Data/");
+#else
+	// Standalone / 패키징 exe
+	ConfigPath = FPaths::ProjectContentDir() / TEXT("Data/config.json");
+	DataPath = FPaths::ProjectContentDir() / TEXT("Data/");
+#endif
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("ConfigPath: %s"), *ConfigPath));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("DataPath: %s"), *DataPath));
+
+	S1ConfigManager::Instance().LoadConfig(TCHAR_TO_UTF8(*ConfigPath));
+	S1DataManager::Instance().LoadData(TCHAR_TO_UTF8(*DataPath));
+
+	FWorldDelegates::OnPostWorldInitialization.AddUObject(this, &US1GameInstance::OnWorldReady);
+}
+
+void US1GameInstance::OnWorldReady(UWorld* World, const UWorld::InitializationValues IVS)
+{
+	if (!World || Connected) // 이미 연결되어있으면 무시
+		return;
+
 	if (BP_ObjectManagerClass)
 	{
 		ObjectManager = NewObject<US1ObjectManager>(this, BP_ObjectManagerClass);
@@ -52,24 +87,13 @@ void US1GameInstance::Init()
 		{
 			ObjectManager->Init(GetWorld());
 		}
-	}	
-
-	MapManager = NewObject<US1MapManager>(this);
-	if (MapManager)
-	{
-		MapManager->LoadMap(1, 100.f);
 	}
 
-	FString ConfigPath = FPaths::ProjectDir() / TEXT("Data/config.json");
-	FString DataPath = FPaths::ProjectDir() / TEXT("Data/");
-
-	UE_LOG(LogTemp, Warning, TEXT("ConfigPath: %s"), *ConfigPath);
-	UE_LOG(LogTemp, Warning, TEXT("DataPath: %s"), *DataPath);
-
-	S1ConfigManager::Instance().LoadConfig("C:/Users/jeson/Desktop/unreal/MMO/S1/Source/S1/Data/config.json");
-	S1DataManager::Instance().LoadData("C:/Users/jeson/Desktop/unreal/MMO/S1/Source/S1/Data/");
-
+	UE_LOG(LogTemp, Warning, TEXT("World is ready, connecting to server..."));
 	ConnectToGameServer();
+
+	// 한 번만 실행되도록 delegate 제거
+	FWorldDelegates::OnPostWorldInitialization.RemoveAll(this);
 }
 
 void US1GameInstance::Shutdown()
@@ -80,6 +104,8 @@ void US1GameInstance::Shutdown()
 
 void US1GameInstance::ConnectToGameServer()
 {
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Connected To Server"));
 	UWorld* World = GetWorld();
 	if (!World)
 		return;
@@ -146,20 +172,36 @@ void US1GameInstance::SendPacket(SendBufferRef SendBuffer)
 void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool IsMine)
 {
 	if (Socket == nullptr || GameServerSession == nullptr)
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("HandleSpawn: Socket or GameServerSession is nullptr"));
 		return;
+	}
 
 	auto* World = GetWorld();
 	if (World == nullptr)
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("HandleSpawn: World is nullptr"));
 		return;
+	}
 
 	// 중복 처리 체크
 	AActor* NewActor = ObjectManager->SpawnObject(ObjectInfo, IsMine);
 	if (!NewActor)
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+				FString::Printf(TEXT("HandleSpawn: SpawnObject returned nullptr for ObjectID %llu"), ObjectInfo.object_id()));
 		return;
+	}
 
 	if (IsMine)
 	{
 		MyPlayer = Cast<AS1MyPlayer>(NewActor);
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+				FString::Printf(TEXT("HandleSpawn: Set MyPlayer = %s"), MyPlayer ? *MyPlayer->GetName() : TEXT("nullptr")));
 
 		OnMyPlayerSpawned.Broadcast(MyPlayer);
 	}

@@ -14,6 +14,10 @@ AS1MarkerActor::AS1MarkerActor()
 	DecalComp = CreateDefaultSubobject<UDecalComponent>(TEXT("DecalComp"));
 	RootComponent = DecalComp;
 	DecalComp->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+
+    LifeTime = 0.f;
+    Elapsed = 0.f;
+    bShouldFollowOwner = false;
 }
 
 void AS1MarkerActor::Init(UMaterialInterface* InMaterial, FVector InSize, float InLifeTime, bool bFollowOwner)
@@ -23,6 +27,12 @@ void AS1MarkerActor::Init(UMaterialInterface* InMaterial, FVector InSize, float 
         DecalComp->SetDecalMaterial(InMaterial);
         DecalComp->DecalSize = InSize;
     }
+    else
+    {
+        if (GEngine)
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("[Marker] Init: Material is nullptr!"));
+    }
+
 
     LifeTime = InLifeTime;
     bShouldFollowOwner = bFollowOwner;
@@ -32,20 +42,38 @@ void AS1MarkerActor::Init(UMaterialInterface* InMaterial, FVector InSize, float 
 void AS1MarkerActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
-    DynMat = DecalComp->CreateDynamicMaterialInstance();
-    if (DynMat)
-        DynMat->SetScalarParameterValue("Fade", 1.f);
+    	
+    if (DecalComp)
+    {
+        DynMat = DecalComp->CreateDynamicMaterialInstance();
+        if (DynMat)
+            DynMat->SetScalarParameterValue("Fade", 1.f);
+        else if (GEngine)
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("[Marker] Failed to create DynMat"));
+    }
 
     if (LifeTime > 0.f)
     {
         const float TickInterval = 0.02f;
-        GetWorldTimerManager().SetTimer(FadeTimer, this, &AS1MarkerActor::TickFade, TickInterval, true);
+
+        // Timer Delegate 안전하게 람다로 바인딩
+        FTimerDelegate FadeDelegate;
+        FadeDelegate.BindLambda([this]()
+            {
+                if (!IsValid(this))
+                    return;
+
+                TickFade();
+            });
+
+        GetWorldTimerManager().SetTimer(FadeTimer, FadeDelegate, TickInterval, true);
     }
 }
 
 void AS1MarkerActor::Tick(float DeltaTime)
 {
+    Super::Tick(DeltaTime);
+
     if (bShouldFollowOwner && FollowActor.IsValid())
     {
         SetActorLocation(FollowActor->GetActorLocation());
@@ -55,24 +83,23 @@ void AS1MarkerActor::Tick(float DeltaTime)
 // Called every frame
 void AS1MarkerActor::TickFade()
 {
-    //if (LifeTime <= 0.f)
-    //    return;
+    if (!IsValid(this) || !DynMat)
+    {
+        GetWorldTimerManager().ClearTimer(FadeTimer);
+        SetLifeSpan(0.1f);
+        return;
+    }
 
-    //const float TickInterval = 0.02f;
-    //Elapsed += TickInterval;
+    const float TickInterval = 0.02f;
+    Elapsed += TickInterval;
 
-    //if (!DynMat)
-    //{
-    //    Destroy();
-    //    return;
-    //}
+    float Alpha = FMath::Clamp(1.f - (Elapsed / LifeTime), 0.f, 1.f);
+    DynMat->SetScalarParameterValue("Fade", Alpha);
 
-    //float Alpha = FMath::Clamp(1.f - (Elapsed / LifeTime), 0.f, 1.f);
-    //DynMat->SetScalarParameterValue("Fade", Alpha);
-
-    //if (Alpha <= 0.f)
-    //{
-    //    SetLifeSpan(0.1f);
-    //}
+    if (Alpha <= 0.f)
+    {
+        GetWorldTimerManager().ClearTimer(FadeTimer);
+        SetLifeSpan(0.1f);
+    }
 }
 

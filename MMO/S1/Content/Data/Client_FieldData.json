@@ -1,0 +1,16 @@
+{
+  "Field": [
+    {
+      "dataId": 30101,
+      "name": "FrozenField",
+      "distance": 1200,
+      "range": 300
+    },
+    {
+      "dataId": 30102,
+      "name": "FlameField",
+      "distance": 1200,
+      "range": 300
+    }
+  ]
+} 

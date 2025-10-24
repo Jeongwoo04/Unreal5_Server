@@ -3,7 +3,7 @@
     {
       "id": 1,
       "name": "Melee_Slash",
-      "iconPath": "UI/Skill_Auto.png",
+      "iconPath": "UI/Skill_Auto",
       "cooldown": 1.0,
       "castTime": 0.0,
       "marker": false,
@@ -22,7 +22,7 @@
     {
       "id": 2,
       "name": "Ranged_Arrow",
-      "iconPath": "UI/Skill_Arrow.png",
+      "iconPath": "UI/Skill_Arrow",
       "cooldown": 1.5,
       "castTime": 0.5,
       "marker": true,
@@ -40,7 +40,7 @@
     {
       "id": 3,
       "name": "SkillB_Fireball",
-      "iconPath": "UI/Skill_Fireball.png",
+      "iconPath": "UI/Skill_Fireball",
       "cooldown": 12.0,
       "castTime": 1.5,
       "marker": true,
@@ -58,7 +58,7 @@
     {
       "id": 4,
       "name": "SkillC_FrozenField",
-      "iconPath": "UI/Skill_Blizard.png",
+      "iconPath": "UI/Skill_Blizard",
       "cooldown": 20.0,
       "castTime": 2.0,
       "marker": true,
@@ -76,7 +76,7 @@
     {
       "id": 5,
       "name": "SkillA_DashStrike",
-      "iconPath": "UI/Skill_Dash.png",
+      "iconPath": "UI/Skill_Dash",
       "cooldown": 8.0,
       "castTime": 0.0,
       "marker": false,

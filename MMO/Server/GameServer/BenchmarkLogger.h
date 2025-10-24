@@ -6,25 +6,56 @@ using namespace std;
 class BenchmarkStat
 {
 public:
-    void Begin(const std::string& name)
+    BenchmarkStat()
     {
-        _startTimes[name] = GetTimeMs();
+        _programStartTime = GetTimeMs();
+        _warmupMs = 30000.0; // 기본 30초 (원하면 SetWarmupTime으로 변경 가능)
     }
 
-    void End(const std::string& name, int32 roomId)
+    void SetWarmupTime(double seconds)
+    {
+        _warmupMs = seconds * 1000.0;
+    }
+
+    void Begin(const std::string& name)
     {
         double now = GetTimeMs();
+
+        // 워밍업 구간 스킵
+        if (now - _programStartTime < _warmupMs)
+            return;
+
+        _startTimes[name] = now;
+    }
+
+    void End(const std::string& name)
+    {
+        double now = GetTimeMs();
+
+        // 워밍업 구간 스킵
+        if (now - _programStartTime < _warmupMs)
+            return;
+
         auto it = _startTimes.find(name);
-        if (it == _startTimes.end()) return;
+        if (it == _startTimes.end())
+            return;
 
         double duration = now - it->second;
-        cout << name <<" No." << roomId << " Tick duration = " << duration << endl;
         _records[name].push_back(duration);
         _startTimes.erase(it);
     }
 
-    void PrintAndSaveSummary(const string& benchWhat, const std::string& filename = "BenchmarkResult.csv")
+    void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "BenchmarkResult.csv")
     {
+        double now = GetTimeMs();
+
+        // 워밍업 구간 스킵
+        if (now - _programStartTime < _warmupMs)
+            return;
+
+        if (_records["Room"].size() % 100 != 0)
+            return ;
+
         std::ofstream file(filename, std::ios::app);
         if (!file.is_open())
         {
@@ -33,12 +64,13 @@ public:
         }
 
         std::cout << "\n========== " << benchWhat << " BENCHMARK SUMMARY ==========\n";
-        file << "========== " << benchWhat << " BENCHMARK SUMMARY ==========\n";
+        file << "========== RoomId : " << roomId << " " << benchWhat << " BENCHMARK SUMMARY ==========\n";
+        file << "Name,Samples,Avg,Min,Max,p01,p99,StdDev\n";
 
         for (auto& [name, samples] : _records)
         {
-            if (samples.size() < 3) continue;
-
+            if ((samples.size() % 100 != 0))
+                continue;
             std::sort(samples.begin(), samples.end());
             double sum = std::accumulate(samples.begin(), samples.end(), 0.0);
             double avg = sum / samples.size();
@@ -54,16 +86,17 @@ public:
             variance /= samples.size();
             double stddev = std::sqrt(variance);
 
-            std::string line =
-                name + "," +
-                std::to_string(samples.size()) + "," +
-                std::to_string(avg) + "," +
-                std::to_string(min) + "," +
-                std::to_string(max) + "," +
-                std::to_string(p01) + "," +
-                std::to_string(p99) + "," +
-                std::to_string(stddev);
+            // CSV 저장
+            file << name << ","
+                << samples.size() << ","
+                << avg << ","
+                << min << ","
+                << max << ","
+                << p01 << ","
+                << p99 << ","
+                << stddev << "\n";
 
+            // 콘솔 출력
             std::cout
                 << name << "\n"
                 << "  Count: " << samples.size()
@@ -73,13 +106,12 @@ public:
                 << " | 1%: " << p01
                 << " | 99%: " << p99
                 << " | StdDev: " << stddev << " (ms)\n";
-
-            file << line << "\n";
         }
 
         std::cout << "======================================\n";
         file << "======================================\n";
         file.close();
+        _records.clear();
     }
 
 private:
@@ -90,6 +122,8 @@ private:
         return duration_cast<microseconds>(now.time_since_epoch()).count() / 1000.0;
     }
 
+    double _programStartTime;
+    double _warmupMs = 30000.0;
     std::unordered_map<std::string, double> _startTimes;
     std::unordered_map<std::string, std::vector<double>> _records;
 };

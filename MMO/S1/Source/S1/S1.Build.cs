@@ -10,15 +10,22 @@ public class S1 : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Sockets", "Networking", "EnhancedInput", "NavigationSystem" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {
-			"ProtobufCore",
-            "UnrealEd",
-            "Blutility",
-            "EditorSubsystem",
-            "EditorScriptingUtilities",
-		});
+        PrivateDependencyModuleNames.AddRange(new string[] {
+            "ProtobufCore"
+        });
 
-		PrivateIncludePaths.AddRange(new string[]
+        // Editor 전용 모듈은 Editor 빌드일 때만 추가
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[] {
+                "UnrealEd",
+                "Blutility",
+                "EditorSubsystem",
+                "EditorScriptingUtilities"
+            });
+        }
+
+        PrivateIncludePaths.AddRange(new string[]
 		{
 			"S1/",
 			"S1/Network/",

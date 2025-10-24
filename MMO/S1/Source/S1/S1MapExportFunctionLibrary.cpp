@@ -7,8 +7,11 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "DrawDebugHelpers.h"
+#if WITH_EDITOR
 #include "Editor.h"
+#endif
 
+#if WITH_EDITOR
 void US1MapExportFunctionLibrary::ExportCollisionMap(int32 MapId, float CellSize)
 {
     UWorld* World = GEditor->GetEditorWorldContext().World();
@@ -162,3 +165,4 @@ void US1MapExportFunctionLibrary::ExportCollisionMap(int32 MapId, float CellSize
         UE_LOG(LogTemp, Error, TEXT("Failed to save collision map to: %s or %s"), *SavePath, *ServerSavePath);
     }
 }
+#endif

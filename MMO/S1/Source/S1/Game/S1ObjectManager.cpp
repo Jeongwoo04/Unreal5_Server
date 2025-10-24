@@ -5,6 +5,7 @@
 #include "S1MyPlayer.h"
 #include "S1Monster.h"
 #include "S1Projectile.h"
+#include "S1Field.h"
 
 void US1ObjectManager::Init(UWorld* TWorld)
 {
@@ -65,6 +66,8 @@ void US1ObjectManager::Init(UWorld* TWorld)
 				if (Objects.Contains(Id))
 					Objects.Remove(Id);
 
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Player Is Despawn. ID = %llu"), Id));
+
 				Actor->Destroy();
 			}
 			else
@@ -102,6 +105,8 @@ void US1ObjectManager::Init(UWorld* TWorld)
 					Monsters.Remove(Id);
 				if (Objects.Contains(Id))
 					Objects.Remove(Id);
+
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Monster Is Despawn. ID = %llu"), Id));
 
 				Actor->Destroy();
 			}
@@ -141,6 +146,8 @@ void US1ObjectManager::Init(UWorld* TWorld)
 				if (Objects.Contains(Id))
 					Objects.Remove(Id);
 
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Projectile Is Despawn. ID = %llu"), Id));
+
 				Actor->Destroy();
 			}
 			else
@@ -149,43 +156,45 @@ void US1ObjectManager::Init(UWorld* TWorld)
 			}
 		}
 	);
-	//// Field
-	//AddFactory(FS1ObjectKey{ Protocol::OBJECT_TYPE_ENV, 1 },
-	//	[this](UWorld* W, const Protocol::ObjectInfo& Info, bool IsMine) -> AActor*
-	//	{
-	//		if (!FieldClass)
-	//			return nullptr;
+	// Field
+	AddFactory(FS1ObjectKey{ Protocol::OBJECT_TYPE_ENV, 1 },
+		[this](UWorld* W, const Protocol::ObjectInfo& Info, bool IsMine) -> AActor*
+		{
+			if (!FieldClass)
+				return nullptr;
 
-	//		FVector Loc(Info.pos_info().x(), Info.pos_info().y(), Info.pos_info().z());
-	//		FRotator Rot(0.f, Info.pos_info().yaw(), 0.f);
+			FVector Loc(Info.pos_info().x(), Info.pos_info().y(), Info.pos_info().z());
+			FRotator Rot(0.f, Info.pos_info().yaw(), 0.f);
 
-	//		auto* Field = W->SpawnActor<AS1Field>(FieldClass, Loc, Rot);
-	//		if (Field && !Fields.Contains(Info.object_id()))
-	//		{
-	//			Objects.Add(Info.object_id(), { FS1ObjectKey{Protocol::OBJECT_TYPE_ENV, 1}, Field });
-	//			Fields.Add(Info.object_id(), Field);
-	//			Field->SetPosInfo(Info.pos_info());
-	//		}
+			auto* Field = W->SpawnActor<AS1Field>(FieldClass, Loc, Rot);
+			if (Field && !Fields.Contains(Info.object_id()))
+			{
+				Objects.Add(Info.object_id(), { FS1ObjectKey{Protocol::OBJECT_TYPE_ENV, 1}, Field });
+				Fields.Add(Info.object_id(), Field);
+				Field->SetPosInfo(Info.pos_info());
+			}
 
-	//		return Field;
-	//	},
-	//	[this](AActor* Actor, uint64 Id)
-	//	{
-	//		if (Actor)
-	//		{
-	//			if (Fields.Contains(Id))
-	//				Fields.Remove(Id);
-	//			if (Objects.Contains(Id))
-	//				Objects.Remove(Id);
+			return Field;
+		},
+		[this](AActor* Actor, uint64 Id)
+		{
+			if (Actor)
+			{
+				if (Fields.Contains(Id))
+					Fields.Remove(Id);
+				if (Objects.Contains(Id))
+					Objects.Remove(Id);
 
-	//			Actor->Destroy();
-	//		}
-	//		else
-	//		{
-	//			// Log
-	//		}
-	//	}
-	//);
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Field Is Despawn. ID = %llu"), Id));
+
+				Actor->Destroy();
+			}
+			else
+			{
+				// Log
+			}
+		}
+	);
 }
 
 void US1ObjectManager::AddFactory(const FS1ObjectKey& Key, CreateFunc Create, DestroyFunc Destroy)

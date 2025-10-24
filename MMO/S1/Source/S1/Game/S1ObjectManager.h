@@ -14,6 +14,7 @@ class AS1Player;
 class AS1Monster;
 class AS1MyPlayer;
 class AS1Projectile;
+class AS1Field;
 
 USTRUCT()
 struct FS1ObjectKey
@@ -78,7 +79,7 @@ public:
 	TMap<uint64, AS1Player*> Players;
 	TMap<uint64, AS1Monster*> Monsters;
 	TMap<uint64, AS1Projectile*> Projectiles;
-	//TMap<uint64, AS1Field*> Fields;
+	TMap<uint64, AS1Field*> Fields;
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Classes")
@@ -93,6 +94,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Classes")
 	TSubclassOf<AS1Projectile> ProjectileClass;
 
-	//UPROPERTY(EditAnywhere, Category = "Classes")
-	//TSubclassOf<AS1Field> FieldClass;
+	UPROPERTY(EditAnywhere, Category = "Classes")
+	TSubclassOf<AS1Field> FieldClass;
 };

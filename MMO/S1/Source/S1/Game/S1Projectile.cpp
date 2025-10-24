@@ -27,6 +27,8 @@ void AS1Projectile::BeginPlay()
 		PosInfo.set_z(Location.Z);
 		PosInfo.set_yaw(GetActorRotation().Yaw);
 		PosInfo.set_state(Protocol::STATE_MACHINE_MOVING);
+
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Projectile Is Spawn. Pos %f , %f , %f"), PosInfo.x(), PosInfo.y(), PosInfo.z()));
 	}
 }
 

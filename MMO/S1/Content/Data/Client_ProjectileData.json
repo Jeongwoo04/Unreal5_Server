@@ -1,0 +1,16 @@
+{
+  "Projectile": [
+    {
+      "dataId": 20101,
+      "name": "Arrow",
+      "distance": 600,
+      "range": 40
+    },
+    {
+      "dataId": 20102,
+      "name": "Fireball",
+      "distance": 1200,
+      "range": 100
+    }
+  ]
+} 

@@ -54,7 +54,6 @@ void Projectile::Update(float deltaTime)
     {
         target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data->damage);
         {
-            auto posCopy = _worldPos;
             Protocol::HpChange change;
             change.set_object_id(target->GetId());
             change.set_hp(target->_statInfo.hp());
@@ -62,9 +61,7 @@ void Projectile::Update(float deltaTime)
             *pkt.add_changes() = change;
             auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 
-            room->DoAsync([room, sendBuffer, posCopy, id=GetId()]() {
-                room->BroadcastNearby(sendBuffer, posCopy, id);
-                });
+            room->BroadcastNearby(sendBuffer, _worldPos, GetId());
         }
         
         room->AddRemoveList(shared_from_this());

@@ -158,7 +158,7 @@ inline T SpatialHashGrid<T>::FindNearest(const Vector2Int& center, float radius,
     float minDistSq = numeric_limits<float>::max();
     float radiusSq = (radius * CELL_SIZE) * (radius * CELL_SIZE);
     int32 range = static_cast<int32>(radius);
-    const float EARLY_EXIT_DIST = 100.f;
+    const float EARLY_EXIT_DIST = CELL_SIZE;
 
     for (int32 y = -range; y <= range; ++y)
     {

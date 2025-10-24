@@ -27,8 +27,8 @@ AS1MyPlayer::AS1MyPlayer()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(CameraRoot);
-	CameraBoom->TargetArmLength = 800.0f; // The camera follows at this distance behind the character	
-	CameraBoom->SetRelativeRotation(FRotator(-50.f, 0.f, 0.f));
+	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
 
 	CameraBoom->bDoCollisionTest = false;
 
@@ -220,13 +220,15 @@ void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 		const Skill& SkillData = SkillIt->second;
 
 		if (SkillData.marker)
+		{
 			SkillComponent->BeginSkillTargeting(SkillID, SkillData.markerData.distance, SkillData.markerData.range);
+		}
 		else
 			;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("Skill Is Cooldown. ID: %d from Slot %d"), SkillID, SlotIndex);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Skill Is Cooldown. ID: %d from Slot %d"), SkillID, SlotIndex));
 	}
 }
 
@@ -387,21 +389,66 @@ void AS1MyPlayer::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,
+			FString::Printf(TEXT("[%s] PossessedBy called, Controller=%s"), *GetName(), *GetNameSafe(NewController)));
+	}
+
 	if (AS1PlayerController* PC = Cast<AS1PlayerController>(NewController))
 	{
 		if (PC->IsLocalController())
 		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
+					FString::Printf(TEXT("[%s] LocalController detected, scheduling TrySetupInput"), *GetName()));
+			}
+
 			// 한 틱 뒤에 시도 (Input 컴포넌트/서브시스템 안정화 후)
 			GetWorld()->GetTimerManager().SetTimerForNextTick([this, PC]()
 				{
+					if (GEngine)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan,
+							FString::Printf(TEXT("[%s] TrySetupInput executing"), *GetName()));
+					}
+
 					TrySetupInput(PC);
 				});
+		}
+		else
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+					FString::Printf(TEXT("[%s] Controller is not local"), *GetName()));
+			}
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+				FString::Printf(TEXT("[%s] Controller cast to AS1PlayerController failed"), *GetName()));
 		}
 	}
 }
 
 void AS1MyPlayer::TrySetupInput(AS1PlayerController* PC)
 {
+	if (!PC)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+				FString::Printf(TEXT("[%s] TrySetupInput: PC is null, retrying next tick"), *GetName()));
+		}
+		GetWorldTimerManager().SetTimerForNextTick([this, PC]() { TrySetupInput(PC); });
+		return;
+	}
+
 	if (ULocalPlayer* LP = PC->GetLocalPlayer())
 	{
 		if (auto* Subsys = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
@@ -416,9 +463,24 @@ void AS1MyPlayer::TrySetupInput(AS1PlayerController* PC)
 					TEXT("Input Mapping Added (Local)"));
 			}
 		}
+		else
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange,
+					FString::Printf(TEXT("[%s] Subsystem not ready, retrying next tick"), *GetName()));
+			}
+			GetWorldTimerManager().SetTimerForNextTick([this, PC]() { TrySetupInput(PC); });
+		}
 	}
 	else
 	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple,
+				FString::Printf(TEXT("[%s] LocalPlayer not ready, retrying next tick"), *GetName()));
+		}
+
 		// 아직이면 다음 틱에 재시도
 		GetWorldTimerManager().SetTimerForNextTick([this, PC]() { TrySetupInput(PC); });
 	}
@@ -440,5 +502,4 @@ void AS1MyPlayer::SendMovePacket()
 	Info->CopyFrom(PosInfo);
 
 	SEND_PACKET(MovePkt);
-	UE_LOG(LogTemp, Log, TEXT("SendMovePacket Loc: %s"), *NextMoveLocation.ToString());
 }

@@ -116,6 +116,9 @@ private:
 	UPROPERTY()
 	class AS1MyPlayer* CachedPlayer;
 
+	UPROPERTY()
+	UWorld* World;
+
 	FTimerHandle SkillAreaUpdateTimer;
 	float SkillAreaUpdateInterval = 0.05f;
 

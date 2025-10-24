@@ -55,50 +55,48 @@ void Room::UpdateTick()
 
 	constexpr float deltaTime = 0.1f;
 	uint64 tick = static_cast<uint64>(deltaTime * 1000);
-	uint64 nowTick = GetTickCount64();
 	DoTimer(tick, &Room::UpdateTick);
 
 	_bench.Begin("Room");
 
-	//cout << "======================\n";
+	cout << "======================\n";
 
-	//_bench.Begin("Monster");
+	_bench.Begin("Monster");
 	for (auto& m : _monsters)
 	{
 		m.second->Update(deltaTime);
 	}
-	//_bench.End("Monster");
+	_bench.End("Monster");
 
-	//_bench.Begin("Projectile");
+	_bench.Begin("Projectile");
 	for (auto& p : _projectiles)
 	{
 		p.second->Update(deltaTime);
 	}
-	//_bench.End("Projectile");
+	_bench.End("Projectile");
 	
-	//_bench.Begin("Field");
+	_bench.Begin("Field");
 	for (auto& f : _fields)
 	{
 		f.second->Update(deltaTime);
 	}
-	//_bench.End("Field");
+	_bench.End("Field");
 
-	//_bench.Begin("SkillSystem");
+	_bench.Begin("SkillSystem");
 	_skillSystem->Update(deltaTime);
-	//_bench.End("SkillSystem");
+	_bench.End("SkillSystem");
 
-	//_bench.Begin("RemoveList");
+	_bench.Begin("RemoveList");
 	ClearRemoveList();
-	//_bench.End("RemoveList");
+	_bench.End("RemoveList");
 	
-	_bench.End("Room", this->GetRoomId());
-	if (++_tickCount % 10 == 0)
+	_bench.End("Room");
+	
+	_bench.PrintAndSaveSummary(GetRoomId(), "싱글룸 테스트", "RoomBenchmark.csv");
+	if (++_tickCount % 100 == 0)
+	{
 		cout << "Player : " << _players.size() << ", Monster : " << _monsters.size() << endl;
-
-	//if (++_tickCount % 100 == 0)
-	//{
-	//	_bench.PrintAndSaveSummary("Monster raycasting 로직 step 최적화", "RoomBenchmark.csv");
-	//}
+	}
 }
 
 void Room::StartHeartbeat()
@@ -421,9 +419,9 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 		{
 			for (auto& player : snapshot)
 			{
-				if (auto session = player->GetSession())
-					session->Send(sendBuffer);
-			}
+		if (auto session = player->GetSession())
+			session->Send(sendBuffer);
+	}
 		}));
 }
 
@@ -435,12 +433,12 @@ void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint
 	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId]()
 		{
 			for (auto& player : nearbyPlayers)
-			{
+	{
 				if (player->GetId() == exceptId)
-					continue;
+			continue;
 				if (auto session = player->GetSession())
-					session->Send(sendBuffer);
-			}
+			session->Send(sendBuffer);
+	}
 		}));
 }
 

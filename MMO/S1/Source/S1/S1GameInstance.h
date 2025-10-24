@@ -27,6 +27,7 @@ class S1_API US1GameInstance : public UGameInstance
 
 public:
 	virtual void Init() override;
+	void OnWorldReady(UWorld* World, const UWorld::InitializationValues IVS);
 	virtual void Shutdown() override;
 	
 	UFUNCTION(BlueprintCallable)

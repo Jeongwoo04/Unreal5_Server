@@ -33,9 +33,26 @@ void US1SkillComponent::BeginPlay()
 
 	// ...
 	OwnerCreature = Cast<AS1Creature>(GetOwner());
+	if (OwnerCreature == nullptr)
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("OwnerCreature == nullptr"));
+	}
+
 	CachedPlayer = Cast<AS1MyPlayer>(GetOwner());
+	if (CachedPlayer == nullptr)
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("CachedPlayer == nullptr"));
+	}
 
+	World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
 
+	if (World == nullptr)
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("World == nullptr"));
+	}
 }
 
 
@@ -58,13 +75,14 @@ void US1SkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		while (PendingSkillQueue.Dequeue(NewSkillID))
 			;
 
-		if (!(NewSkillID <= 0 || CurrentSkillID == NewSkillID))
+		if (!(NewSkillID <= 0 || (CurrentSkillID == NewSkillID) || GetSkillState(NewSkillID)->bIsCooldown || GetSkillState(NewSkillID)->bIsCasting))
 		{
 			if (CurrentSkillID > 0)
 			{
 				CachedPlayer->HandleLocalCancelCasting();
 			}
-			DoSkillStart(NewSkillID);
+			if (!GetSkillState(NewSkillID)->bIsCooldown)
+				DoSkillStart(NewSkillID);
 		}
 	}
 
@@ -85,7 +103,7 @@ void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float
 	// 캐릭터 중심 사거리 마커
 	if (SkillRangeMaterial)
 	{
-		SkillRangeMarker = GetWorld()->SpawnActor<AS1MarkerActor>(
+		SkillRangeMarker = World->SpawnActor<AS1MarkerActor>(
 			AS1MarkerActor::StaticClass(),
 			CachedPlayer->GetActorLocation(),
 			FRotator::ZeroRotator
@@ -114,7 +132,7 @@ void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float
 				FVector End = MouseWorld + MouseDir * 10000.f;
 
 				// WorldStatic만 충돌
-				if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic))
+				if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic))
 				{
 					FVector Target = Hit.Location;
 					FVector OwnerPos = CachedPlayer->GetActorLocation();
@@ -130,7 +148,7 @@ void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float
 			}
 		}
 
-		SkillAreaMarker = GetWorld()->SpawnActor<AS1MarkerActor>(
+		SkillAreaMarker = World->SpawnActor<AS1MarkerActor>(
 			AS1MarkerActor::StaticClass(),
 			SpawnLoc,
 			FRotator::ZeroRotator
@@ -142,8 +160,10 @@ void US1SkillComponent::BeginSkillTargeting(int32 SkillID, float Distance, float
 		}
 	}
 
+	UpdateSkillAreaMarker();
+
 	// 타이머 시작
-	GetWorld()->GetTimerManager().SetTimer(
+	World->GetTimerManager().SetTimer(
 		SkillAreaUpdateTimer,
 		this,
 		&US1SkillComponent::UpdateSkillMarkers,
@@ -244,7 +264,7 @@ void US1SkillComponent::UpdateSkillAreaMarker()
 		FVector Start = MouseWorld;
 		FVector End = MouseWorld + MouseDir * 10000.f;
 
-		if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic))
+		if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic))
 		{
 			FVector Target = Hit.Location;
 			FVector OwnerPos = CachedPlayer->GetActorLocation();
@@ -275,7 +295,7 @@ void US1SkillComponent::UpdateSkillRangeMarker()
 
 void US1SkillComponent::ClearSkillMarkers()
 {
-	GetWorld()->GetTimerManager().ClearTimer(SkillAreaUpdateTimer);
+	World->GetTimerManager().ClearTimer(SkillAreaUpdateTimer);
 
 	if (SkillRangeMarker)
 	{
@@ -361,6 +381,9 @@ void US1SkillComponent::DoCastTick(float DeltaTime)
 
 void US1SkillComponent::DoSkillStart(int32 SkillID)
 {
+	if (GetSkillState(SkillID)->bIsCooldown)
+		return;
+
 	{
 		FVector Dir = CachedTargetLoc - CachedPlayer->GetActorLocation();
 		Dir.Z = 0;

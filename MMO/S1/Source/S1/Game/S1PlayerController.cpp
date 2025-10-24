@@ -38,18 +38,42 @@ void AS1PlayerController::HandleMyPlayerSpawned(AS1MyPlayer* SpawnedMyPlayer)
 {
 	if (!SpawnedMyPlayer)
 		return;
+
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,
+			FString::Printf(TEXT("HandleMyPlayerSpawned called for %s"), *SpawnedMyPlayer->GetName()));
 	// 로컬 컨트롤러만 Possess
 	if (!IsLocalController())
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, TEXT("HandleMyPlayerSpawned: Not local controller"));
 		return;
+	}
+
 	// 이미 다른 컨트롤러가 잡고 있지 않다면 Possess
 	if (!SpawnedMyPlayer->GetController())
 	{
 		Possess(SpawnedMyPlayer);
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Possessed %s"), *SpawnedMyPlayer->GetName()));
+
+		SetViewTarget(SpawnedMyPlayer);
 		CreateSkillBarWidget();
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("SkillBarWidget created"));
 		SpawnedMyPlayer->BindSkillBar(Cast<US1SkillBar>(SkillBarWidget));
 		SpawnedMyPlayer->InitSkillBar();
 
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("SkillBar bound and initialized"));
+
 		bShowMouseCursor = true;
+	}
+	else
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+				FString::Printf(TEXT("Already possessed by %s"), *SpawnedMyPlayer->GetController()->GetName()));
 	}
 }
 

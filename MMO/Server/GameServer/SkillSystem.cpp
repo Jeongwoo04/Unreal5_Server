@@ -139,7 +139,8 @@ void SkillSystem::Update(float deltaTime)
 					}
 
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-					GetRoom()->BroadcastNearby(sendBuffer, instance->caster->_worldPos);
+					if (auto room = GetRoom())
+						room->BroadcastNearby(sendBuffer, instance->caster->_worldPos);
 				}
 				creature->StartSkillCooldown(instance->skill->id, now);
 			}
@@ -269,9 +270,6 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 			Protocol::HpChange hpChange;
 			CombatSystem::Instance().ApplyDamage(caster, target, action->damage);
 
-			if (target->_statInfo.hp() <= 0)
-				room->AddRemoveList(target);
-
 			hpChange.set_hp(target->_statInfo.hp());
 			hpChange.set_object_id(target->GetId());
 			*pkt.add_changes() = hpChange;
@@ -308,9 +306,6 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 		{
 			Protocol::HpChange hpChange;
 			CombatSystem::Instance().ApplyDamage(caster, target, action->damage);
-
-			if (target->_statInfo.hp() <= 0)
-				room->AddRemoveList(target);
 
 			hpChange.set_hp(target->_statInfo.hp());
 			hpChange.set_object_id(target->GetId());

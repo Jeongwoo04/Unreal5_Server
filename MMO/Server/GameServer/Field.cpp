@@ -83,7 +83,7 @@ void Field::Update(float deltaTime)
 		else if (GetOwner()->GetCreatureType() == CREATURE_TYPE_PLAYER)
 		{
 			auto targets = room->_monsterGrid.Find(grid);
-			
+
 			for (auto target : targets)
 			{
 				if (target == nullptr || target->IsDead())
@@ -107,9 +107,6 @@ void Field::Update(float deltaTime)
 		}
 	}
 
-	auto copyPos = _worldPos;
 	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	room->DoAsync([room, sendBuffer, copyPos, id = GetId()] {
-		room->BroadcastNearby(sendBuffer, copyPos, id);
-		});
+	room->BroadcastNearby(sendBuffer, _worldPos, GetId());
 }

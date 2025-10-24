@@ -1,0 +1,101 @@
+{
+  "skills": [
+    {
+      "id": 1,
+      "name": "Melee_Slash",
+      "iconPath": "UI/Skill_Auto.png",
+      "cooldown": 1.0,
+      "castTime": 0.0,
+      "marker": false,
+      "actions": [
+        {
+          "actionType": "PlayAnimation",
+          "animName": "Melee_Slash"
+        },
+        {
+          "actionType": "PlayEffect",
+          "effectName": "Slash_Effect",
+          "attachBone": "Weapon"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Ranged_Arrow",
+      "iconPath": "UI/Skill_Arrow.png",
+      "cooldown": 1.5,
+      "castTime": 0.5,
+      "marker": true,
+      "actions": [
+        {
+          "actionType": "PlayAnimation",
+          "animName": "Shoot_Arrow"
+        },
+        {
+          "actionType": "SpawnProjectile",
+          "dataId": 20101
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "SkillB_Fireball",
+      "iconPath": "UI/Skill_Fireball.png",
+      "cooldown": 12.0,
+      "castTime": 1.5,
+      "marker": true,
+      "actions": [
+        {
+          "actionType": "PlayAnimation",
+          "animName": "Cast_Fireball"
+        },
+        {
+          "actionType": "SpawnProjectile",
+          "dataId": 20102
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SkillC_FrozenField",
+      "iconPath": "UI/Skill_Blizard.png",
+      "cooldown": 20.0,
+      "castTime": 2.0,
+      "marker": true,
+      "actions": [
+        {
+          "actionType": "PlayAnimation",
+          "animName": "Cast_Blizard"
+        },
+        {
+          "actionType": "SpawnField",
+          "dataId": 30101
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "SkillA_DashStrike",
+      "iconPath": "UI/Skill_Dash.png",
+      "cooldown": 8.0,
+      "castTime": 0.0,
+      "marker": false,
+      "actions": [
+        {
+          "actionType": "PlayAnimation",
+          "animName": "DashStrike"
+        },
+        {
+          "actionType": "Move",
+          "moveDistance": 7.0,
+          "actionDelay": 0.2
+        },
+        {
+          "actionType": "PlayEffect",
+          "effectName": "Dash_Trail",
+          "attachBone": "Root"
+        }
+      ]
+    }
+  ]
+}

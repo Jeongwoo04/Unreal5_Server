@@ -1,0 +1,19 @@
+{
+  "stats": [
+    {
+      "level": 1,
+      "maxHp": 200,
+      "speed": 300.0
+    },
+    {
+      "level": 2,
+      "maxHp": 250,
+      "speed": 350.0
+    },
+    {
+      "level": 3,
+      "maxHp": 300,
+      "speed": 400.0
+    }
+  ]
+} 
