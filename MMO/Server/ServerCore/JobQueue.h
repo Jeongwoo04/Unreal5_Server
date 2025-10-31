@@ -15,6 +15,13 @@ enum JobQueueFlag
 
 class JobQueue : public enable_shared_from_this<JobQueue>
 {
+	//TEMP
+public:
+	JobQueue(string name = "JobQueue") : _queueName(move(name))
+	{
+
+	}
+
 public:
 	void DoAsync(CallbackType&& callback)
 	{
@@ -60,10 +67,11 @@ public:
 	void					Push(JobRef job, bool pushOnly = false);
 	void					Execute();
 
-	JobQueueFlag _flag = JobQueueFlag::DEFAULT;
-
 protected:
 	LockQueue<JobRef>		_jobs;
 	atomic<int32>			_jobCount = 0;
+
+protected:
+	string _queueName;
 };
 

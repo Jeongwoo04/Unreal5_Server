@@ -14,7 +14,7 @@ using FieldRef = shared_ptr<class Field>;
 class Room : public JobQueue
 {
 public:
-	Room();
+	Room(string name);
 	virtual ~Room();
 
 	void SetRoomId(int32 roomId) { _roomId = roomId; }
@@ -26,6 +26,13 @@ public:
 	void UpdateTick();
 	void StartHeartbeat();
 	void CheckHeartbeat();
+
+	// TEMP: Command
+	void Spawn(int32 dataId, bool randPos, Vector3 pos, int32 count);
+	void Kill();
+	void KillAll();
+	void GetList();
+	//
 
 	void SpawnInit();
 	void SpawnMonster(int32 spTableId);
@@ -85,7 +92,7 @@ private:
 
 public:
 	BenchmarkStat _bench;
-	uint64 _tickCount;
+	uint64 _tickCount = 0;
 
 private:
 	shared_ptr<JobQueue> _broadcastQueue;

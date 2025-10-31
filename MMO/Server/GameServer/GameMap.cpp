@@ -147,15 +147,18 @@ bool GameMap::HasLineOfSightRayCast(const Vector3& from, const Vector3& to, floa
     return true;
 }
 
-Vector3 GameMap::GetSafePosRayCast(const Vector3& from, const Vector3& to, Vector2Int* blocked)
+Vector3 GameMap::GetSafePosRayCast(const Vector3& from, const Vector3& to, float deltaStep, Vector2Int* blocked)
 {
+    float stepSize = std::min(deltaStep, CELL_SIZE * 0.25f);
+
     Vector3 dir = (to - from);
     float dist = dir.Length2D();
+    int32 steps = static_cast<int32>(dist / stepSize);
+    steps = std::max(steps, 1);
+    Vector3 step = dir / static_cast<float>(steps);
     if (dist < 1e-6f)
         return from;
 
-    int32 steps = static_cast<int32>(dist / 0.1f);
-    Vector3 step = dir * (1.f / steps);
 
     Vector3 current = from;
     Vector3 lastSafe = from;
@@ -173,6 +176,15 @@ Vector3 GameMap::GetSafePosRayCast(const Vector3& from, const Vector3& to, Vecto
 
         lastSafe = current;
         current += step;
+    }
+
+    Vector2Int endCell = WorldToGrid(to);
+    if (!CanGo(endCell, false))
+    {
+        if (blocked)
+            *blocked = endCell;
+
+        return lastSafe;
     }
 
     return to;

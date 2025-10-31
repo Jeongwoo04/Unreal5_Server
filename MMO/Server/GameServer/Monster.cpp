@@ -64,13 +64,15 @@ void Monster::UpdateIdle(float deltaTime)
             return;
         _nextSearchTick = tick + 500 + Utils::GetRandom(-200, 500);
 
-        target = room->_playerGrid.FindNearest(_gridPos, static_cast<int32>(_searchRadius), _worldPos);
+        cout << "[Server] Monster: Searching target\n";
+        target = room->_playerGrid.FindNearest(_gridPos, _searchRadius, _worldPos);
 
         if (target == nullptr || target->IsDead())
             return;
 
         SetPlayer(target);
         ChangeState(Protocol::STATE_MACHINE_MOVING);
+        cout << "[Server] Monster: Chasing target\n";
         BroadcastMove();
         return;
     }
@@ -90,6 +92,7 @@ void Monster::UpdateIdle(float deltaTime)
             {
                 _posInfo.set_yaw(Vector3::DirToYaw2D(dir.Normalized2D()));
                 ChangeState(Protocol::STATE_MACHINE_MOVING);
+                cout << "[Server] Monster: Cannot skill, chasing target\n";
                 BroadcastMove();
                 return;
             }
@@ -134,6 +137,14 @@ void Monster::UpdateMoving(float deltaTime)
     if (distanceSq > ((_chaseDistance * CELL_SIZE) * (_chaseDistance * CELL_SIZE)))
     {
         SetPlayer(nullptr);
+        ChangeState(Protocol::STATE_MACHINE_IDLE);
+        cout << "[Server] Monster: Target's out of sight";
+        BroadcastMove();
+        return;
+    }
+
+    if (distanceSq < (CELL_SIZE * CELL_SIZE))
+    {
         ChangeState(Protocol::STATE_MACHINE_IDLE);
         BroadcastMove();
         return;

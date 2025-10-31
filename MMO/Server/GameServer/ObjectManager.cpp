@@ -50,6 +50,7 @@ ObjectRef ObjectManager::Spawn(int32 dataId, const PosInfo& posInfo)
 
 ObjectRef ObjectManager::Spawn(int32 dataId, bool randPos, const Vector3& pos, float yaw)
 {
+    //printf("[Server] ObjectManager: Spawn called\n");
     auto it = DataManager::Instance().ObjectDict.find(dataId);
     if (it == DataManager::Instance().ObjectDict.end())
         return nullptr;
@@ -78,6 +79,7 @@ ObjectRef ObjectManager::Spawn(int32 dataId, bool randPos, const Vector3& pos, f
         if (projectileIt != DataManager::Instance().ProjectileDict.end())
         {
             proj->SetData(&(projectileIt->second));
+            proj->_statInfo.set_speed(proj->GetData()->speed);
         }
     }
 

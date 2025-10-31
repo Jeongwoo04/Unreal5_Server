@@ -31,10 +31,7 @@ void JobQueue::Execute()
 {
 	LCurrentJobQueue = this;
 
-	bool isBCQueue = (_flag == JobQueueFlag::BCQ);
-	uint64 startTick = 0;
-	if (isBCQueue)
-		startTick = GetTickCount64();
+	//SafeLog("[JobQueue] Execute Start: " + _queueName + " | Thread: " + LThreadName);
 
 	while (true)
 	{
@@ -42,8 +39,6 @@ void JobQueue::Execute()
 		_jobs.PopAll(OUT jobs);
 
 		const int32 jobCount = static_cast<int32>(jobs.size());
-		//if (isBCQueue)
-		//	cout << "jobCount = " << jobCount << endl;
 		for (int32 i = 0; i < jobCount; i++)
 			jobs[i]->Execute();
 
@@ -51,8 +46,6 @@ void JobQueue::Execute()
 		if (_jobCount.fetch_sub(jobCount) == jobCount)
 		{
 			LCurrentJobQueue = nullptr;
-			//if (isBCQueue)
-			//	cout << "End : " << GetTickCount64() - startTick << " tick\n";
 
 			return;
 		}
@@ -61,10 +54,6 @@ void JobQueue::Execute()
 		if (now >= LEndTickCount)
 		{
 			LCurrentJobQueue = nullptr;
-
-			//if (isBCQueue)
-			//	cout << "Push : " << now - startTick << " tick\n";
-			// GlobalQueue로 넘겨 여유있는 Worker가 실행
 			GGlobalQueue->Push(shared_from_this());
 
 			break;

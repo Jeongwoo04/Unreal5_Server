@@ -83,7 +83,15 @@ void AS1Creature::ChangeState(Protocol::StateMachine NewState)
 
 void AS1Creature::UpdateIdle(float DeltaTime)
 {
-	
+	FVector CurrentLoc = GetActorLocation();
+	float Dist = FVector::Dist(CurrentLoc, TargetPos);
+
+	// Idle이더라도 미세한 오차가 남아있으면 보정
+	if (Dist > KINDA_SMALL_NUMBER)
+	{
+		SetActorLocation(TargetPos);
+		SetActorRotation(TargetRot);
+	}
 }
 
 void AS1Creature::UpdateMoving(float DeltaTime)
@@ -91,17 +99,16 @@ void AS1Creature::UpdateMoving(float DeltaTime)
 	FVector PreviousLoc = GetActorLocation();
 
 	SetActorRotation(TargetRot);
-
-	FVector NewLoc = FMath::VInterpConstantTo(PreviousLoc, TargetPos, DeltaTime, PosInfo.speed());
-	SetActorLocation(NewLoc);
-
-	float DistToTarget = FVector::Dist(NewLoc, TargetPos);
-	if (DistToTarget <= PosInfo.speed() * DeltaTime)
+	float Dist = FVector::Dist(PreviousLoc, TargetPos);
+	if (Dist <= 2000.f && Dist >= PosInfo.speed() * DeltaTime)
 	{
-		NewLoc = TargetPos;
+		FVector NewLoc = FMath::VInterpConstantTo(PreviousLoc, TargetPos, DeltaTime, PosInfo.speed());
+		SetActorLocation(NewLoc);
 	}
-
-	SetActorLocation(NewLoc);
+	else
+	{
+		SetActorLocation(TargetPos);
+	}
 }
 
 void AS1Creature::UpdateCasting(float DeltaTime)

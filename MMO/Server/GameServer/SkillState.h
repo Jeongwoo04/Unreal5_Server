@@ -14,6 +14,7 @@ public:
 	void CancelCasting();
 
 	uint64 GetCastEndTime() const { return _castEndTime; }
+	uint64 GetCooldownEndTime() const { return _cooldownEndTime; }
 
 private:
 	int32 _skillId;

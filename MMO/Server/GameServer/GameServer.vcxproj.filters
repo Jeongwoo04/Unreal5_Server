@@ -114,7 +114,12 @@
     <ClCompile Include="Field.cpp">
       <Filter>Game\Object</Filter>
     </ClCompile>
-    <ClCompile Include="BenchmarkLogger.cpp" />
+    <ClCompile Include="CommandManager.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="BenchmarkLogger.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -198,7 +203,12 @@
     <ClInclude Include="Field.h">
       <Filter>Game\Object</Filter>
     </ClInclude>
-    <ClInclude Include="BenchmarkLogger.h" />
+    <ClInclude Include="CommandManager.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="BenchmarkLogger.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Common\protoc-21.12-win64\bin\Protocol.proto">

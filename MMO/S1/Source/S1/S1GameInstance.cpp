@@ -350,6 +350,8 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 	{
 		// OtherPlayer / Monster는 단순 State 변경 + 애니메이션
 		Creature->ChangeState(Protocol::STATE_MACHINE_CASTING);
+		FRotator Rotation = { 0.f, CastStartPkt.yaw(), 0.f };
+		Creature->SetActorRotation(Rotation);
 		// Creature->UpdateAnim(CastStartPkt.skillid()); // 필요 시
 	}
 }

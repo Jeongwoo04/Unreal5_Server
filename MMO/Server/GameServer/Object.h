@@ -47,7 +47,7 @@ public:
 	void UpdateBuffs();
 	void SetPosInfo(const PosInfo& posInfo);
 	void SetSpawnPos(const Vector3& pos, float yaw = 0.f);
-	void SetSpawnRandomPos(Vector3 pos, float yaw = 0.f);
+	void SetSpawnRandomPos(Vector3 pos, float yaw = 0.f, int32 range = 0);
 
 public: 
 	Protocol::ObjectInfo _objectInfo;

@@ -48,6 +48,11 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 		pkt.set_castendtime(now + static_cast<uint64>(instance->skill->castTime * 1000));
 		pkt.set_yaw(caster->_posInfo.yaw());
 
+		//if (creature->GetCreatureType() == Protocol::CREATURE_TYPE_MONSTER)
+			//printf("[Server] SkillSystem: Monster SkillCastStart\n");
+		//else
+			//printf("[Server] SkillSystem: Player SkillCastStart\n");
+
 		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 		if (auto room = GetRoom())
 			room->BroadcastNearby(sendBuffer, caster->_worldPos);
@@ -69,6 +74,7 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 
 void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 {
+	//printf("[Server] SkillSystem: CancelCasting caster ID = %llu\n", caster->GetId());
 	if (auto creature = static_pointer_cast<Creature>(caster))
 	{
 		if (creature->GetActiveSkill() == nullptr)
@@ -137,6 +143,7 @@ void SkillSystem::Update(float deltaTime)
 						pkt.mutable_skill_info()->mutable_targetpos()->set_y(instance->targetPos._y);
 						pkt.mutable_skill_info()->mutable_targetpos()->set_z(instance->targetPos._z);
 					}
+					//printf("[Server] SkillSystem: SkillCastSuccess %s [%d]\n", instance->skill->name.c_str(), instance->currentActionIndex);
 
 					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 					if (auto room = GetRoom())
@@ -182,10 +189,16 @@ void SkillSystem::Update(float deltaTime)
 	}
 }
 
+// TODO: struct Action -> class Action
 void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action, SkillInstanceRef instance)
 {
 	int32 idx = instance->currentActionIndex;
 	caster->ChangeState(Protocol::STATE_MACHINE_SKILL);
+
+	//if (caster->GetCreatureType() == Protocol::CREATURE_TYPE_MONSTER)
+	//	printf("[Server] Monster SkillSystem: HandleAction %s [%d]\n", instance->skill->name.c_str(), idx);
+	//else
+	//	printf("[Server] Player SkillSystem: HandleAction %s [%d]\n", instance->skill->name.c_str(), idx);
 
 	if (idx != 0)
 	{
@@ -226,7 +239,8 @@ void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, Actio
 
 void SkillSystem::HandleMoveAction(ObjectRef caster, const Vector3& targetPos, MoveActionData* action)
 {
-	caster->MoveToNextPos(targetPos);
+	Vector2Int blocked;
+	caster->MoveToNextPos(targetPos, nullptr, &blocked);
 	if (auto room = GetRoom())
 		room->BroadcastMove(caster->_posInfo);
 }

@@ -11,6 +11,7 @@ public:
 	virtual void Update(float deltaTime) override;
 
 	void SetData(const ProjectileInfo* data) { _data = data; }
+	const ProjectileInfo* GetData() { return _data; }
 	void SetOwner(ObjectRef owner) { _owner = owner; }
 	void SetDir(const Vector3& dir) { _dir = dir; }
 

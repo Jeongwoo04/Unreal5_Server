@@ -31,7 +31,8 @@ bool Handle_S_ENTER_GAME(PacketSessionRef& session, Protocol::S_ENTER_GAME& pkt)
 	//cout << "S_ENTER_GAME" << endl;
 
 	ServerSessionRef serverSession = static_pointer_cast<ServerSession>(session);
-	serverSession->_enter = true;
+	serverSession->_objectInfo = pkt.object();
+	serverSession->_posInfo = pkt.object().pos_info();
 
 	return true;
 }

@@ -13,10 +13,10 @@ public:
 	ThreadManager();
 	~ThreadManager();
 
-	void	Launch(function<void(void)> callback);
+	void	Launch(const string& name, function<void(void)> callback);
 	void	Join();
 
-	static void InitTLS();
+	static void InitTLS(const string& name);
 	static void DestroyTLS();
 
 	static void DoGlobalQueueWork();

@@ -215,6 +215,13 @@ public:
 	}
 };
 
+static double GetTimeMs()
+{
+    using namespace std::chrono;
+    auto now = steady_clock::now();
+    return duration_cast<microseconds>(now.time_since_epoch()).count() / 1000.0;
+}
+
 static float Clamp01(float value)
 {
     return max(0.f, min(1.f, value));

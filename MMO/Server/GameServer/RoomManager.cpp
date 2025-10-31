@@ -4,14 +4,11 @@
 
 RoomRef RoomManager::Add(int32 mapId)
 {
-	RoomRef room = make_shared<Room>();
-
 	WRITE_LOCK;
-	{
-		room->SetRoomId(_roomId);
-		_rooms[_roomId] = room;
-		_roomId++;
-	}
+	RoomRef room = make_shared<Room>("Room#" + to_string(_roomId));
+
+	room->SetRoomId(_roomId);
+	_rooms[_roomId++] = room;
 
 	room->DoAsyncPushOnly(&Room::Init, mapId);
 

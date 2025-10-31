@@ -48,7 +48,14 @@ void Object::MoveToNextPos(const Vector3& destPos, Vector3* dir, Vector2Int* blo
 	Vector3 currentPos = _worldPos;
 	Vector2Int currentGrid = _gridPos;
 
-	nextPos = GetRoom()->GetGameMap()->GetSafePosRayCast(_worldPos, destPos, blocked);
+	nextPos = room->GetGameMap()->GetSafePosRayCast(_worldPos, destPos, _statInfo.speed(), blocked);
+
+	float diff = (destPos - nextPos).Length2D();
+	if (diff > 0.001f)
+	{
+		cout << "[Server] Collision Fail. Move GetSafePos.\n";
+	}
+
 	Vector3 direction;
 	if (dir == nullptr)
 		direction = (nextPos - currentPos).Normalized2D();
@@ -147,7 +154,7 @@ void Object::SetSpawnPos(const Vector3& pos, float yaw)
 	_worldPos = Vector3(_posInfo);
 }
 
-void Object::SetSpawnRandomPos(Vector3 pos, float yaw)
+void Object::SetSpawnRandomPos(Vector3 pos, float yaw, int32 range)
 {
 	pos._x = pos._x + Utils::GetRandom(-3000.f, 3000.f);
 	pos._y = pos._y + Utils::GetRandom(-3000.f, 3000.f);
@@ -157,7 +164,7 @@ void Object::SetSpawnRandomPos(Vector3 pos, float yaw)
 void Object::ApplyBuffEffect(BuffInstance& buff, float deltaTime)
 {
 	int32 hp = _statInfo.hp();
-	hp += buff.effectPerTick * deltaTime;
+	hp += static_cast<int32>(buff.effectPerTick);
 
 	_statInfo.set_hp(hp);
 	// TODO: 다른 스탯, 효과 처리

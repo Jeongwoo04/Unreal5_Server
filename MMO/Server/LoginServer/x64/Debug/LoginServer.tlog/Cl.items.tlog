@@ -1,8 +1,0 @@
-C:\Users\jeson\Desktop\unreal\MMO\Server\DummyClient\Enum.pb.cc;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\Enum.pb.obj
-C:\Users\jeson\Desktop\unreal\MMO\Server\DummyClient\Protocol.pb.cc;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\Protocol.pb.obj
-C:\Users\jeson\Desktop\unreal\MMO\Server\DummyClient\Struct.pb.cc;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\Struct.pb.obj
-C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\LoginServer.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\LoginServer.obj
-C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\LoginSession.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\LoginSession.obj
-C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\LoginSessionManager.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\LoginSessionManager.obj
-C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\pch.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\pch.obj
-C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\ServerPacketHandler.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\LoginServer\x64\Debug\ServerPacketHandler.obj

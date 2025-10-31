@@ -47,15 +47,15 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 		return false;
 
 	RoomRef room = nullptr;
-	//if (!RoomManager::Instance().FindUsableRoom())
-	//{
-	//	room = RoomManager::Instance().Add(1);
-	//}
-	//else
-	//	room = RoomManager::Instance().Find(1);
+	if (!RoomManager::Instance().FindUsableRoom())
+	{
+		room = RoomManager::Instance().Add(1);
+	}
+	else
+		room = RoomManager::Instance().Find(1);
 
-	 //TEMP : MultiRoom 테스트
-	room = RoomManager::Instance().Find(pkt.roomnumber());
+	//TEMP : MultiRoom 테스트
+	//room = RoomManager::Instance().Find(pkt.roomnumber());
 
 	// 입장
 	room->DoAsyncPushOnly(&Room::HandleEnterPlayer, gameSession);

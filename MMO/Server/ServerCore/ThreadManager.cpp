@@ -3,6 +3,7 @@
 #include "CoreTLS.h"
 #include "CoreGlobal.h"
 #include "GlobalQueue.h"
+#include <string>
 
 /*------------------
 	ThreadManager
@@ -11,7 +12,7 @@
 ThreadManager::ThreadManager()
 {
 	// Main Thread
-	InitTLS();
+	InitTLS("MainThread");
 }
 
 ThreadManager::~ThreadManager()
@@ -19,13 +20,24 @@ ThreadManager::~ThreadManager()
 	Join();
 }
 
-void ThreadManager::Launch(function<void(void)> callback)
+void ThreadManager::Launch(const string& name, function<void(void)> callback)
 {
 	lock_guard<mutex> guard(_lock);
 
 	_threads.push_back(thread([=]()
 		{
-			InitTLS();
+			InitTLS(name);
+
+#ifdef _WIN32
+			DWORD sysId = GetCurrentThreadId();
+#else
+			pid_t sysId = syscall(SYS_gettid);
+#endif
+
+			SafeLog("[ThreadManager] Launch: " + LThreadName +
+				" (LThreadId: " + to_string(LThreadId) +
+				", SysThreadId: " + to_string(sysId) + ")");
+
 			callback();
 			DestroyTLS();
 		}));
@@ -41,10 +53,16 @@ void ThreadManager::Join()
 	_threads.clear();
 }
 
-void ThreadManager::InitTLS()
+void ThreadManager::InitTLS(const string& name)
 {
 	static atomic<uint32> SThreadId = 1;
 	LThreadId = SThreadId.fetch_add(1);
+	LThreadName = name;
+
+#ifdef _WIN32
+	const wstring wname(name.begin(), name.end());
+	SetThreadDescription(GetCurrentThread(), wname.c_str());
+#endif
 }
 
 void ThreadManager::DestroyTLS()

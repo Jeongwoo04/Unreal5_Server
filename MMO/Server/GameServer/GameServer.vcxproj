@@ -156,6 +156,7 @@
     <ClCompile Include="BenchmarkLogger.cpp" />
     <ClCompile Include="BuffSystem.cpp" />
     <ClCompile Include="CombatSystem.cpp" />
+    <ClCompile Include="CommandManager.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
     <ClCompile Include="Creature.cpp" />
     <ClCompile Include="Data.Contents.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="BenchmarkLogger.h" />
     <ClInclude Include="BuffSystem.h" />
     <ClInclude Include="CombatSystem.h" />
+    <ClInclude Include="CommandManager.h" />
     <ClInclude Include="ConfigManager.h" />
     <ClInclude Include="Creature.h" />
     <ClInclude Include="Data.Contents.h" />

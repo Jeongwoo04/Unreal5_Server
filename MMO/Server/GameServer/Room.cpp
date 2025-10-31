@@ -6,13 +6,11 @@
 #include "ObjectManager.h"
 #include "SkillSystem.h"
 
-Room::Room()
-{
-	// TEMP
-	_prevTime = std::chrono::high_resolution_clock::now();
+using namespace std::chrono;
 
-	_broadcastQueue = make_shared<JobQueue>();
-	_broadcastQueue->_flag = JobQueueFlag::BCQ;
+Room::Room(string name) : JobQueue(name)
+{
+	_broadcastQueue = make_shared<JobQueue>("BC_" + name);
 
 	_gameMap = make_shared<GameMap>();
 	_objectManager = make_shared<ObjectManager>();
@@ -58,45 +56,25 @@ void Room::UpdateTick()
 	DoTimer(tick, &Room::UpdateTick);
 
 	_bench.Begin("Room");
-
-	cout << "======================\n";
-
-	_bench.Begin("Monster");
+	
 	for (auto& m : _monsters)
 	{
 		m.second->Update(deltaTime);
 	}
-	_bench.End("Monster");
-
-	_bench.Begin("Projectile");
 	for (auto& p : _projectiles)
 	{
 		p.second->Update(deltaTime);
 	}
-	_bench.End("Projectile");
-	
-	_bench.Begin("Field");
 	for (auto& f : _fields)
 	{
 		f.second->Update(deltaTime);
 	}
-	_bench.End("Field");
-
-	_bench.Begin("SkillSystem");
 	_skillSystem->Update(deltaTime);
-	_bench.End("SkillSystem");
 
-	_bench.Begin("RemoveList");
 	ClearRemoveList();
-	_bench.End("RemoveList");
-	
 	_bench.End("Room");
-	
-	_bench.PrintAndSaveSummary(GetRoomId(), "½Ì±Û·ë Å×½ºÆ®", "RoomBenchmark.csv");
-	if (++_tickCount % 100 == 0)
-	{
-		cout << "Player : " << _players.size() << ", Monster : " << _monsters.size() << endl;
-	}
+
+	_bench.PrintAndSaveSummary(GetRoomId(), "100 dummy BCQueue execute delay, Push BCJob");
 }
 
 void Room::StartHeartbeat()
@@ -115,6 +93,43 @@ void Room::CheckHeartbeat()
 
 	//constexpr uint64 Tick = 10000;
 	//DoTimer(Tick, &Room::CheckHeartbeat);
+}
+
+// TEMP: Command Spawn
+void Room::Spawn(int32 dataId, bool randPos, Vector3 pos, int32 count)
+{
+	for (int32 i = 0; i < count; i++)
+	{
+		auto obj = _objectManager->Spawn(dataId, true, pos);
+		if (!obj)
+			return;
+
+		EnterRoom(obj);
+	}
+}
+
+void Room::Kill()
+{	
+	Vector2Int centerInt = { 0,0 };
+	Vector3 centerFloat = { 0,0,100 };
+	auto monster = _monsterGrid.FindNearest(centerInt, 40.f, centerFloat);
+	AddRemoveList(monster);
+}
+
+void Room::KillAll()
+{
+	for (auto& [id, monster] : _monsters)
+	{
+		AddRemoveList(monster);
+	}
+}
+
+void Room::GetList()
+{
+	for (auto& [id, monster] : _monsters)
+	{
+		cout << "Monster ID: " << id << endl;
+	}	
 }
 
 void Room::SpawnInit()
@@ -228,6 +243,7 @@ bool Room::LeaveGame(ObjectRef object, uint64 objectId)
 
 bool Room::HandleEnterPlayer(GameSessionRef gameSession)
 {
+	//printf("[Server] Handle Enter Player\n");
 	PlayerRef player = static_pointer_cast<Player>(_objectManager->Spawn(10101, true, {0, 0, 0}));
 	if (player == nullptr)
 		return false;
@@ -245,10 +261,11 @@ bool Room::HandleLeavePlayer(PlayerRef player)
 
 void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 {
+	_bench.Begin("MovePrevSection");
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
 		return;
-	
+
 	PlayerRef player = _players[objectId];
 	if (player == nullptr || player->GetRoom() == nullptr || player->GetRoom()->GetGameMap() == nullptr)
 		return;
@@ -259,16 +276,25 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 		if (activeSkill)
 		{
 			_skillSystem->CancelCasting(player, activeSkill->castId);
+			cout << "[Server] CancelCasting\n";
 		}
 	}
 	else if (player->GetState() == Protocol::STATE_MACHINE_SKILL)
+	{
+		cout << "[Server] Move Fail: Player state is Skill\n";
 		return;
+	}
 
 	Vector3 destPos = Vector3(pkt.info());
 
 	player->_posInfo.set_state(pkt.info().state());
+	_bench.End("MovePrevSection");
+	_bench.Begin("MoveToNextPos");
 	player->MoveToNextPos(destPos);
+	_bench.End("MoveToNextPos");
+	_bench.Begin("BCJobPush");
 	BroadcastMove(player->_posInfo);
+	_bench.End("BCJobPush");
 }
 
 void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
@@ -403,6 +429,7 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 
 void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 {
+	_bench.Begin("BC_AllSnapshot");
 	vector<PlayerRef> snapshot;
 	snapshot.reserve(_players.size());
 
@@ -413,25 +440,45 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 
 		snapshot.push_back(player);
 	}
+	_bench.End("BC_AllSnapshot");
 
+	auto enqueueTime = GetTimeMs();
+	_bench.Begin("BCAllJobPush");
 	_broadcastQueue->Push(make_shared<Job>(
-		[snapshot = std::move(snapshot), sendBuffer]()
+		[snapshot = std::move(snapshot), sendBuffer, enqueueTime, this]()
 		{
+			double executeTime = GetTimeMs();
+			double delayMs = static_cast<double>(executeTime - enqueueTime);
+
+			_bench.AddBCQDelay(delayMs);
+			_bench.AddSendCount(snapshot.size());
+
 			for (auto& player : snapshot)
 			{
 		if (auto session = player->GetSession())
 			session->Send(sendBuffer);
 	}
 		}));
+	_bench.End("BCAllJobPush");
 }
 
 void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId)
 {
+	_bench.Begin("BC_FindAround");
 	vector<PlayerRef> nearbyPlayers =
 		_playerGrid.FindAroundFloat(center, BROADCAST_RANGE);
+	_bench.End("BC_FindAround");
 
-	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId]()
+	auto enqueueTime = GetTickCount64();
+	_bench.Begin("BCNearJobPush");
+	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId, enqueueTime, this]()
 		{
+			uint64 executeTime = GetTickCount64();
+			double delayMs = static_cast<double>(executeTime - enqueueTime);
+
+			_bench.AddBCQDelay(delayMs);
+			_bench.AddSendCount(nearbyPlayers.size());
+
 			for (auto& player : nearbyPlayers)
 	{
 				if (player->GetId() == exceptId)
@@ -440,6 +487,7 @@ void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint
 			session->Send(sendBuffer);
 	}
 		}));
+	_bench.End("BCNearJobPush");
 }
 
 void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)

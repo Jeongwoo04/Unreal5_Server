@@ -17,13 +17,31 @@ public:
         _warmupMs = seconds * 1000.0;
     }
 
+    void AddBCQDelay(double delayMs)
+    {
+        double now = GetTimeMs();
+        //if (now - _programStartTime < _warmupMs)
+        //    return;
+
+        _records["BCQueueDelay"].push_back(delayMs);
+    }
+
+    void AddSendCount(int32 sendCount)
+    {
+        double now = GetTimeMs();
+        //if (now - _programStartTime < _warmupMs)
+        //    return;
+
+        _records["SendCount"].push_back(sendCount);
+    }
+
     void Begin(const std::string& name)
     {
         double now = GetTimeMs();
 
         // 워밍업 구간 스킵
-        if (now - _programStartTime < _warmupMs)
-            return;
+        //if (now - _programStartTime < _warmupMs)
+        //    return;
 
         _startTimes[name] = now;
     }
@@ -45,15 +63,15 @@ public:
         _startTimes.erase(it);
     }
 
-    void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "BenchmarkResult.csv")
+    void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "BenchmarkResult_BCQ.csv")
     {
         double now = GetTimeMs();
 
         // 워밍업 구간 스킵
-        if (now - _programStartTime < _warmupMs)
-            return;
+        //if (now - _programStartTime < _warmupMs)
+        //    return;
 
-        if (_records["Room"].size() % 100 != 0)
+        if (_records["Room"].size() < 100)
             return ;
 
         std::ofstream file(filename, std::ios::app);
@@ -69,8 +87,9 @@ public:
 
         for (auto& [name, samples] : _records)
         {
-            if ((samples.size() % 100 != 0))
+            if (samples.empty())
                 continue;
+
             std::sort(samples.begin(), samples.end());
             double sum = std::accumulate(samples.begin(), samples.end(), 0.0);
             double avg = sum / samples.size();
@@ -118,7 +137,7 @@ private:
     double GetTimeMs()
     {
         using namespace std::chrono;
-        auto now = high_resolution_clock::now();
+        auto now = steady_clock::now();
         return duration_cast<microseconds>(now.time_since_epoch()).count() / 1000.0;
     }
 
