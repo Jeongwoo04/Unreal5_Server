@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.h"
-#include "SpatialHashGrid.h"
+#include "SpatialGrid.h"
 #include "BenchmarkLogger.h"
 
 using GameMapRef = shared_ptr<class GameMap>;
@@ -10,6 +10,44 @@ using RoomRef = shared_ptr<class Room>;
 using MonsterRef = shared_ptr<class Monster>;
 using ProjectileRef = shared_ptr<class Projectile>;
 using FieldRef = shared_ptr<class Field>;
+using GameSessionRef = shared_ptr<class GameSession>;
+
+struct MapInfo;
+struct SpawnTable;
+
+/*
+struct InterestDiff
+{
+	vector<Vector2Int> spawns;
+	vector<Vector2Int> despawns;
+	vector<Vector2Int> moves;
+};
+
+struct BroadcastGroup
+{
+	vector<Protocol::ObjectInfo> _spawns;
+	vector<uint64> _despawns;
+	vector<Protocol::PosInfo> _moves;
+	vector<SendBufferRef> _batchBuffers;
+
+	void Clear()
+	{
+		//_spawns.clear();
+		//_despawns.clear();
+		_moves.clear();
+		_batchBuffers.clear();
+	}
+
+	bool IsEmpty()
+	{
+		return _spawns.empty() && _despawns.empty() && _moves.empty();
+	}
+
+	void AddSpawn(const Protocol::ObjectInfo& obj) { _spawns.push_back(obj); }
+	void AddDespawn(uint64 id) { _despawns.push_back(id); }
+	void AddMove(const Protocol::PosInfo& pos) { _moves.push_back(pos); }
+};
+*/
 
 class Room : public JobQueue
 {
@@ -23,6 +61,7 @@ public:
 	GameMapRef GetGameMap() { return _gameMap; }
 
 	void Init(int32 mapId);
+	void InitBaseOffsets();
 	void UpdateTick();
 	void StartHeartbeat();
 	void CheckHeartbeat();
@@ -61,16 +100,26 @@ public:
 	void BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId = 0);
 	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId = 0);
 
+	//InterestDiff UpdateInterestCell(const Vector2Int& oldCenter, const Vector2Int& newCenter);
+	vector<Vector2Int> InterestCells(const Vector2Int& center) const;
+	//InterestDiff DiffInterestCells(const vector<Vector2Int>& oldCell, const vector<Vector2Int>& newCell, const Vector2Int& delta) const;
+	void FlushBroadcast();
+
 	void NotifySpawn(ObjectRef object, bool success);
 
 public:
 	void AddRemoveList(ObjectRef object);
 	void ClearRemoveList();
 
+	int32 Index(const Vector2Int& pos) const;
+
 public:
 	GameMapRef _gameMap;
-	SpatialHashGrid<PlayerRef> _playerGrid;
-	SpatialHashGrid<MonsterRef> _monsterGrid;
+	SpatialGrid<PlayerRef> _playerGrid;
+	SpatialGrid<MonsterRef> _monsterGrid;
+
+	const int32 BROADCAST_RANGE = 20; // 카메라뷰 + 여유분
+	//vector<Vector2Int> _baseOffsets;
 
 public:
 	ObjectManagerRef _objectManager;
@@ -82,13 +131,15 @@ public:
 	unordered_map<uint64, ProjectileRef> _projectiles;
 	unordered_map<uint64, FieldRef> _fields;
 
+public:
+	vector<PlayerRef> _dirtyPlayers;
+	//vector<BroadcastGroup> _flushBCQueue;
+
 private:
 	vector<ObjectRef> _removePending;
 
-	MapInfo _mapInfo;
+	MapInfo* _mapInfo;
 	int32 _roomId = 0;
-
-	const float BROADCAST_RANGE = 2000.f; // 카메라뷰 + 여유분
 
 public:
 	BenchmarkStat _bench;

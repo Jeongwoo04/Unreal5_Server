@@ -3,7 +3,7 @@
 
 struct ServerConfig
 {
-    string dataPath;
+	string dataPath;
 };
 
 using json = nlohmann::json;
@@ -11,15 +11,15 @@ using json = nlohmann::json;
 class ConfigManager
 {
 public:
-    static ConfigManager& Instance()
-    {
-        static ConfigManager instance;
-        return instance;
-    }
+	static ConfigManager& Instance()
+	{
+		static ConfigManager instance;
+		return instance;
+	}
 
-    static bool LoadConfig(const string& filePath);
-    static const ServerConfig& GetConfig();
+	static bool LoadConfig(const string& filePath);
+	static const ServerConfig& GetConfig();
 
 private:
-    static ServerConfig _config;
+	static ServerConfig _config;
 };

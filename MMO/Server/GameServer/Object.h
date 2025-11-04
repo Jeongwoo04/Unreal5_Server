@@ -49,6 +49,8 @@ public:
 	void SetSpawnPos(const Vector3& pos, float yaw = 0.f);
 	void SetSpawnRandomPos(Vector3 pos, float yaw = 0.f, int32 range = 0);
 
+	bool IsMoveBatch();
+
 public: 
 	Protocol::ObjectInfo _objectInfo;
 	Protocol::PosInfo _posInfo;
@@ -56,6 +58,9 @@ public:
 
 	Vector2Int _gridPos;
 	Vector3 _worldPos;
+	Vector3 _lastFlushPos;
+
+	vector<Vector2Int> _interestCell;
 
 	int32 _spTableId;
 

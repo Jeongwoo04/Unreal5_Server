@@ -2,6 +2,13 @@
 
 #include "GeometryUtil.h"
 
+struct Skill;
+struct ActionData;
+struct MoveActionData;
+struct AttackActionData;
+struct SpawnActionData;
+struct BuffActionData;
+
 struct SkillInstance
 {
 	ObjectRef caster;
@@ -18,6 +25,7 @@ struct SkillInstance
 };
 
 using SkillInstanceRef = shared_ptr<struct SkillInstance>;
+class Room;
 
 class SkillSystem
 {

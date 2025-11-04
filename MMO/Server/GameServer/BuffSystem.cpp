@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "BuffSystem.h"
+#include "DataManager.h"
+#include "Object.h"
 
 void BuffSystem::ApplyBuff(ObjectRef target, int32 buffId)
 {

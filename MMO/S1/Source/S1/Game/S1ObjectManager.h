@@ -63,8 +63,6 @@ public:
 	AActor* SpawnObject(const Protocol::ObjectInfo& Info, bool IsMine);
 	void DespawnObject(uint64 ObjectId);
 
-	void MoveObject(const Protocol::S_MOVE& MovePkt);
-
 	FS1ObjectKey MakeKey(const Protocol::ObjectInfo& Info) const;
 
 public:

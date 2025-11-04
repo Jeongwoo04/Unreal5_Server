@@ -52,6 +52,7 @@ public:
 	void HandleDespawn(const Protocol::S_DESPAWN& DespawnPkt);
 
 	void HandleMove(const Protocol::S_MOVE& MovePkt);
+	void HandleMove(const Protocol::PosInfo& PosInfo);
 
 	void HandleSkill(const Protocol::S_SKILL& SkillPkt);
 	void HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& CastStartPkt);

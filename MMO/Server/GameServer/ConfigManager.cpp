@@ -7,22 +7,22 @@ ServerConfig ConfigManager::_config;
 
 bool ConfigManager::LoadConfig(const string& filePath)
 {
-    std::ifstream input(filePath);
-    if (!input.is_open())
-    {
-        std::cerr << "Failed to open config file: " << filePath << std::endl;
-        return false;
-    }
+	std::ifstream input(filePath);
+	if (!input.is_open())
+	{
+		std::cerr << "Failed to open config file: " << filePath << std::endl;
+		return false;
+	}
 
-    json j;
-    input >> j;
+	json j;
+	input >> j;
 
-    _config.dataPath = j.value("dataPath", "");
+	_config.dataPath = j.value("dataPath", "");
 
-    return true;
+	return true;
 }
 
 const ServerConfig& ConfigManager::GetConfig()
 {
-    return _config;
+	return _config;
 }

@@ -189,7 +189,7 @@
     <ClCompile Include="ServerPacketHandler.cpp" />
     <ClCompile Include="SkillState.cpp" />
     <ClCompile Include="SkillSystem.cpp" />
-    <ClCompile Include="SpatialHashGrid.cpp" />
+    <ClCompile Include="SpatialGrid.cpp" />
     <ClCompile Include="Struct.pb.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -223,7 +223,7 @@
     <ClInclude Include="ServerPacketHandler.h" />
     <ClInclude Include="SkillState.h" />
     <ClInclude Include="SkillSystem.h" />
-    <ClInclude Include="SpatialHashGrid.h" />
+    <ClInclude Include="SpatialGrid.h" />
     <ClInclude Include="Struct.pb.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

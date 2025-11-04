@@ -17,7 +17,7 @@ int main()
 		NetAddress(L"127.0.0.1", 7777),
 		make_shared<IocpCore>(),
 		[=]() { return make_shared<ServerSession>(); }, // TODO : SessionManager 등
-		100);
+		50);
 
 	ASSERT_CRASH(service->Start());
 
@@ -34,7 +34,6 @@ int main()
 
 	GThreadManager->Launch("DummyMover", []()
 		{
-			this_thread::sleep_for(chrono::seconds(30));
 			while (true)
 			{
 				GSessionManager.SendRandomPos();

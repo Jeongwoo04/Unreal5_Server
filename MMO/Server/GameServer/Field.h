@@ -1,4 +1,7 @@
 #pragma once
+#include "Object.h"
+
+struct FieldInfo;
 
 class Field : public Object
 {

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Room.h"
 #include "Player.h"
+#include "Monster.h"
 #include "Projectile.h"
 #include "Field.h"
 #include "ObjectManager.h"
@@ -30,8 +31,15 @@ void Room::Init(int32 mapId)
 	if (mapIt == DataManager::Instance().MapDataDict.end())
 		return;
 
-	_mapInfo = mapIt->second;
-	_gameMap->LoadGameMap(_mapInfo.filePath);
+	_mapInfo = &mapIt->second;
+	_gameMap->LoadGameMap(_mapInfo->filePath);
+
+	_playerGrid = SpatialGrid<PlayerRef>(_gameMap);
+	_monsterGrid = SpatialGrid<MonsterRef>(_gameMap);
+	_flushBCQueue.resize(_gameMap->_sizeX * _gameMap->_sizeY);
+
+	InitBaseOffsets();
+
 	_skillSystem->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 
 	SpawnInit();
@@ -39,6 +47,21 @@ void Room::Init(int32 mapId)
 	UpdateTick();
 	//StartHeartbeat();
 }
+
+//void Room::InitBaseOffsets()
+//{
+//	_baseOffsets.clear();
+//	for (int32 y = -BROADCAST_RANGE; y <= BROADCAST_RANGE; ++y)
+//	{
+//		for (int32 x = -BROADCAST_RANGE; x <= BROADCAST_RANGE; ++x)
+//		{
+//			if (x * x + y * y <= BROADCAST_RANGE * BROADCAST_RANGE)
+//			{
+//				_baseOffsets.push_back(Vector2Int(x, y));
+//			}
+//		}
+//	}
+//}
 
 void Room::UpdateTick()
 {
@@ -72,9 +95,13 @@ void Room::UpdateTick()
 	_skillSystem->Update(deltaTime);
 
 	ClearRemoveList();
+	_bench.Begin("FlushBroadcast");
+	FlushBroadcast();
+	_bench.End("FlushBroadcast");
+
 	_bench.End("Room");
 
-	_bench.PrintAndSaveSummary(GetRoomId(), "100 dummy BCQueue execute delay, Push BCJob");
+	_bench.PrintAndSaveSummary(GetRoomId(), "flushbroadcast");
 }
 
 void Room::StartHeartbeat()
@@ -134,7 +161,7 @@ void Room::GetList()
 
 void Room::SpawnInit()
 {
-	for (auto& spawnIt : _mapInfo.spawnTables)
+	for (auto& spawnIt : _mapInfo->spawnTables)
 	{
 		for (int32 i = 0; i < spawnIt.second.count; i++)
 		{
@@ -145,7 +172,7 @@ void Room::SpawnInit()
 
 void Room::SpawnMonster(int32 spTableId)
 {
-	auto spTableData = _mapInfo.spawnTables.find(spTableId)->second;
+	auto spTableData = _mapInfo->spawnTables.find(spTableId)->second;
 
 	auto obj = _objectManager->Spawn(spTableData.dataId, true, spTableData.spawnPos);
 	if (!obj)
@@ -192,6 +219,7 @@ bool Room::EnterRoom(ObjectRef object)
 		return false;
 
 	bool success = AddObject(object);
+	object->_interestCell = InterestCells(object->_gridPos);
 
 	NotifySpawn(object, success);
 
@@ -261,7 +289,6 @@ bool Room::HandleLeavePlayer(PlayerRef player)
 
 void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 {
-	_bench.Begin("MovePrevSection");
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
 		return;
@@ -288,13 +315,8 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 	Vector3 destPos = Vector3(pkt.info());
 
 	player->_posInfo.set_state(pkt.info().state());
-	_bench.End("MovePrevSection");
-	_bench.Begin("MoveToNextPos");
 	player->MoveToNextPos(destPos);
-	_bench.End("MoveToNextPos");
-	_bench.Begin("BCJobPush");
-	BroadcastMove(player->_posInfo);
-	_bench.End("BCJobPush");
+	//BroadcastMove(player->_posInfo);
 }
 
 void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
@@ -333,8 +355,8 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const
 {
-	auto it = _mapInfo.spawnTables.find(spawnId);
-	if (it != _mapInfo.spawnTables.end())
+	auto it = _mapInfo->spawnTables.find(spawnId);
+	if (it != _mapInfo->spawnTables.end())
 		return &it->second;
 	return nullptr;
 }
@@ -429,7 +451,6 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 
 void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 {
-	_bench.Begin("BC_AllSnapshot");
 	vector<PlayerRef> snapshot;
 	snapshot.reserve(_players.size());
 
@@ -440,10 +461,8 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 
 		snapshot.push_back(player);
 	}
-	_bench.End("BC_AllSnapshot");
 
 	auto enqueueTime = GetTimeMs();
-	_bench.Begin("BCAllJobPush");
 	_broadcastQueue->Push(make_shared<Job>(
 		[snapshot = std::move(snapshot), sendBuffer, enqueueTime, this]()
 		{
@@ -451,7 +470,7 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 			double delayMs = static_cast<double>(executeTime - enqueueTime);
 
 			_bench.AddBCQDelay(delayMs);
-			_bench.AddSendCount(snapshot.size());
+			_bench.AddSendCount(int32(snapshot.size()));
 
 			for (auto& player : snapshot)
 			{
@@ -459,46 +478,344 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 			session->Send(sendBuffer);
 	}
 		}));
-	_bench.End("BCAllJobPush");
 }
 
 void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId)
 {
-	_bench.Begin("BC_FindAround");
 	vector<PlayerRef> nearbyPlayers =
-		_playerGrid.FindAroundFloat(center, BROADCAST_RANGE);
-	_bench.End("BC_FindAround");
+		_playerGrid.FindAround(WorldToGrid(center), BROADCAST_RANGE);
 
 	auto enqueueTime = GetTickCount64();
-	_bench.Begin("BCNearJobPush");
 	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId, enqueueTime, this]()
 		{
 			uint64 executeTime = GetTickCount64();
 			double delayMs = static_cast<double>(executeTime - enqueueTime);
 
 			_bench.AddBCQDelay(delayMs);
-			_bench.AddSendCount(nearbyPlayers.size());
+			_bench.AddSendCount(int32(nearbyPlayers.size()));
 
+			//auto preExeTime = GetTickCount64();
 			for (auto& player : nearbyPlayers)
-	{
+			{
 				if (player->GetId() == exceptId)
-			continue;
+					continue;
 				if (auto session = player->GetSession())
-			session->Send(sendBuffer);
-	}
+					session->Send(sendBuffer);
+			}
+			//double exeTime = static_cast<double>(GetTickCount64() - preExeTime);
+			//_bench.AddExecuteTime(exeTime);
 		}));
-	_bench.End("BCNearJobPush");
 }
 
 void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)
 {
 	Protocol::S_MOVE movePkt;
-
-	movePkt.mutable_info()->CopyFrom(posInfo);
+	*movePkt.add_info() = posInfo;
 
 	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
 
 	BroadcastNearby(sendBuffer, Vector3(posInfo), exceptId);
+}
+
+/*
+InterestDiff Room::UpdateInterestCell(const Vector2Int& oldCenter, const Vector2Int& newCenter)
+{
+	Vector2Int delta = newCenter - oldCenter;
+	InterestDiff diff;
+
+	int32 range = BROADCAST_RANGE;
+
+	// delta가 너무 크면 풀 비교 (드물게 발생)
+	if (abs(delta._x) > 1 || abs(delta._y) > 1)
+	{
+		vector<Vector2Int> oldCells = InterestCells(oldCenter);
+		vector<Vector2Int> newCells = InterestCells(newCenter);
+
+		// DiffInterestCells를 호출
+		InterestDiff fullDiff = DiffInterestCells(oldCells, newCells, delta);
+
+		diff.despawns = std::move(fullDiff.despawns);
+		diff.spawns = std::move(fullDiff.spawns);
+		diff.moves = std::move(fullDiff.moves);
+
+		return diff;
+	}
+
+	// 전체 old 영역에서 despawn/spawn을 제외한 나머지는 move
+	// => move 영역 = oldInterest, newInterest 교집합
+
+	// 수평 이동
+	if (delta._x == 1)
+	{
+		// 오른쪽 이동 → 왼쪽줄 despawn, 오른쪽줄 spawn
+		for (int y = -range; y <= range; y++)
+		{
+			Vector2Int left = { oldCenter._x - range, oldCenter._y + y };
+			Vector2Int right = { newCenter._x + range, newCenter._y + y };
+
+			if (_playerGrid.IsValid(left))
+				diff.despawns.push_back(left);
+
+			if (_playerGrid.IsValid(right))
+				diff.spawns.push_back(right);
+		}
+
+		// 겹치는 영역 (중앙 블록)은 move 처리
+		for (int x = -range + 1; x <= range; x++)
+		{
+			for (int y = -range; y <= range; y++)
+			{
+				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
+
+				if (_playerGrid.IsValid(pos))
+					diff.moves.push_back(pos);
+			}
+		}
+	}
+	else if (delta._x == -1)
+	{
+		// 왼쪽 이동 → 오른쪽줄 despawn, 왼쪽줄 spawn
+		for (int y = -range; y <= range; y++)
+		{
+			Vector2Int right = { oldCenter._x + range, oldCenter._y + y };
+			Vector2Int left = { newCenter._x - range, newCenter._y + y };
+
+			if (_playerGrid.IsValid(right))
+				diff.despawns.push_back(right);
+
+			if (_playerGrid.IsValid(left))
+				diff.spawns.push_back(left);
+		}
+
+		for (int x = -range; x <= range - 1; x++)
+		{
+			for (int y = -range; y <= range; y++)
+			{
+				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
+
+				if (_playerGrid.IsValid(pos))
+					diff.moves.push_back(pos);
+			}
+		}
+	}
+
+	// 수직 이동
+	if (delta._y == 1)
+	{
+		// 위로 이동 → 아래줄 despawn, 위줄 spawn
+		for (int x = -range; x <= range; x++)
+		{
+			Vector2Int bottom = { oldCenter._x + x, oldCenter._y - range };
+			Vector2Int top = { newCenter._x + x, newCenter._y + range };
+
+			if (_playerGrid.IsValid(bottom))
+				diff.despawns.push_back(bottom);
+
+			if (_playerGrid.IsValid(top))
+				diff.spawns.push_back(top);
+		}
+
+		// move
+		for (int x = -range; x <= range; x++)
+		{
+			for (int y = -range + 1; y <= range; y++)
+			{
+				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
+
+				if (_playerGrid.IsValid(pos))
+					diff.moves.push_back(pos);
+			}
+		}
+	}
+	else if (delta._y == -1)
+	{
+		// 아래로 이동 → 위줄 despawn, 아래줄 spawn
+		for (int x = -range; x <= range; x++)
+		{
+			Vector2Int top = { oldCenter._x + x, oldCenter._y + range };
+			Vector2Int bottom = { newCenter._x + x, newCenter._y - range };
+
+			if (_playerGrid.IsValid(top))
+				diff.despawns.push_back(top);
+
+			if (_playerGrid.IsValid(bottom))
+				diff.spawns.push_back(bottom);
+		}
+
+		for (int x = -range; x <= range; x++)
+		{
+			for (int y = -range; y <= range - 1; y++)
+			{
+				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
+
+				if (_playerGrid.IsValid(pos))
+					diff.moves.push_back(pos);
+			}
+		}
+	}
+
+	return diff;
+}
+
+vector<Vector2Int> Room::InterestCells(const Vector2Int& center) const
+{
+	vector<Vector2Int> res;
+	res.reserve(_baseOffsets.size());
+
+	for (auto& offset : _baseOffsets)
+	{
+		Vector2Int cell = center + offset;
+		if (_playerGrid.IsValid(cell))
+			res.push_back(cell);
+	}
+
+	return res;
+}
+
+InterestDiff Room::DiffInterestCells(const vector<Vector2Int>& oldCell, const vector<Vector2Int>& newCell, const Vector2Int& delta) const
+{
+	InterestDiff diff;
+
+	auto compare = [](const Vector2Int& a, const Vector2Int& b)
+		{
+			if (a._x != b._x)
+				return a._x < b._x;
+
+			return a._y < b._y;
+		};
+
+	vector<Vector2Int> sortOld = oldCell;
+	vector<Vector2Int> sortNew = newCell;
+
+	std::sort(sortOld.begin(), sortOld.end(), compare);
+	std::sort(sortNew.begin(), sortNew.end(), compare);
+
+	std::set_difference(sortOld.begin(), sortOld.end(),
+		sortNew.begin(), sortNew.end(),
+		std::back_inserter(diff.despawns), compare);
+
+	std::set_difference(sortNew.begin(), sortNew.end(),
+		sortOld.begin(), sortOld.end(),
+		std::back_inserter(diff.spawns), compare);
+
+	std::set_intersection(sortOld.begin(), sortOld.end(),
+		sortNew.begin(), sortNew.end(),
+		std::back_inserter(diff.moves), compare);
+
+	return diff;
+}
+*/
+
+void Room::FlushBroadcast()
+{
+	_bench.AddDirtyCount(_dirtyPlayers.size());
+	_bench.Begin("DirtyUpdateBCGroup");
+	for (auto& p : _dirtyPlayers)
+	{
+		if (p->IsDead() || !p->_hasMove || !p->IsMoveBatch())
+		{
+			p->_hasMove = false;
+			p->_isDirty = false;
+			continue;
+		}
+
+		p->_hasMove = false;
+
+		// interestCell 갱신
+		
+		if (WorldToGrid(p->_lastFlushPos) == p->_gridPos)
+		{
+			for (auto& cell : p->_interestCell)
+			{
+				_flushBCQueue[Index(cell)].AddMove(p->_posInfo);
+			}
+		}
+		else
+		{
+			InterestDiff diff = UpdateInterestCell(WorldToGrid(p->_lastFlushPos), WorldToGrid(p->_worldPos));
+
+			for (auto& despawn : diff.despawns)
+			{
+				_flushBCQueue[Index(despawn)].AddDespawn(p->GetId());
+			}
+			for (auto& spawn : diff.spawns)
+			{
+				_flushBCQueue[Index(spawn)].AddSpawn(p->_objectInfo);
+			}
+			for (auto& move : diff.moves)
+			{
+				_flushBCQueue[Index(move)].AddMove(p->_posInfo);
+			}
+		}
+
+		p->_lastFlushPos = p->_worldPos;
+		p->_isDirty = false;
+	}
+	_dirtyPlayers.clear();
+	_bench.End("DirtyUpdateBCGroup");
+	_bench.Begin("SerializePktAllCell");
+	for (int32 i = 0; i < _flushBCQueue.size(); i++)
+	{
+		auto& targets = _playerGrid.GetCellPlayers(i);
+		if (targets.empty())
+			continue;
+
+		auto& bc = _flushBCQueue[i];
+		if (bc.IsEmpty())
+			continue;
+
+		if (!bc._spawns.empty())
+		{
+			Protocol::S_SPAWN spawnPkt;
+			for (auto& s : bc._spawns)
+			{
+				*spawnPkt.add_objects() = s;
+			}
+			auto spawnSendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
+			bc._batchBuffers.push_back(spawnSendBuffer);
+		}
+		
+		if (!bc._despawns.empty())
+		{
+			Protocol::S_DESPAWN despawnPkt;
+			for (auto& d : bc._despawns)
+			{
+				despawnPkt.add_object_ids(d);
+			}
+			auto despawnSendBuffer = ServerPacketHandler::MakeSendBuffer(despawnPkt);
+			bc._batchBuffers.push_back(despawnSendBuffer);
+		}
+
+		if (!bc._moves.empty())
+		{
+			Protocol::S_MOVE movePkt;
+			for (auto& m : bc._moves)
+			{
+				*movePkt.add_info() = m;
+			}
+			auto moveSendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
+			bc._batchBuffers.push_back(moveSendBuffer);
+		}		
+	}
+	_bench.End("SerializePktAllCell");
+
+	_bench.Begin("BroadcastAllCell");
+	for (int32 i = 0; i < _flushBCQueue.size(); i++)
+	{
+		auto& bc = _flushBCQueue[i];
+		if (bc._batchBuffers.empty())
+			continue;
+
+		auto& cellPlayers = _playerGrid.GetCellPlayers(i);
+		for (auto& player : cellPlayers)
+		{
+			for (auto& sendBuffer : bc._batchBuffers)
+				player->GetSession()->Send(sendBuffer);
+		}
+
+		bc.Clear(); // flush 후 비움
+	}
+	_bench.End("BroadcastAllCell");
 }
 
 void Room::NotifySpawn(ObjectRef object, bool success)
@@ -520,20 +837,31 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 		{
 			Protocol::S_SPAWN spawnPkt;
 
-			for (auto& playerIt : _players)
+			for (auto& cell : object->_interestCell)
 			{
-				if (playerIt.first == object->_objectInfo.object_id())
-					continue;
+				auto& players = _playerGrid.GetCellPlayers(Index(cell));
+				auto& monsters = _monsterGrid.GetCellPlayers(Index(cell));
+				for (auto& p : players)
+				{
+					if (p->GetId() == object->_objectInfo.object_id())
+						continue;
 
-				*spawnPkt.add_objects() = playerIt.second->_objectInfo;
-			}
-			for (auto& monsterIt : _monsters)
-			{
-				*spawnPkt.add_objects() = monsterIt.second->_objectInfo;
+					*spawnPkt.add_objects() = p->_objectInfo;
+				}
+				for (auto& m : monsters)
+				{
+					*spawnPkt.add_objects() = m->_objectInfo;
+				}
 			}
 			for (auto& projectileIt : _projectiles)
 			{
-				*spawnPkt.add_objects() = projectileIt.second->_objectInfo;
+				if ((projectileIt.second->_gridPos - object->_gridPos).sqrMagnitude() <= BROADCAST_RANGE * BROADCAST_RANGE)
+					*spawnPkt.add_objects() = projectileIt.second->_objectInfo;
+			}
+			for (auto& fieldIt : _fields)
+			{
+				if ((fieldIt.second->_gridPos - object->_gridPos).sqrMagnitude() <= BROADCAST_RANGE * BROADCAST_RANGE)
+					*spawnPkt.add_objects() = fieldIt.second->_objectInfo;
 			}
 
 			SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
@@ -549,7 +877,7 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 		*spawnPkt.add_objects() = object->_objectInfo;
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
-		Broadcast(sendBuffer, object->_objectInfo.object_id());
+		BroadcastNearby(sendBuffer, object->_worldPos, object->_objectInfo.object_id());
 	}
 }
 
@@ -575,4 +903,12 @@ void Room::ClearRemoveList()
 	Broadcast(sendBuffer);
 
 	_removePending.erase(_removePending.begin(), _removePending.begin() + count);
+}
+
+int32 Room::Index(const Vector2Int& pos) const
+{
+	int32 localX = pos._x - _gameMap->_minX;
+	int32 localY = pos._y - _gameMap->_minY;
+
+	return localY * _gameMap->_sizeX + localX;
 }

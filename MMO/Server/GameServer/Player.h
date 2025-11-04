@@ -21,6 +21,10 @@ public:
 	GameSessionRef GetSession() { return _session.lock(); }
 	void SetSession(GameSessionRef session) { _session = session; }
 
+public:
+	bool _hasMove = false;
+	bool _isDirty = false;
+
 private:
 	weak_ptr<GameSession> _session;
 };

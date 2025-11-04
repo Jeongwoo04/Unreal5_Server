@@ -2,8 +2,12 @@
 #include "SkillSystem.h"
 #include "SkillState.h"
 #include "ObjectManager.h"
+#include "DataManager.h"
 #include "CombatSystem.h"
 #include "BuffSystem.h"
+#include "Player.h"
+#include "Monster.h"
+#include "Room.h"
 
 void SkillSystem::Init()
 {

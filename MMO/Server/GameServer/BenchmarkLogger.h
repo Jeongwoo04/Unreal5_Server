@@ -1,148 +1,168 @@
 #pragma once
 #include "pch.h"
+#include <numeric>
 
 using namespace std;
 
 class BenchmarkStat
 {
 public:
-    BenchmarkStat()
-    {
-        _programStartTime = GetTimeMs();
-        _warmupMs = 30000.0; // 기본 30초 (원하면 SetWarmupTime으로 변경 가능)
-    }
+	BenchmarkStat()
+	{
+		_programStartTime = GetTimeMs();
+		_warmupMs = 30000.0; // 기본 30초 (원하면 SetWarmupTime으로 변경 가능)
+	}
 
-    void SetWarmupTime(double seconds)
-    {
-        _warmupMs = seconds * 1000.0;
-    }
+	void SetWarmupTime(double seconds)
+	{
+		_warmupMs = seconds * 1000.0;
+	}
 
-    void AddBCQDelay(double delayMs)
-    {
-        double now = GetTimeMs();
-        //if (now - _programStartTime < _warmupMs)
-        //    return;
+	void AddExecuteTime(double exeTime)
+	{
+		double now = GetTimeMs();
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
 
-        _records["BCQueueDelay"].push_back(delayMs);
-    }
+		_records["BCExecuteTime"].push_back(exeTime);
+	}\
 
-    void AddSendCount(int32 sendCount)
-    {
-        double now = GetTimeMs();
-        //if (now - _programStartTime < _warmupMs)
-        //    return;
 
-        _records["SendCount"].push_back(sendCount);
-    }
+	void AddBCQDelay(double delayMs)
+	{
+		double now = GetTimeMs();
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
 
-    void Begin(const std::string& name)
-    {
-        double now = GetTimeMs();
+		_records["BCQueueDelay"].push_back(delayMs);
+	}
 
-        // 워밍업 구간 스킵
-        //if (now - _programStartTime < _warmupMs)
-        //    return;
+	void AddSendCount(int32 sendCount)
+	{
+		double now = GetTimeMs();
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
 
-        _startTimes[name] = now;
-    }
+		_records["SendCount"].push_back(sendCount);
+	}
 
-    void End(const std::string& name)
-    {
-        double now = GetTimeMs();
+	void AddDirtyCount(int32 dirtyCount)
+	{
+		double now = GetTimeMs();
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
 
-        // 워밍업 구간 스킵
-        if (now - _programStartTime < _warmupMs)
-            return;
+		_records["DirtyCount"].push_back(dirtyCount);
+	}
 
-        auto it = _startTimes.find(name);
-        if (it == _startTimes.end())
-            return;
+	void Begin(const std::string& name)
+	{
+		double now = GetTimeMs();
 
-        double duration = now - it->second;
-        _records[name].push_back(duration);
-        _startTimes.erase(it);
-    }
+		// 워밍업 구간 스킵
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
 
-    void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "BenchmarkResult_BCQ.csv")
-    {
-        double now = GetTimeMs();
+		_startTimes[name] = now;
+	}
 
-        // 워밍업 구간 스킵
-        //if (now - _programStartTime < _warmupMs)
-        //    return;
+	void End(const std::string& name)
+	{
+		double now = GetTimeMs();
 
-        if (_records["Room"].size() < 100)
-            return ;
+		// 워밍업 구간 스킵
+		//if (now - _programStartTime < _warmupMs)
+		//	return;
 
-        std::ofstream file(filename, std::ios::app);
-        if (!file.is_open())
-        {
-            std::cerr << "Failed to open benchmark log file: " << filename << std::endl;
-            return;
-        }
+		auto it = _startTimes.find(name);
+		if (it == _startTimes.end())
+			return;
 
-        std::cout << "\n========== " << benchWhat << " BENCHMARK SUMMARY ==========\n";
-        file << "========== RoomId : " << roomId << " " << benchWhat << " BENCHMARK SUMMARY ==========\n";
-        file << "Name,Samples,Avg,Min,Max,p01,p99,StdDev\n";
+		double duration = now - it->second;
+		_records[name].push_back(duration);
+		_startTimes.erase(it);
+	}
 
-        for (auto& [name, samples] : _records)
-        {
-            if (samples.empty())
-                continue;
+	void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "BenchmarkResult_BCQ.csv")
+	{
+		double now = GetTimeMs();
 
-            std::sort(samples.begin(), samples.end());
-            double sum = std::accumulate(samples.begin(), samples.end(), 0.0);
-            double avg = sum / samples.size();
-            double min = samples.front();
-            double max = samples.back();
+		// 워밍업 구간 스킵
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
 
-            double p01 = samples[(int)(samples.size() * 0.01)];
-            double p99 = samples[(int)(samples.size() * 0.99)];
+		if (_records["Room"].size() < 100)
+			return ;
 
-            double variance = 0.0;
-            for (double v : samples)
-                variance += (v - avg) * (v - avg);
-            variance /= samples.size();
-            double stddev = std::sqrt(variance);
+		std::ofstream file(filename, std::ios::app);
+		if (!file.is_open())
+		{
+			std::cerr << "Failed to open benchmark log file: " << filename << std::endl;
+			return;
+		}
 
-            // CSV 저장
-            file << name << ","
-                << samples.size() << ","
-                << avg << ","
-                << min << ","
-                << max << ","
-                << p01 << ","
-                << p99 << ","
-                << stddev << "\n";
+		std::cout << "\n========== " << benchWhat << " BENCHMARK SUMMARY ==========\n";
+		file << "========== RoomId : " << roomId << " " << benchWhat << " BENCHMARK SUMMARY ==========\n";
+		file << "Name,Samples,Avg,Min,Max,p01,p99,StdDev\n";
 
-            // 콘솔 출력
-            std::cout
-                << name << "\n"
-                << "  Count: " << samples.size()
-                << " | Avg: " << avg
-                << " | Min: " << min
-                << " | Max: " << max
-                << " | 1%: " << p01
-                << " | 99%: " << p99
-                << " | StdDev: " << stddev << " (ms)\n";
-        }
+		for (auto& [name, samples] : _records)
+		{
+			if (samples.empty())
+				continue;
 
-        std::cout << "======================================\n";
-        file << "======================================\n";
-        file.close();
-        _records.clear();
-    }
+			std::sort(samples.begin(), samples.end());
+			double sum = std::accumulate(samples.begin(), samples.end(), 0.0);
+			double avg = sum / samples.size();
+			double min = samples.front();
+			double max = samples.back();
+
+			double p01 = samples[(int)(samples.size() * 0.01)];
+			double p99 = samples[(int)(samples.size() * 0.99)];
+
+			double variance = 0.0;
+			for (double v : samples)
+				variance += (v - avg) * (v - avg);
+			variance /= samples.size();
+			double stddev = std::sqrt(variance);
+
+			// CSV 저장
+			file << name << ","
+				<< samples.size() << ","
+				<< avg << ","
+				<< min << ","
+				<< max << ","
+				<< p01 << ","
+				<< p99 << ","
+				<< stddev << "\n";
+
+			// 콘솔 출력
+			std::cout
+				<< name << "\n"
+				<< "  Count: " << samples.size()
+				<< " | Avg: " << avg
+				<< " | Min: " << min
+				<< " | Max: " << max
+				<< " | 1%: " << p01
+				<< " | 99%: " << p99
+				<< " | StdDev: " << stddev << " (ms)\n";
+		}
+
+		std::cout << "======================================\n";
+		file << "======================================\n";
+		file.close();
+		_records.clear();
+	}
 
 private:
-    double GetTimeMs()
-    {
-        using namespace std::chrono;
-        auto now = steady_clock::now();
-        return duration_cast<microseconds>(now.time_since_epoch()).count() / 1000.0;
-    }
+	double GetTimeMs()
+	{
+		using namespace std::chrono;
+		auto now = steady_clock::now();
+		return duration_cast<microseconds>(now.time_since_epoch()).count() / 1000.0;
+	}
 
-    double _programStartTime;
-    double _warmupMs = 30000.0;
-    std::unordered_map<std::string, double> _startTimes;
-    std::unordered_map<std::string, std::vector<double>> _records;
+	double _programStartTime;
+	double _warmupMs = 30000.0;
+	std::unordered_map<std::string, double> _startTimes;
+	std::unordered_map<std::string, std::vector<double>> _records;
 };

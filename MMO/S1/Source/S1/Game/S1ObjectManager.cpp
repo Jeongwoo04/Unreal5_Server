@@ -246,11 +246,6 @@ void US1ObjectManager::DespawnObject(uint64 ObjectId)
 	}
 }
 
-void US1ObjectManager::MoveObject(const Protocol::S_MOVE& MovePkt)
-{
-	const uint64 ObjectId = MovePkt.info().object_id();
-}
-
 FS1ObjectKey US1ObjectManager::MakeKey(const Protocol::ObjectInfo& Info) const
 {
 	int32 mainType = Info.object_type();

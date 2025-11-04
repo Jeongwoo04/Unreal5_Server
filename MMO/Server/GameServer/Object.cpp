@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Object.h"
+#include "Monster.h"
+#include "Player.h"
 #include "GameMap.h"
 
 Object::Object()
@@ -77,7 +79,15 @@ void Object::MoveToNextPos(const Vector3& destPos, Vector3* dir, Vector2Int* blo
 	if (GetCreatureType() == CREATURE_TYPE_MONSTER)
 		room->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), currentGrid, _gridPos);
 	else if (GetCreatureType() == CREATURE_TYPE_PLAYER)
-		room->_playerGrid.ApplyMove(static_pointer_cast<Player>(shared_from_this()), currentGrid, _gridPos);
+	{
+		auto player = static_pointer_cast<Player>(shared_from_this());
+		room->_playerGrid.ApplyMove(player, currentGrid, _gridPos);
+		if (player->_isDirty == false)
+			room->_dirtyPlayers.push_back(player);
+
+		player->_isDirty = true;
+		player->_hasMove = true;
+	}
 }
 
 void Object::ChangeState(const Protocol::StateMachine& state)
@@ -152,6 +162,7 @@ void Object::SetSpawnPos(const Vector3& pos, float yaw)
 	_objectInfo.mutable_pos_info()->CopyFrom(_posInfo);
 	_gridPos = WorldToGrid(Vector3(_posInfo));
 	_worldPos = Vector3(_posInfo);
+	_lastFlushPos = _worldPos;
 }
 
 void Object::SetSpawnRandomPos(Vector3 pos, float yaw, int32 range)
@@ -159,6 +170,11 @@ void Object::SetSpawnRandomPos(Vector3 pos, float yaw, int32 range)
 	pos._x = pos._x + Utils::GetRandom(-3000.f, 3000.f);
 	pos._y = pos._y + Utils::GetRandom(-3000.f, 3000.f);
 	SetSpawnPos(pos, yaw);
+}
+
+bool Object::IsMoveBatch()
+{
+	return (_lastFlushPos - _worldPos).LengthSquared2D() >= 0.0025;
 }
 
 void Object::ApplyBuffEffect(BuffInstance& buff, float deltaTime)

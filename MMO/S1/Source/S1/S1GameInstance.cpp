@@ -242,6 +242,14 @@ void US1GameInstance::HandleDespawn(const Protocol::S_DESPAWN& DespawnPkt)
 
 void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 {
+	for (auto& PosInfo : MovePkt.info())
+	{
+		HandleMove(PosInfo);
+	}
+}
+
+void US1GameInstance::HandleMove(const Protocol::PosInfo& PosInfo)
+{
 	if (Socket == nullptr || GameServerSession == nullptr)
 		return;
 
@@ -249,7 +257,7 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	if (World == nullptr)
 		return;
 
-	const uint64 ObjectId = MovePkt.info().object_id();
+	const uint64 ObjectId = PosInfo.object_id();
 
 	AActor* FindActor = ObjectManager->FindObject(ObjectId);
 	if (FindActor == nullptr)
@@ -258,7 +266,7 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 	AS1Projectile* Projectile = Cast<AS1Projectile>(FindActor);
 	if (Projectile)
 	{
-		Projectile->SetPosInfo(MovePkt.info());
+		Projectile->SetPosInfo(PosInfo);
 	}
 
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
@@ -267,21 +275,21 @@ void US1GameInstance::HandleMove(const Protocol::S_MOVE& MovePkt)
 
 	if (Creature == MyPlayer)
 	{
-		FVector ServerPos = FVector(MovePkt.info().x(), MovePkt.info().y(), MovePkt.info().z());
+		FVector ServerPos = FVector(PosInfo.x(), PosInfo.y(), PosInfo.z());
 		
 		float DistSq = FVector::DistSquared2D(ServerPos, MyPlayer->GetActorLocation());
 		const float Allow = FMath::Square(25.f);
 
 		if (DistSq > Allow)
 		{
-			Creature->SetPosInfo(MovePkt.info());
+			Creature->SetPosInfo(PosInfo);
 		}
 		else
 			return;
 	}
 	else
 	{
-		Creature->SetPosInfo(MovePkt.info());
+		Creature->SetPosInfo(PosInfo);
 	}
 }
 
