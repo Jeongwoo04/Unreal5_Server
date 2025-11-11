@@ -15,7 +15,7 @@ Object::~Object()
 
 }
 
-void Object::Update(float deltaTime)
+void Object::Update()
 {
 
 }
@@ -27,6 +27,7 @@ void Object::OnDamaged(ObjectRef attacker, int32 damage)
 		return;
 
 	_statInfo.set_hp(_statInfo.hp() - damage);
+	_attackerId = attacker->GetId();
 
 	if (_statInfo.hp() <= 0)
 	{
@@ -76,15 +77,17 @@ void Object::MoveToNextPos(const Vector3& destPos, Vector3* dir, Vector2Int* blo
 	_worldPos = nextPos;
 	_gridPos = Vector2Int(_posInfo);
 
+	AddMoveFlushQueue(shared_from_this());
+
 	if (GetCreatureType() == CREATURE_TYPE_MONSTER)
+	{
 		room->_monsterGrid.ApplyMove(static_pointer_cast<Monster>(shared_from_this()), currentGrid, _gridPos);
+	}
 	else if (GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
 		auto player = static_pointer_cast<Player>(shared_from_this());
 		room->_playerGrid.ApplyMove(player, currentGrid, _gridPos);
-		if (player->_isDirty == false)
-			room->_dirtyPlayers.push_back(player);
-
+		
 		player->_isDirty = true;
 		player->_hasMove = true;
 	}
@@ -172,9 +175,88 @@ void Object::SetSpawnRandomPos(Vector3 pos, float yaw, int32 range)
 	SetSpawnPos(pos, yaw);
 }
 
+void Object::AddSpawnFlushQueue(ObjectRef obj)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	room->_deferFlushQueue.push_back({ obj, Type::SPAWN });
+}
+
+void Object::AddMoveFlushQueue(ObjectRef obj)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	room->_deferFlushQueue.push_back({ obj, Type::MOVE });
+}
+
+void Object::AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const Protocol::S_SKILL_EVENT& event)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	switch (state)
+	{
+	case CastState::CAST_START:
+	{
+		room->_deferFlushQueue.push_back({ obj, Type::CAST_START, event });
+	} break;
+	case CastState::CAST_CANCEL:
+	{
+		room->_deferFlushQueue.push_back({ obj, Type::CAST_CANCEL, event });
+	} break;
+	case CastState::CAST_SUCCESS:
+	{
+		room->_deferFlushQueue.push_back({ obj, Type::CAST_SUCCESS, event });
+	} break;
+	case CastState::ACTION:
+	{
+		room->_deferFlushQueue.push_back({ obj, Type::SKILL_ACTION, event });
+	} break;
+	default:
+		break;
+	}
+}
+
+void Object::AddHitFlushQueue(ObjectRef obj)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	room->_deferFlushQueue.push_back({ obj, Type::HIT });
+}
+
+void Object::AddDieFlushQueue(ObjectRef obj)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	room->_deferFlushQueue.push_back({ obj, Type::DIE });
+}
+
+void Object::AddDespawnFlushQueue(ObjectRef obj)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	room->_deferFlushQueue.push_back({ obj, Type::DESPAWN });
+}
+
+void Object::FlushStateInit()
+{
+	_lastFlushPos = _worldPos;
+}
+
 bool Object::IsMoveBatch()
 {
-	return (_lastFlushPos - _worldPos).LengthSquared2D() >= 0.0025;
+	return !IsDead() && (_lastFlushPos - _worldPos).LengthSquared2D() >= 0.0025;
 }
 
 void Object::ApplyBuffEffect(BuffInstance& buff, float deltaTime)

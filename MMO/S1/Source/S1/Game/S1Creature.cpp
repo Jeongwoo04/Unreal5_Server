@@ -70,12 +70,6 @@ void AS1Creature::ChangeState(Protocol::StateMachine NewState)
 	if (PosInfo.state() == NewState)
 		return;
 
-	UEnum* EnumPtr = StaticEnum<EStateMachine>();
-	FString OldStateName = EnumPtr ? EnumPtr->GetNameStringByValue((int64)PosInfo.state()) : FString("Unknown");
-	FString NewStateName = EnumPtr ? EnumPtr->GetNameStringByValue((int64)NewState) : FString("Unknown");
-
-	UE_LOG(LogTemp, Warning, TEXT("[ChangeState] %s -> %s"), *OldStateName, *NewStateName);
-
 	PosInfo.set_state(NewState);
 
 	//UpdateAnim();
@@ -83,37 +77,42 @@ void AS1Creature::ChangeState(Protocol::StateMachine NewState)
 
 void AS1Creature::UpdateIdle(float DeltaTime)
 {
+	// Idle 시에는 오차 보정만 수행
 	FVector CurrentLoc = GetActorLocation();
-	float Dist = FVector::Dist(CurrentLoc, TargetPos);
-
-	// Idle이더라도 미세한 오차가 남아있으면 보정
-	if (Dist > KINDA_SMALL_NUMBER)
+	if (FVector::Dist(CurrentLoc, TargetPos) > 5.f)
 	{
-		SetActorLocation(TargetPos);
 		SetActorRotation(TargetRot);
+		SetActorLocation(FMath::VInterpTo(CurrentLoc, TargetPos, DeltaTime, 10.f));
 	}
 }
 
 void AS1Creature::UpdateMoving(float DeltaTime)
 {
-	FVector PreviousLoc = GetActorLocation();
-
 	SetActorRotation(TargetRot);
-	float Dist = FVector::Dist(PreviousLoc, TargetPos);
-	if (Dist <= 2000.f && Dist >= PosInfo.speed() * DeltaTime)
-	{
-		FVector NewLoc = FMath::VInterpConstantTo(PreviousLoc, TargetPos, DeltaTime, PosInfo.speed());
-		SetActorLocation(NewLoc);
-	}
-	else
+
+	if (!bShouldInterp)
 	{
 		SetActorLocation(TargetPos);
+		return;
+	}
+
+	FVector NewLoc = FMath::VInterpConstantTo(GetActorLocation(), TargetPos, DeltaTime, PosInfo.speed());
+	SetActorLocation(NewLoc);
+
+	if (FVector::Dist(NewLoc, TargetPos) < 1.f)
+	{
+		bShouldInterp = false;
 	}
 }
 
 void AS1Creature::UpdateCasting(float DeltaTime)
 {
-
+	FVector NewLoc = FMath::VInterpConstantTo(GetActorLocation(), TargetPos, DeltaTime, PosInfo.speed());
+	if (FVector::Dist(NewLoc, TargetPos) < 1.f)
+	{
+		return;
+	}
+	SetActorLocation(NewLoc);
 }
 
 void AS1Creature::UpdateSkill(float DeltaTime)
@@ -136,12 +135,6 @@ void AS1Creature::UpdateAnim()
 	}
 }
 
-void AS1Creature::Move(const Protocol::PosInfo& Info)
-{
-	TargetPos = FVector(Info.x(), Info.y(), Info.z());
-	TargetRot = FRotator(0.f, Info.yaw(), 0.f);
-}
-
 void AS1Creature::SetPosInfo(const Protocol::PosInfo& Info)
 {
 	if (PosInfo.object_id() != 0)
@@ -149,12 +142,15 @@ void AS1Creature::SetPosInfo(const Protocol::PosInfo& Info)
 		assert(PosInfo.object_id() == Info.object_id());
 	}
 
+	TargetPos = FVector(Info.x(), Info.y(), Info.z());
+	TargetRot = FRotator(0.f, Info.yaw(), 0.f);
+
 	PosInfo.CopyFrom(Info);
 
-	Move(Info);
+	bShouldInterp = FVector::Dist(GetActorLocation(), TargetPos) > KINDA_SMALL_NUMBER;
 }
 
-void AS1Creature::HandleActionPkt(const Protocol::S_SKILL& Pkt)
+void AS1Creature::HandleActionPkt(const Protocol::S_ACTION& Pkt)
 {
 	SkillComponent->HandleActionPkt(Pkt);
 }

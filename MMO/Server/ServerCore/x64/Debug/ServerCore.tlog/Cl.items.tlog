@@ -14,6 +14,7 @@ C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\LockQueue.cpp;C:\Users\jeson
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\NetAddress.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Debug\NetAddress.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\pch.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Debug\pch.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\RecvBuffer.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Debug\RecvBuffer.obj
+C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\SafeLog.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Debug\SafeLog.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\SendBuffer.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Debug\SendBuffer.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\Service.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Debug\Service.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\Session.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Debug\Session.obj

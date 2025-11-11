@@ -18,6 +18,24 @@ public:
 		_warmupMs = seconds * 1000.0;
 	}
 
+	void AddDeferPktCount(int32 count)
+	{
+		double now = GetTimeMs();
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
+
+		_records["DeferPktCount"].push_back(count);
+	}
+
+	void AddImmediatePktCount(int32 count)
+	{
+		double now = GetTimeMs();
+		//if (now - _programStartTime < _warmupMs)
+		//    return;
+
+		_records["ImmediatePktCount"].push_back(count);
+	}
+
 	void AddExecuteTime(double exeTime)
 	{
 		double now = GetTimeMs();
@@ -25,7 +43,7 @@ public:
 		//    return;
 
 		_records["BCExecuteTime"].push_back(exeTime);
-	}\
+	}
 
 
 	void AddBCQDelay(double delayMs)

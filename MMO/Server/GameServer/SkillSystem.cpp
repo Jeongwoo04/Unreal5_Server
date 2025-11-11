@@ -29,6 +29,9 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 	instance->skill = &skill;
 	instance->targetPos = targetPos;
 	instance->castId = castId;
+	instance->clientSend = clientSend;
+	instance->serverNow = now;
+	instance->castEndTime = now + static_cast<uint64>(instance->skill->castTime * 1000);
 	instance->isCasting = (skill.castTime > 0.0f);
 	instance->actionDelayElapsed = 0.f;
 	instance->currentActionIndex = 0;
@@ -37,42 +40,45 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 	if (creature == nullptr)
 		return;
 
+	creature->SetActiveSkill(instance);
+
 	if (instance->isCasting == true)
 	{
 		creature->ChangeState(Protocol::STATE_MACHINE_CASTING);
 		creature->StartSkillCast(skillId, now, skill.castTime);
 		
+		{
+			instance->caster->_hasMove = false;
+			Protocol::S_SKILL_EVENT event;
+			ParseEvent(creature, CastState::CAST_START, event);
+			instance->caster->AddSkillFlushQueue(caster, CastState::CAST_START, event);
+		}
+
 		// 캐스팅시작 패킷전송
-		Protocol::S_SKILL_CAST_START pkt;
-		pkt.set_object_id(caster->GetId());
-		pkt.set_skillid(skillId);
-		pkt.set_castid(castId);
-		pkt.set_clientsend(clientSend);
-		pkt.set_servernow(now);
-		pkt.set_castendtime(now + static_cast<uint64>(instance->skill->castTime * 1000));
-		pkt.set_yaw(caster->_posInfo.yaw());
+		//Protocol::S_SKILL_CAST_START pkt;
+		//pkt.set_object_id(caster->GetId());
+		//pkt.set_skillid(skillId);
+		//pkt.set_castid(castId);
+		//pkt.set_clientsend(clientSend);
+		//pkt.set_servernow(now);
+		//pkt.set_castendtime(now + static_cast<uint64>(instance->skill->castTime * 1000));
+		//pkt.set_yaw(caster->_posInfo.yaw());
 
 		//if (creature->GetCreatureType() == Protocol::CREATURE_TYPE_MONSTER)
 			//printf("[Server] SkillSystem: Monster SkillCastStart\n");
 		//else
 			//printf("[Server] SkillSystem: Player SkillCastStart\n");
 
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-		if (auto room = GetRoom())
-			room->BroadcastNearby(sendBuffer, caster->_worldPos);
+		//auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+		//if (auto room = GetRoom())
+		//	room->BroadcastNearby(sendBuffer, caster->_worldPos);
 	}
 	else
 	{
-		if (!skill.actions.empty())
-		{
-			ActionData* action = instance->skill->actions[instance->currentActionIndex];
-			HandleAction(caster, targetPos, action, instance);
-			
-			creature->StartSkillCooldown(skillId, now);
-		}
+		instance->cooldownEndTime = now + static_cast<uint64>(instance->skill->cooldown * 1000);
+		creature->StartSkillCooldown(skillId, now);
 	}
 
-	creature->SetActiveSkill(instance);
 	activeSkills.push_back(instance);
 }
 
@@ -87,21 +93,30 @@ void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 		if (caster->IsDead())
 			return;
 
-		Protocol::S_SKILL_CAST_CANCEL cancelPkt;
-		cancelPkt.set_object_id(creature->GetId());
-		cancelPkt.set_skillid(creature->GetActiveSkill()->skill->id);
-		cancelPkt.set_castid(castId);
+		{
+			Protocol::S_SKILL_EVENT event;
+			ParseEvent(caster, CastState::CAST_CANCEL, event);
+			caster->AddSkillFlushQueue(caster, CastState::CAST_CANCEL, event);
 
-		creature->GetActiveSkill()->canceled = true;
-		creature->SetActiveSkill(nullptr);
+			creature->GetActiveSkill()->canceled = true;
+			creature->SetActiveSkill(nullptr);
+		}
 
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(cancelPkt);
-		if (auto room = GetRoom())
-			room->BroadcastNearby(sendBuffer, caster->_worldPos);
+		//Protocol::S_SKILL_CAST_CANCEL cancelPkt;
+		//cancelPkt.set_object_id(creature->GetId());
+		//cancelPkt.set_skillid(creature->GetActiveSkill()->skill->id);
+		//cancelPkt.set_castid(castId);
+
+		//creature->GetActiveSkill()->canceled = true;
+		//creature->SetActiveSkill(nullptr);
+
+		//auto sendBuffer = ServerPacketHandler::MakeSendBuffer(cancelPkt);
+		//if (auto room = GetRoom())
+		//	room->BroadcastNearby(sendBuffer, caster->_worldPos);
 	}
 }
 
-void SkillSystem::Update(float deltaTime)
+void SkillSystem::Update()
 {
 	uint64 now = GetTickCount64();
 	for (auto it = activeSkills.begin(); it != activeSkills.end(); )
@@ -134,24 +149,29 @@ void SkillSystem::Update(float deltaTime)
 				instance->actionDelayElapsed = 0.f;
 				// 캐스팅 완료 패킷 전송
 				{
-					S_SKILL_CAST_SUCCESS pkt;
-					pkt.set_object_id(instance->caster->GetId());
-					pkt.set_skillid(instance->skill->id);
-					pkt.set_castid(instance->castId);
-					pkt.set_servernow(now);
-					pkt.set_cooldownendtime(now + static_cast<uint64>(instance->skill->cooldown * 1000));
-					if (!actions.empty())
-					{
-						pkt.mutable_skill_info()->set_actionindex(instance->currentActionIndex);
-						pkt.mutable_skill_info()->mutable_targetpos()->set_x(instance->targetPos._x);
-						pkt.mutable_skill_info()->mutable_targetpos()->set_y(instance->targetPos._y);
-						pkt.mutable_skill_info()->mutable_targetpos()->set_z(instance->targetPos._z);
-					}
-					//printf("[Server] SkillSystem: SkillCastSuccess %s [%d]\n", instance->skill->name.c_str(), instance->currentActionIndex);
+					Protocol::S_SKILL_EVENT event;
+					instance->cooldownEndTime = now + static_cast<uint64>(instance->skill->cooldown * 1000);
+					ParseEvent(creature, CastState::CAST_SUCCESS, event);
+					instance->caster->AddSkillFlushQueue(instance->caster, CastState::CAST_SUCCESS, event);
 
-					auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-					if (auto room = GetRoom())
-						room->BroadcastNearby(sendBuffer, instance->caster->_worldPos);
+					//S_SKILL_CAST_SUCCESS pkt;
+					//pkt.set_object_id(instance->caster->GetId());
+					//pkt.set_skillid(instance->skill->id);
+					//pkt.set_castid(instance->castId);
+					//pkt.set_servernow(now);
+					//pkt.set_cooldownendtime(now + static_cast<uint64>(instance->skill->cooldown * 1000));
+					//if (!actions.empty())
+					//{
+					//	pkt.mutable_skill_info()->set_actionindex(instance->currentActionIndex);
+					//	pkt.mutable_skill_info()->mutable_targetpos()->set_x(instance->targetPos._x);
+					//	pkt.mutable_skill_info()->mutable_targetpos()->set_y(instance->targetPos._y);
+					//	pkt.mutable_skill_info()->mutable_targetpos()->set_z(instance->targetPos._z);
+					//}
+					////printf("[Server] SkillSystem: SkillCastSuccess %s [%d]\n", instance->skill->name.c_str(), instance->currentActionIndex);
+
+					//auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+					//if (auto room = GetRoom())
+					//	room->BroadcastNearby(sendBuffer, instance->caster->_worldPos);
 				}
 				creature->StartSkillCooldown(instance->skill->id, now);
 			}
@@ -165,7 +185,7 @@ void SkillSystem::Update(float deltaTime)
 		while(instance->currentActionIndex < (int32)actions.size())
 		{
 			ActionData* action = actions[instance->currentActionIndex];
-			instance->actionDelayElapsed += deltaTime;
+			instance->actionDelayElapsed += ServerTickInterval;
 
 			if (instance->actionDelayElapsed < action->actionDelay)
 				break;
@@ -177,6 +197,7 @@ void SkillSystem::Update(float deltaTime)
 		// Action 종료 -> 제거
 		if (instance->currentActionIndex >= (int32)actions.size())
 		{
+			instance->canceled = true;
 			creature->SetActiveSkill(nullptr);
 			creature->ChangeState(Protocol::STATE_MACHINE_IDLE);
 
@@ -193,31 +214,111 @@ void SkillSystem::Update(float deltaTime)
 	}
 }
 
+void SkillSystem::ParseEvent(ObjectRef object, const Protocol::CastState& state, OUT Protocol::S_SKILL_EVENT& event)
+{
+	auto creature = static_pointer_cast<Creature>(object);
+	if (!creature)
+		return;
+
+	SkillInstanceRef instance = creature->GetActiveSkill();
+
+	switch (state)
+	{
+	case Protocol::CAST_START:
+	{
+		Protocol::S_SKILL_CAST_START pkt;
+		pkt.set_object_id(object->GetId());
+		pkt.set_skillid(instance->skill->id);
+		pkt.set_castid(instance->castId);
+		pkt.set_clientsend(instance->clientSend);
+		pkt.set_servernow(instance->serverNow);
+		pkt.set_castendtime(instance->castEndTime);
+		pkt.mutable_pos()->CopyFrom(object->_posInfo);
+
+		event.mutable_cast_start()->CopyFrom(pkt);
+		event.set_caststate(state);
+	} break;
+	case Protocol::CAST_CANCEL:
+	{
+		Protocol::S_SKILL_CAST_CANCEL pkt;
+		pkt.set_object_id(object->GetId());
+		pkt.set_skillid(instance->skill->id);
+		pkt.set_castid(instance->castId);
+
+		event.mutable_cast_cancel()->CopyFrom(pkt);
+		event.set_caststate(state);
+	} break;
+	case Protocol::CAST_SUCCESS:
+	{
+		Protocol::S_SKILL_CAST_SUCCESS pkt;
+		pkt.set_object_id(object->GetId());
+		pkt.set_skillid(instance->skill->id);
+		pkt.set_castid(instance->castId);
+		pkt.set_servernow(instance->serverNow);
+		pkt.set_cooldownendtime(instance->cooldownEndTime);
+		pkt.set_actionindex(0);
+		pkt.mutable_targetpos()->set_x(instance->targetPos._x);
+		pkt.mutable_targetpos()->set_y(instance->targetPos._y);
+		pkt.mutable_targetpos()->set_z(instance->targetPos._z);
+
+		event.mutable_cast_success()->CopyFrom(pkt);
+		event.set_caststate(state);
+	} break;
+	case Protocol::ACTION:
+	{
+		Protocol::S_ACTION pkt;
+		pkt.set_object_id(object->GetId());
+		pkt.set_skillid(instance->skill->id);
+		pkt.set_actionindex(instance->currentActionIndex);
+		pkt.mutable_targetpos()->set_x(instance->targetPos._x);
+		pkt.mutable_targetpos()->set_y(instance->targetPos._y);
+		pkt.mutable_targetpos()->set_z(instance->targetPos._z);
+
+		if (instance->currentActionIndex == 0)
+			pkt.set_cooldownendtime(instance->cooldownEndTime);
+
+		event.mutable_action()->CopyFrom(pkt);
+		event.set_caststate(state);
+	} break;
+	default:
+		break;
+	}
+}
+
 // TODO: struct Action -> class Action
 void SkillSystem::HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action, SkillInstanceRef instance)
 {
 	int32 idx = instance->currentActionIndex;
 	caster->ChangeState(Protocol::STATE_MACHINE_SKILL);
+	auto creature = static_pointer_cast<Creature>(caster);
+	if (!creature)
+		return;
 
 	//if (caster->GetCreatureType() == Protocol::CREATURE_TYPE_MONSTER)
 	//	printf("[Server] Monster SkillSystem: HandleAction %s [%d]\n", instance->skill->name.c_str(), idx);
 	//else
 	//	printf("[Server] Player SkillSystem: HandleAction %s [%d]\n", instance->skill->name.c_str(), idx);
 
-	if (idx != 0)
 	{
-		Protocol::S_SKILL pkt;
-		pkt.set_object_id(caster->GetId());
-		pkt.mutable_skill_info()->set_skillid(instance->skill->id);
-		pkt.mutable_skill_info()->set_actionindex(idx);
-		pkt.mutable_skill_info()->mutable_targetpos()->set_x(targetPos._x);
-		pkt.mutable_skill_info()->mutable_targetpos()->set_y(targetPos._y);
-		pkt.mutable_skill_info()->mutable_targetpos()->set_z(targetPos._z);
-
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-		if (auto room = GetRoom())
-			room->BroadcastNearby(sendBuffer, caster->_worldPos);
+		Protocol::S_SKILL_EVENT event;
+		ParseEvent(creature, CastState::ACTION, event);
+		caster->AddSkillFlushQueue(caster, CastState::ACTION, event);
 	}
+
+	//if (idx != 0)
+	//{
+		//Protocol::S_SKILL pkt;
+		//pkt.set_object_id(caster->GetId());
+		//pkt.mutable_skill_info()->set_skillid(instance->skill->id);
+		//pkt.mutable_skill_info()->set_actionindex(idx);
+		//pkt.mutable_skill_info()->mutable_targetpos()->set_x(targetPos._x);
+		//pkt.mutable_skill_info()->mutable_targetpos()->set_y(targetPos._y);
+		//pkt.mutable_skill_info()->mutable_targetpos()->set_z(targetPos._z);
+
+		//auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+		//if (auto room = GetRoom())
+		//	room->BroadcastNearby(sendBuffer, caster->_worldPos);
+	//}	
 
 	switch (action->actionType)
 	{
@@ -245,6 +346,7 @@ void SkillSystem::HandleMoveAction(ObjectRef caster, const Vector3& targetPos, M
 {
 	Vector2Int blocked;
 	caster->MoveToNextPos(targetPos, nullptr, &blocked);
+	// Flush?
 	if (auto room = GetRoom())
 		room->BroadcastMove(caster->_posInfo);
 }
@@ -281,20 +383,12 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 			break;
 		}
 
-		// ApplyDamage 시점에 ObjectRef로 변환
-		Protocol::S_CHANGE_HP pkt;
 		for (auto target : targetPlayers)
 		{
-			Protocol::HpChange hpChange;
 			CombatSystem::Instance().ApplyDamage(caster, target, action->damage);
 
-			hpChange.set_hp(target->_statInfo.hp());
-			hpChange.set_object_id(target->GetId());
-			*pkt.add_changes() = hpChange;
+			target->AddHitFlushQueue(target);
 		}
-
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-		room->BroadcastNearby(sendBuffer, caster->_worldPos);
 	}
 	else if (caster->GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
@@ -319,19 +413,12 @@ void SkillSystem::HandleAttackAction(ObjectRef caster, const Vector3& targetPos,
 			break;
 		}
 
-		Protocol::S_CHANGE_HP pkt;
 		for (auto target : targetMonsters)
 		{
-			Protocol::HpChange hpChange;
 			CombatSystem::Instance().ApplyDamage(caster, target, action->damage);
 
-			hpChange.set_hp(target->_statInfo.hp());
-			hpChange.set_object_id(target->GetId());
-			*pkt.add_changes() = hpChange;
+			target->AddHitFlushQueue(target);
 		}
-
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-		room->BroadcastNearby(sendBuffer, caster->_worldPos);
 	}
 }
 
@@ -342,13 +429,8 @@ void SkillSystem::HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, 
 		auto room = GetRoom();
 		if (room)
 		{
-			Vector3 startPos = caster->_worldPos;
-			Vector3 dir = (targetPos - startPos).Normalized2D();
-
-			room->DoAsync([room, caster, dataId = action->dataId, startPos, dir]()
-				{
-					room->SpawnProjectile(caster, dataId, startPos, dir);
-				});
+			Vector3 dir = (targetPos - caster->_worldPos).Normalized2D();
+			room->SpawnProjectile(caster, action->dataId, caster->_worldPos, dir);
 		}
 	}
 	else if (action->actionType == ActionType::SpawnField)
@@ -356,11 +438,7 @@ void SkillSystem::HandleSpawnAction(ObjectRef caster, const Vector3& targetPos, 
 		auto room = GetRoom();
 		if (room)
 		{
-			Vector3 pos = targetPos;
-			room->DoAsync([room, caster, dataId = action->dataId, pos]()
-				{
-					room->SpawnField(caster, dataId, pos);
-				});
+			room->SpawnField(caster, action->dataId, targetPos);
 		}
 	}
 }

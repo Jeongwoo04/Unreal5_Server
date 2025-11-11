@@ -22,13 +22,17 @@ enum : uint16
 	PKT_S_MOVE = 1009,
 	PKT_C_SKILL = 1010,
 	PKT_S_SKILL = 1011,
-	PKT_S_SKILL_CAST_START = 1012,
-	PKT_S_SKILL_CAST_SUCCESS = 1013,
+	PKT_S_ACTION = 1012,
+	PKT_S_SKILL_CAST_START = 1013,
 	PKT_S_SKILL_CAST_CANCEL = 1014,
-	PKT_S_CHANGE_HP = 1015,
-	PKT_S_DIE = 1016,
-	PKT_C_HEARTBEAT = 1017,
-	PKT_S_HEARTBEAT = 1018,
+	PKT_S_SKILL_CAST_SUCCESS = 1015,
+	PKT_S_HIT = 1016,
+	PKT_S_DIE = 1017,
+	PKT_C_HEARTBEAT = 1018,
+	PKT_S_HEARTBEAT = 1019,
+	PKT_S_SKILL_EVENT = 1020,
+	PKT_S_IMMEDIATE_FLUSH = 1021,
+	PKT_S_DEFER_FLUSH = 1022,
 };
 
 // Custom Handlers
@@ -40,12 +44,16 @@ bool Handle_S_SPAWN(PacketSessionRef& session, Protocol::S_SPAWN& pkt);
 bool Handle_S_DESPAWN(PacketSessionRef& session, Protocol::S_DESPAWN& pkt);
 bool Handle_S_MOVE(PacketSessionRef& session, Protocol::S_MOVE& pkt);
 bool Handle_S_SKILL(PacketSessionRef& session, Protocol::S_SKILL& pkt);
+bool Handle_S_ACTION(PacketSessionRef& session, Protocol::S_ACTION& pkt);
 bool Handle_S_SKILL_CAST_START(PacketSessionRef& session, Protocol::S_SKILL_CAST_START& pkt);
-bool Handle_S_SKILL_CAST_SUCCESS(PacketSessionRef& session, Protocol::S_SKILL_CAST_SUCCESS& pkt);
 bool Handle_S_SKILL_CAST_CANCEL(PacketSessionRef& session, Protocol::S_SKILL_CAST_CANCEL& pkt);
-bool Handle_S_CHANGE_HP(PacketSessionRef& session, Protocol::S_CHANGE_HP& pkt);
+bool Handle_S_SKILL_CAST_SUCCESS(PacketSessionRef& session, Protocol::S_SKILL_CAST_SUCCESS& pkt);
+bool Handle_S_HIT(PacketSessionRef& session, Protocol::S_HIT& pkt);
 bool Handle_S_DIE(PacketSessionRef& session, Protocol::S_DIE& pkt);
 bool Handle_S_HEARTBEAT(PacketSessionRef& session, Protocol::S_HEARTBEAT& pkt);
+bool Handle_S_SKILL_EVENT(PacketSessionRef& session, Protocol::S_SKILL_EVENT& pkt);
+bool Handle_S_IMMEDIATE_FLUSH(PacketSessionRef& session, Protocol::S_IMMEDIATE_FLUSH& pkt);
+bool Handle_S_DEFER_FLUSH(PacketSessionRef& session, Protocol::S_DEFER_FLUSH& pkt);
 
 class ClientPacketHandler
 {
@@ -61,12 +69,16 @@ public:
 		GPacketHandler[PKT_S_DESPAWN] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_DESPAWN>(Handle_S_DESPAWN, session, buffer, len); };
 		GPacketHandler[PKT_S_MOVE] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_MOVE>(Handle_S_MOVE, session, buffer, len); };
 		GPacketHandler[PKT_S_SKILL] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_SKILL>(Handle_S_SKILL, session, buffer, len); };
+		GPacketHandler[PKT_S_ACTION] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_ACTION>(Handle_S_ACTION, session, buffer, len); };
 		GPacketHandler[PKT_S_SKILL_CAST_START] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_SKILL_CAST_START>(Handle_S_SKILL_CAST_START, session, buffer, len); };
-		GPacketHandler[PKT_S_SKILL_CAST_SUCCESS] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_SKILL_CAST_SUCCESS>(Handle_S_SKILL_CAST_SUCCESS, session, buffer, len); };
 		GPacketHandler[PKT_S_SKILL_CAST_CANCEL] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_SKILL_CAST_CANCEL>(Handle_S_SKILL_CAST_CANCEL, session, buffer, len); };
-		GPacketHandler[PKT_S_CHANGE_HP] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_CHANGE_HP>(Handle_S_CHANGE_HP, session, buffer, len); };
+		GPacketHandler[PKT_S_SKILL_CAST_SUCCESS] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_SKILL_CAST_SUCCESS>(Handle_S_SKILL_CAST_SUCCESS, session, buffer, len); };
+		GPacketHandler[PKT_S_HIT] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_HIT>(Handle_S_HIT, session, buffer, len); };
 		GPacketHandler[PKT_S_DIE] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_DIE>(Handle_S_DIE, session, buffer, len); };
 		GPacketHandler[PKT_S_HEARTBEAT] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_HEARTBEAT>(Handle_S_HEARTBEAT, session, buffer, len); };
+		GPacketHandler[PKT_S_SKILL_EVENT] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_SKILL_EVENT>(Handle_S_SKILL_EVENT, session, buffer, len); };
+		GPacketHandler[PKT_S_IMMEDIATE_FLUSH] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_IMMEDIATE_FLUSH>(Handle_S_IMMEDIATE_FLUSH, session, buffer, len); };
+		GPacketHandler[PKT_S_DEFER_FLUSH] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_DEFER_FLUSH>(Handle_S_DEFER_FLUSH, session, buffer, len); };
 	}
 
 	static bool HandlePacket(PacketSessionRef& session, BYTE* buffer, int32 len)

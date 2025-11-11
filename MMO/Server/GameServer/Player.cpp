@@ -35,12 +35,51 @@ void Player::OnDead(ObjectRef attacker)
 	if (attacker->GetCreatureType() == CREATURE_TYPE_MONSTER)
 		static_pointer_cast<Monster>(attacker)->SetPlayer(nullptr);
 
-	S_DIE diePkt;
-	diePkt.set_object_id(GetId());
-	diePkt.set_attacker_id(attacker->GetId());
-
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
-	GetSession()->Send(sendBuffer);
-
+	AddDieFlushQueue(shared_from_this());
 	room->AddRemoveList(shared_from_this());
+}
+
+void Player::AddMoveFlushQueue(ObjectRef obj)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	if (_isDirty == false)
+		room->_immediateFlushQueue.push_back({ obj, Type::MOVE });
+}
+
+void Player::AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const Protocol::S_SKILL_EVENT& event)
+{
+	auto room = GetRoom();
+	if (!room)
+		return;
+
+	switch (state)
+	{
+	case CastState::CAST_START:
+	{
+		room->_immediateFlushQueue.push_back({ obj, Type::CAST_START, event });
+	} break;
+	case CastState::CAST_CANCEL:
+	{
+		room->_immediateFlushQueue.push_back({ obj, Type::CAST_CANCEL, event });
+	} break;
+	case CastState::CAST_SUCCESS:
+	{
+		room->_deferFlushQueue.push_back({ obj, Type::CAST_SUCCESS, event });
+	} break;
+	case CastState::ACTION:
+	{
+		room->_deferFlushQueue.push_back({ obj, Type::SKILL_ACTION, event });
+	} break;
+	default:
+		break;
+	}
+}
+
+void Player::FlushStateInit()
+{
+	Object::FlushStateInit();
+	_isDirty = false;
 }

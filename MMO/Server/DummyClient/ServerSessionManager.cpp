@@ -49,6 +49,5 @@ void ServerSessionManager::SendRandomPos()
 
 		auto sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
 		session->Send(sendBuffer);
-		cout << "Send Random Move\n";
 	}
 }

@@ -21,9 +21,10 @@ public:
 	GameSessionRef GetSession() { return _session.lock(); }
 	void SetSession(GameSessionRef session) { _session = session; }
 
-public:
-	bool _hasMove = false;
-	bool _isDirty = false;
+	virtual void AddMoveFlushQueue(ObjectRef obj) override;
+	virtual void AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const Protocol::S_SKILL_EVENT& event) override;
+
+	virtual void FlushStateInit() override;
 
 private:
 	weak_ptr<GameSession> _session;

@@ -26,32 +26,32 @@ Monster::~Monster()
 	//cout << "Monster " << GetId() << " Destructor" << endl;
 }
 
-void Monster::Update(float deltaTime)
+void Monster::Update()
 {
 	switch (_posInfo.state())
 	{
 	case StateMachine::STATE_MACHINE_IDLE:
-		UpdateIdle(deltaTime);
+		UpdateIdle();
 		break;
 	case StateMachine::STATE_MACHINE_PATROL:
-		UpdatePatrol(deltaTime);
+		UpdatePatrol();
 		break;
 	case StateMachine::STATE_MACHINE_MOVING:
-		UpdateMoving(deltaTime);
+		UpdateMoving();
 		break;
 	case StateMachine::STATE_MACHINE_CASTING:
-		UpdateCasting(deltaTime);
+		UpdateCasting();
 		break;
 	case StateMachine::STATE_MACHINE_SKILL:
-		UpdateSkill(deltaTime);
+		UpdateSkill();
 		break;
 	case StateMachine::STATE_MACHINE_DEAD:
-		UpdateDead(deltaTime);
+		UpdateDead();
 		break;
 	}
 }
 
-void Monster::UpdateIdle(float deltaTime)
+void Monster::UpdateIdle()
 {
 	const uint64 tick = GetTickCount64();
 
@@ -64,7 +64,6 @@ void Monster::UpdateIdle(float deltaTime)
 			return;
 		_nextSearchTick = tick + 500 + Utils::GetRandom(-200, 500);
 
-		cout << "[Server] Monster: Searching target\n";
 		target = room->_playerGrid.FindNearest(_gridPos, _searchRadius, _worldPos);
 
 		if (target == nullptr || target->IsDead())
@@ -72,7 +71,6 @@ void Monster::UpdateIdle(float deltaTime)
 
 		SetPlayer(target);
 		ChangeState(Protocol::STATE_MACHINE_MOVING);
-		cout << "[Server] Monster: Chasing target\n";
 		BroadcastMove();
 		return;
 	}
@@ -100,17 +98,17 @@ void Monster::UpdateIdle(float deltaTime)
 	}
 }
 
-void Monster::UpdatePatrol(float deltaTime)
+void Monster::UpdatePatrol()
 {
 
 }
 
-void Monster::UpdateCasting(float deltaTime)
+void Monster::UpdateCasting()
 {
 
 }
 
-void Monster::UpdateMoving(float deltaTime)
+void Monster::UpdateMoving()
 {
 	const uint64 tick = GetTickCount64();
 	
@@ -173,10 +171,10 @@ void Monster::UpdateMoving(float deltaTime)
 	}
 
 	// 직선 추적 가능 시 바로 이동
-	if (map->HasLineOfSightRayCast(myPos, targetPos, _statInfo.speed() * deltaTime))
+	if (map->HasLineOfSightRayCast(myPos, targetPos, _statInfo.speed() * ServerTickInterval))
 	{
 		Vector3 dir = (targetPos - myPos).Normalized2D();
-		float moveDist = _statInfo.speed() * deltaTime;
+		float moveDist = _statInfo.speed() * ServerTickInterval;
 		if ((moveDist * moveDist) > distanceSq)
 			moveDist = (targetPos - myPos).Length2D();
 
@@ -207,7 +205,7 @@ void Monster::UpdateMoving(float deltaTime)
 			return;
 		}
 
-		_simplifiedPath = map->SimplifyPathRaycast(_worldPos, _path, _statInfo.speed() * deltaTime);
+		_simplifiedPath = map->SimplifyPathRaycast(_worldPos, _path, _statInfo.speed() * ServerTickInterval);
 		_simplifiedIndex = 1;
 		_lastTargetPos = targetPos;
 	}
@@ -218,7 +216,7 @@ void Monster::UpdateMoving(float deltaTime)
 		destPos = _simplifiedPath[_simplifiedIndex];
 		Vector3 dir = destPos - _worldPos;
 		float segDistSq = dir.LengthSquared2D();
-		float moveDist = _statInfo.speed() * deltaTime;
+		float moveDist = _statInfo.speed() * ServerTickInterval;
 
 		if (moveDist * moveDist >= segDistSq)
 		{
@@ -244,12 +242,12 @@ void Monster::UpdateMoving(float deltaTime)
 	BroadcastMove();
 }
 
-void Monster::UpdateSkill(float deltaTime)
+void Monster::UpdateSkill()
 {
 
 }
 
-void Monster::UpdateDead(float deltaTime)
+void Monster::UpdateDead()
 {
 
 }
@@ -269,17 +267,9 @@ void Monster::OnDead(ObjectRef attacker)
 	_posInfo.set_state(Protocol::STATE_MACHINE_DEAD);
 	room->_skillSystem->CancelCasting(shared_from_this(), _castId);
 
-	S_DIE diePkt;
-	diePkt.set_object_id(GetId());
-	diePkt.set_attacker_id(attacker->GetId());
-
-	//cout << "Monster is Dead" << endl;
-
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(diePkt);
-	room->Broadcast(sendBuffer);
-
-	room->DoTimer(room->GetSpawnTable(_spTableId)->respawnInterval, &Room::SpawnMonster, _spTableId);
+	AddDieFlushQueue(shared_from_this());
 	room->AddRemoveList(shared_from_this());
+	room->DoTimer(room->GetSpawnTable(_spTableId)->respawnInterval, &Room::SpawnMonster, _spTableId);
 }
 
 void Monster::BroadcastMove()
@@ -288,7 +278,7 @@ void Monster::BroadcastMove()
 	if (room == nullptr)
 		return;
 
-	room->BroadcastMove(_posInfo, GetId());
+	AddMoveFlushQueue(shared_from_this());
 }
 
 void Monster::SelectSkill()

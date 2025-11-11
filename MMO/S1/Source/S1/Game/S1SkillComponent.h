@@ -72,7 +72,7 @@ public:
 	void LocalCancelCasting();
 	void ServerCancelCasting(int32 SkillID);
 
-	void HandleActionPkt(const Protocol::S_SKILL& Pkt);
+	void HandleActionPkt(const Protocol::S_ACTION& Pkt);
 
 private:
 	// 마커 업데이트

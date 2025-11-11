@@ -22,6 +22,7 @@
 #include "Room.h"
 
 using GameSessionRef = shared_ptr<class GameSession>;
+extern float ServerTickInterval;
 
 #define SEND_PACKET(pkt)													\
 	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);	\

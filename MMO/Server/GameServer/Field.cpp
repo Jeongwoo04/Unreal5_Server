@@ -29,7 +29,7 @@ void Field::GridCaching()
 	}
 }
 
-void Field::Update(float deltaTime)
+void Field::Update()
 {
 	if (GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
 		return;
@@ -42,15 +42,12 @@ void Field::Update(float deltaTime)
 	if (room == nullptr)
 		return;
 
-	_elapsedTime += deltaTime;
+	_elapsedTime += ServerTickInterval;
 	if (_elapsedTime >= _data->duration)
 	{
 		room->AddRemoveList(shared_from_this());
 		return;
 	}
-
-	Protocol::HpChange change;
-	Protocol::S_CHANGE_HP pkt;
 
 	for (const auto& grid : _cachedGrids)
 	{
@@ -71,9 +68,7 @@ void Field::Update(float deltaTime)
 
 				target->OnDamaged(GetOwner(), _data->damagePerTick);
 
-				change.set_object_id(target->GetId());
-				change.set_hp(target->_statInfo.hp());
-				*pkt.add_changes() = change;
+				target->AddHitFlushQueue(target);
 
 				if (_data->buffId > 0)
 					BuffSystem::Instance().ApplyBuff(target, _data->buffId);
@@ -96,9 +91,7 @@ void Field::Update(float deltaTime)
 
 				target->OnDamaged(GetOwner(), _data->damagePerTick);
 
-				change.set_object_id(target->GetId());
-				change.set_hp(target->_statInfo.hp());
-				*pkt.add_changes() = change;
+				target->AddHitFlushQueue(target);
 
 				if (_data->buffId > 0)
 					BuffSystem::Instance().ApplyBuff(target, _data->buffId);
@@ -107,7 +100,4 @@ void Field::Update(float deltaTime)
 			}
 		}
 	}
-
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	room->BroadcastNearby(sendBuffer, _worldPos, GetId());
 }

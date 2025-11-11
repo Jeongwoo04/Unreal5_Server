@@ -8,7 +8,7 @@ public:
 	Projectile();
 	virtual ~Projectile();
 
-	virtual void Update(float deltaTime) override;
+	virtual void Update() override;
 
 	void SetData(const ProjectileInfo* data) { _data = data; }
 	const ProjectileInfo* GetData() { return _data; }

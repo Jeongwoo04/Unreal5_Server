@@ -187,6 +187,9 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 	}
 
 	// 중복 처리 체크
+	if (ObjectManager->FindObject(ObjectInfo.object_id()))
+		return;
+
 	AActor* NewActor = ObjectManager->SpawnObject(ObjectInfo, IsMine);
 	if (!NewActor)
 	{
@@ -273,14 +276,17 @@ void US1GameInstance::HandleMove(const Protocol::PosInfo& PosInfo)
 	if (Creature == nullptr)
 		return;
 
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("HandleMove: ObjectID %llu Pos(%f, %f, %f)"), PosInfo.object_id(), PosInfo.x(), PosInfo.y(), PosInfo.z()));
+
 	if (Creature == MyPlayer)
 	{
 		FVector ServerPos = FVector(PosInfo.x(), PosInfo.y(), PosInfo.z());
 		
 		float DistSq = FVector::DistSquared2D(ServerPos, MyPlayer->GetActorLocation());
-		const float Allow = FMath::Square(25.f);
+		const float Allow = FMath::Square(PosInfo.speed() * 0.1f);
 
-		if (DistSq > Allow)
+		if (DistSq - Allow < 0.001f)
 		{
 			Creature->SetPosInfo(PosInfo);
 		}
@@ -295,6 +301,34 @@ void US1GameInstance::HandleMove(const Protocol::PosInfo& PosInfo)
 
 void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
 {
+	for (auto& event : SkillPkt.event())
+	{
+		switch (event.caststate())
+		{
+		case CAST_START:
+		{
+			HandleSkillCastStart(event.cast_start());
+		} break;
+		case CAST_CANCEL:
+		{
+			HandleSkillCastCancel(event.cast_cancel());
+		} break;
+		case CAST_SUCCESS:
+		{
+			HandleSkillCastSuccess(event.cast_success());
+		} break;
+		case ACTION:
+		{
+			HandleAction(event.action());
+		} break;
+		default:
+			break;
+		}
+	}
+}
+
+void US1GameInstance::HandleAction(const Protocol::S_ACTION& ActionPkt)
+{
 	if (Socket == nullptr || GameServerSession == nullptr)
 		return;
 
@@ -302,7 +336,7 @@ void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
 	if (World == nullptr)
 		return;
 
-	const uint64 ObjectId = SkillPkt.object_id();
+	const uint64 ObjectId = ActionPkt.object_id();
 
 	AActor* FindActor = ObjectManager->FindObject(ObjectId);
 	if (FindActor == nullptr)
@@ -311,12 +345,15 @@ void US1GameInstance::HandleSkill(const Protocol::S_SKILL& SkillPkt)
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
 	if (Creature == nullptr)
 		return;
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("HandleAction: ObjectID %llu ActionIndex %d"), ActionPkt.object_id(), ActionPkt.actionindex()));
 	
 	//Creature->ChangeState(Protocol::STATE_MACHINE_SKILL);
 	// Creature->UpdateAnim(SkillPkt.skillid());
 
 	// ActionIndex에 맞게 ExecuteAction
-	Creature->HandleActionPkt(SkillPkt);
+	Creature->HandleActionPkt(ActionPkt);
 }
 
 void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& CastStartPkt)
@@ -336,6 +373,9 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
 	if (Creature == nullptr)
 		return;
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("HandleCastStart: ObjectID %llu SkillId %d"), CastStartPkt.object_id(), CastStartPkt.skillid()));
 
 	// CastId 검증
 	if (Creature == MyPlayer)
@@ -357,9 +397,9 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 	else
 	{
 		// OtherPlayer / Monster는 단순 State 변경 + 애니메이션
-		Creature->ChangeState(Protocol::STATE_MACHINE_CASTING);
-		FRotator Rotation = { 0.f, CastStartPkt.yaw(), 0.f };
+		FRotator Rotation = { 0.f, CastStartPkt.pos().yaw(), 0.f};
 		Creature->SetActorRotation(Rotation);
+		Creature->SetPosInfo(CastStartPkt.pos());
 		// Creature->UpdateAnim(CastStartPkt.skillid()); // 필요 시
 	}
 }
@@ -383,7 +423,10 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 	if (Creature == nullptr)
 		return;
 
-	Vec3 Vec = CastSuccessPkt.skill_info().targetpos();
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("HandleCastSuccess: ObjectID %llu TargetPos (%f, %f, %f)"), CastSuccessPkt.object_id(), CastSuccessPkt.targetpos().x(), CastSuccessPkt.targetpos().y(), CastSuccessPkt.targetpos().z()));
+
+	Vec3 Vec = CastSuccessPkt.targetpos();
 	FVector TargetLoc = {Vec.x(), Vec.y(), Vec.z()};
 	FVector Direction = (TargetLoc - Creature->GetActorLocation());
 	Direction.Z = 0;
@@ -446,6 +489,9 @@ void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL&
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
 	if (Creature == nullptr)
 		return;
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("HandleCastCancel: ObjectID %llu SkillID %d"), CastCancelPkt.object_id(), CastCancelPkt.skillid()));
 	
 	if (Creature == MyPlayer)
 	{
@@ -463,7 +509,15 @@ void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL&
 	}
 }
 
-void US1GameInstance::HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt)
+void US1GameInstance::HandleHit(const Protocol::S_HIT& HitPkt)
+{
+	for (auto& Change : HitPkt.changes())
+	{
+		HandleHit(Change);
+	}
+}
+
+void US1GameInstance::HandleHit(const Protocol::HpChange& Change)
 {
 	if (Socket == nullptr || GameServerSession == nullptr)
 		return;
@@ -472,11 +526,21 @@ void US1GameInstance::HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt)
 	if (World == nullptr)
 		return;
 
-	// TODO : Hp UI 변경
+	// HpChange UI 업데이트
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("HandleHit: ObjectID %llu Hp %d"), Change.object_id(), Change.hp()));
 }
 
 void US1GameInstance::HandleDie(const Protocol::S_DIE& DiePkt)
 {
+	for (auto& Death : DiePkt.death())
+	{
+		HandleDie(Death);
+	}
+}
+
+void US1GameInstance::HandleDie(const Protocol::Death& Death)
+{
 	if (Socket == nullptr || GameServerSession == nullptr)
 		return;
 
@@ -484,8 +548,9 @@ void US1GameInstance::HandleDie(const Protocol::S_DIE& DiePkt)
 	if (World == nullptr)
 		return;
 
-	// TODO : Die anim
-	HandleDespawn(DiePkt.object_id());
+	// Die Anim 업데이트
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("HandleDie: ObjectID %llu by %llu"), Death.object_id(), Death.attacker_id()));
 }
 
 void US1GameInstance::HandleHeartbeat(const Protocol::S_HEARTBEAT& pkt)

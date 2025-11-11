@@ -95,6 +95,9 @@ public:
 					continue;
 
 				const auto& cellObjects = _cells[Index(pos)];
+				if (cellObjects.empty())
+					continue;
+
 				result.insert(result.end(), cellObjects.begin(), cellObjects.end());
 			}
 		}
@@ -139,9 +142,12 @@ public:
 		{
 			for (int32 x = -range; x <= range; ++x)
 			{
-				if ((x * CELL_SIZE * x * CELL_SIZE + y * CELL_SIZE * y * CELL_SIZE) > radius * radius) continue;
+				if ((x * CELL_SIZE * x * CELL_SIZE + y * CELL_SIZE * y * CELL_SIZE) > radius * radius)
+					continue;
+
 				Vector2Int pos = center + Vector2Int(x, y);
-				if (IsValid(pos)) result.push_back(pos);
+				if (IsValid(pos))
+					result.push_back(pos);
 			}
 		}
 		return result;
@@ -150,10 +156,11 @@ public:
 	ObjectPtr FindNearest(const Vector2Int& center, float radius, const Vector3& worldPos) const
 	{
 		ObjectPtr nearest = nullptr;
+		float earlyExit = 100.f;
 		float minDistSq = std::numeric_limits<float>::max();
-		float radiusSq = radius * radius;
+		float radiusSq = (radius * CELL_SIZE) * (radius * CELL_SIZE);
 
-		int32 range = static_cast<int32>(ceil(radius / CELL_SIZE));
+		int32 range = static_cast<int32>(ceil(radius));
 
 		for (int32 y = -range; y <= range; ++y)
 		{
@@ -169,8 +176,12 @@ public:
 						continue;
 
 					float distSq = (obj->_worldPos - worldPos).LengthSquared2D();
+					if (distSq <= earlyExit * earlyExit)
+						return obj;
+
 					if (distSq <= radiusSq && distSq < minDistSq)
 					{
+
 						minDistSq = distSq;
 						nearest = obj;
 					}
@@ -192,7 +203,9 @@ public:
 
 		for (auto& target : candidates)
 		{
-			if (!target || target->IsDead()) continue;
+			if (!target || target->IsDead())
+				continue;
+
 			Vector3 targetPos(target->_posInfo);
 			float totalRadius = thisRadius + target->_collisionRadius;
 			float hitT;

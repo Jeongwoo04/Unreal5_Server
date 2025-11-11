@@ -61,15 +61,25 @@ message S_MOVE
 
 message C_SKILL
 {
-	SkillInfo skill_info = 1;
+	int32 skillId = 1;
 	int32 castId = 2;
 	uint64 clientSend = 3;
+	optional int32 actionIndex = 4;
+	optional Vec3 TargetPos = 5;
 }
 
 message S_SKILL
 {
+	repeated S_SKILL_EVENT event = 1;
+}
+
+message S_ACTION
+{
 	uint64 object_id = 1;
-	SkillInfo skill_info = 2;
+	int32 skillId = 2;
+	optional int32 actionIndex = 3;
+	optional Vec3 TargetPos = 4;
+	optional uint64 cooldownEndTime = 5;
 }
 
 message S_SKILL_CAST_START
@@ -80,7 +90,14 @@ message S_SKILL_CAST_START
 	uint64 clientSend = 4;
 	uint64 serverNow = 5;
 	uint64 castEndTime = 6;
-	float yaw = 7;
+	PosInfo pos = 7;
+}
+
+message S_SKILL_CAST_CANCEL
+{
+	uint64 object_id = 1;
+	int32 skillId = 2;
+	int32 castId = 3;
 }
 
 message S_SKILL_CAST_SUCCESS
@@ -90,26 +107,18 @@ message S_SKILL_CAST_SUCCESS
 	int32 castId = 3;
 	uint64 serverNow = 4;
 	uint64 cooldownEndTime = 5;
-	optional SkillInfo skill_info = 6;
+	optional int32 actionIndex = 6;
+	optional Vec3 TargetPos = 7;
 }
 
-
-message S_SKILL_CAST_CANCEL
-{
-	uint64 object_id = 1;
-	int32 skillId = 2;
-	int32 castId = 3;
-}
-
-message S_CHANGE_HP
+message S_HIT
 {
 	repeated HpChange changes = 1;
 }
 
 message S_DIE
 {
-	uint64 object_id = 1;
-	uint64 attacker_id = 2;
+	repeated Death death = 1;
 }
 
 message C_HEARTBEAT
@@ -120,4 +129,30 @@ message C_HEARTBEAT
 message S_HEARTBEAT
 {
 	uint64 serverTime = 1;
+}
+
+message S_SKILL_EVENT
+{
+	CastState castState = 1;
+
+	optional S_SKILL_CAST_START cast_start = 2;
+	optional S_SKILL_CAST_CANCEL cast_cancel = 3;
+	optional S_SKILL_CAST_SUCCESS cast_success = 4;
+	optional S_ACTION action = 5;
+}
+
+message S_IMMEDIATE_FLUSH
+{
+	optional S_SKILL skill_pkt = 1;
+	optional S_MOVE move_pkt = 2;
+}
+
+message S_DEFER_FLUSH
+{
+	optional S_SPAWN spawn_pkt = 1;
+	optional S_MOVE move_pkt = 2;
+	optional S_SKILL skill_pkt = 3;
+	optional S_HIT hit_pkt = 4;
+	optional S_DIE die_pkt = 5;
+	optional S_DESPAWN despawn_pkt = 6;
 }

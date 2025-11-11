@@ -23,7 +23,7 @@ public:
 	Object();
 	virtual ~Object();
 
-	virtual void Update(float deltaTime);
+	virtual void Update();
 	virtual void OnDamaged(ObjectRef attacker, int32 damage);
 	virtual void OnDead(ObjectRef attacker);
 	virtual void MoveToNextPos(const Vector3& destPos, Vector3* dir = nullptr, Vector2Int* blocked = nullptr);
@@ -49,7 +49,19 @@ public:
 	void SetSpawnPos(const Vector3& pos, float yaw = 0.f);
 	void SetSpawnRandomPos(Vector3 pos, float yaw = 0.f, int32 range = 0);
 
+	virtual void AddSpawnFlushQueue(ObjectRef obj);
+	virtual void AddMoveFlushQueue(ObjectRef obj);
+	virtual void AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const Protocol::S_SKILL_EVENT& event);
+	virtual void AddHitFlushQueue(ObjectRef obj);
+	virtual void AddDieFlushQueue(ObjectRef obj);
+	virtual void AddDespawnFlushQueue(ObjectRef obj);
+
+	virtual void FlushStateInit();
 	bool IsMoveBatch();
+
+public:
+	bool _hasMove = false;
+	bool _isDirty = false;
 
 public: 
 	Protocol::ObjectInfo _objectInfo;
@@ -60,9 +72,10 @@ public:
 	Vector3 _worldPos;
 	Vector3 _lastFlushPos;
 
-	vector<Vector2Int> _interestCell;
+	//vector<Vector2Int> _interestCell;
 
 	int32 _spTableId;
+	uint64 _attackerId;
 
 	float _collisionRadius;
 

@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "SpatialGrid.h"
 #include "BenchmarkLogger.h"
+#include <optional>
 
 using GameMapRef = shared_ptr<class GameMap>;
 using ObjectManagerRef = shared_ptr<class ObjectManager>;
@@ -14,6 +15,26 @@ using GameSessionRef = shared_ptr<class GameSession>;
 
 struct MapInfo;
 struct SpawnTable;
+
+enum class Type
+{
+	SPAWN = 1,
+	MOVE = 2,
+	CAST_START = 3,
+	CAST_CANCEL = 4,
+	CAST_SUCCESS = 5,
+	SKILL_ACTION = 6,
+	HIT = 7,
+	DIE = 8,	
+	DESPAWN = 9
+};
+
+struct FlushQueue
+{
+	ObjectRef object;
+	Type type;
+	optional<Protocol::S_SKILL_EVENT> eventInfo;
+};
 
 /*
 struct InterestDiff
@@ -61,8 +82,13 @@ public:
 	GameMapRef GetGameMap() { return _gameMap; }
 
 	void Init(int32 mapId);
-	void InitBaseOffsets();
+	//void InitBaseOffsets();
 	void UpdateTick();
+	void UpdateMonster();
+	void UpdateProjectile();
+	void UpdateField();
+	void UpdateSkillSystem();
+
 	void StartHeartbeat();
 	void CheckHeartbeat();
 
@@ -100,10 +126,24 @@ public:
 	void BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId = 0);
 	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId = 0);
 
-	//InterestDiff UpdateInterestCell(const Vector2Int& oldCenter, const Vector2Int& newCenter);
+	/*
+	InterestDiff UpdateInterestCell(const Vector2Int& oldCenter, const Vector2Int& newCenter);
 	vector<Vector2Int> InterestCells(const Vector2Int& center) const;
-	//InterestDiff DiffInterestCells(const vector<Vector2Int>& oldCell, const vector<Vector2Int>& newCell, const Vector2Int& delta) const;
-	void FlushBroadcast();
+	InterestDiff DiffInterestCells(const vector<Vector2Int>& oldCell, const vector<Vector2Int>& newCell, const Vector2Int& delta) const;
+	*/
+
+	//void AddSpawnFlushQueue(ObjectRef obj);
+	//void AddMoveFlushQueue(ObjectRef obj);
+	//void AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const SkillEvent& event = {});
+	//void AddHitFlushQueue(ObjectRef obj);
+	//void AddDieFlushQueue(ObjectRef obj);
+	//void AddDespawnFlushQueue(ObjectRef obj);
+
+	bool IsEmptyImmediatePkt(const Protocol::S_IMMEDIATE_FLUSH& pkt);
+	bool IsEmptyDeferPkt(const Protocol::S_DEFER_FLUSH& pkt);
+
+	void FlushImmediateBroadcast();
+	void FlushDeferBroadcast();
 
 	void NotifySpawn(ObjectRef object, bool success);
 
@@ -132,7 +172,8 @@ public:
 	unordered_map<uint64, FieldRef> _fields;
 
 public:
-	vector<PlayerRef> _dirtyPlayers;
+	vector<FlushQueue> _immediateFlushQueue; // C_Packet
+	vector<FlushQueue> _deferFlushQueue; // Room Object Update
 	//vector<BroadcastGroup> _flushBCQueue;
 
 private:

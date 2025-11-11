@@ -210,6 +210,33 @@ inline bool SkillType_Parse(
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SkillType>(
     SkillType_descriptor(), name, value);
 }
+enum CastState : int {
+  CAST_START = 0,
+  CAST_CANCEL = 1,
+  CAST_SUCCESS = 2,
+  ACTION = 3,
+  CastState_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  CastState_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool CastState_IsValid(int value);
+constexpr CastState CastState_MIN = CAST_START;
+constexpr CastState CastState_MAX = ACTION;
+constexpr int CastState_ARRAYSIZE = CastState_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* CastState_descriptor();
+template<typename T>
+inline const std::string& CastState_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, CastState>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function CastState_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    CastState_descriptor(), enum_t_value);
+}
+inline bool CastState_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, CastState* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<CastState>(
+    CastState_descriptor(), name, value);
+}
 // ===================================================================
 
 
@@ -261,6 +288,11 @@ template <> struct is_proto_enum< ::Protocol::SkillType> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::Protocol::SkillType>() {
   return ::Protocol::SkillType_descriptor();
+}
+template <> struct is_proto_enum< ::Protocol::CastState> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Protocol::CastState>() {
+  return ::Protocol::CastState_descriptor();
 }
 
 PROTOBUF_NAMESPACE_CLOSE

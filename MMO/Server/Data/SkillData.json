@@ -11,7 +11,8 @@
           "shape": "Circle",
           "damage": 1,
           "radius": 100.0,
-          "distance": 1.0
+          "distance": 1.0,
+          "actionDelay": 0.2
         }
       ]
     },
@@ -70,7 +71,8 @@
           "shape": "Circle",
           "damage": 1,
           "radius": 100.0,
-          "distance": 1.0
+          "distance": 1.0,
+          "actionDelay": 0.2
         }
       ]
     }

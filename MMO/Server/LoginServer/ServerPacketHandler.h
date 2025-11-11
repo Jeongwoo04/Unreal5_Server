@@ -22,13 +22,17 @@ enum : uint16
 	PKT_S_MOVE = 1009,
 	PKT_C_SKILL = 1010,
 	PKT_S_SKILL = 1011,
-	PKT_S_SKILL_CAST_START = 1012,
-	PKT_S_SKILL_CAST_SUCCESS = 1013,
+	PKT_S_ACTION = 1012,
+	PKT_S_SKILL_CAST_START = 1013,
 	PKT_S_SKILL_CAST_CANCEL = 1014,
-	PKT_S_CHANGE_HP = 1015,
-	PKT_S_DIE = 1016,
-	PKT_C_HEARTBEAT = 1017,
-	PKT_S_HEARTBEAT = 1018,
+	PKT_S_SKILL_CAST_SUCCESS = 1015,
+	PKT_S_HIT = 1016,
+	PKT_S_DIE = 1017,
+	PKT_C_HEARTBEAT = 1018,
+	PKT_S_HEARTBEAT = 1019,
+	PKT_S_SKILL_EVENT = 1020,
+	PKT_S_IMMEDIATE_FLUSH = 1021,
+	PKT_S_DEFER_FLUSH = 1022,
 };
 
 // Custom Handlers
@@ -67,12 +71,16 @@ public:
 	static SendBufferRef MakeSendBuffer(Protocol::S_DESPAWN& pkt) { return MakeSendBuffer(pkt, PKT_S_DESPAWN); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_MOVE& pkt) { return MakeSendBuffer(pkt, PKT_S_MOVE); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_SKILL& pkt) { return MakeSendBuffer(pkt, PKT_S_SKILL); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_ACTION& pkt) { return MakeSendBuffer(pkt, PKT_S_ACTION); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_SKILL_CAST_START& pkt) { return MakeSendBuffer(pkt, PKT_S_SKILL_CAST_START); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_SKILL_CAST_SUCCESS& pkt) { return MakeSendBuffer(pkt, PKT_S_SKILL_CAST_SUCCESS); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_SKILL_CAST_CANCEL& pkt) { return MakeSendBuffer(pkt, PKT_S_SKILL_CAST_CANCEL); }
-	static SendBufferRef MakeSendBuffer(Protocol::S_CHANGE_HP& pkt) { return MakeSendBuffer(pkt, PKT_S_CHANGE_HP); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_SKILL_CAST_SUCCESS& pkt) { return MakeSendBuffer(pkt, PKT_S_SKILL_CAST_SUCCESS); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_HIT& pkt) { return MakeSendBuffer(pkt, PKT_S_HIT); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_DIE& pkt) { return MakeSendBuffer(pkt, PKT_S_DIE); }
 	static SendBufferRef MakeSendBuffer(Protocol::S_HEARTBEAT& pkt) { return MakeSendBuffer(pkt, PKT_S_HEARTBEAT); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_SKILL_EVENT& pkt) { return MakeSendBuffer(pkt, PKT_S_SKILL_EVENT); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_IMMEDIATE_FLUSH& pkt) { return MakeSendBuffer(pkt, PKT_S_IMMEDIATE_FLUSH); }
+	static SendBufferRef MakeSendBuffer(Protocol::S_DEFER_FLUSH& pkt) { return MakeSendBuffer(pkt, PKT_S_DEFER_FLUSH); }
 
 private:
 	template<typename PacketType, typename ProcessFunc>

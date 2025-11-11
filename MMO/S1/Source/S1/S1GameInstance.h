@@ -55,12 +55,17 @@ public:
 	void HandleMove(const Protocol::PosInfo& PosInfo);
 
 	void HandleSkill(const Protocol::S_SKILL& SkillPkt);
+
 	void HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& CastStartPkt);
 	void HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCESS& CastSuccessPkt);
 	void HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL& CastCancelPkt);
+	void HandleAction(const Protocol::S_ACTION& ActionPkt);
 
-	void HandleChangeHp(const Protocol::S_CHANGE_HP& ChangeHpPkt);
+	void HandleHit(const Protocol::S_HIT& HitPkt);
+	void HandleHit(const Protocol::HpChange& Change);
+
 	void HandleDie(const Protocol::S_DIE& DiePkt);
+	void HandleDie(const Protocol::Death& Death);
 
 	void HandleHeartbeat(const Protocol::S_HEARTBEAT& pkt);
 

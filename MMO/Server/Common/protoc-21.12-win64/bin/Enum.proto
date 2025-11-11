@@ -49,3 +49,11 @@ enum SkillType
 	SKILL_PROJECTILE = 2;
 	SKILL_AOE_DOT = 3;
 }
+
+enum CastState
+{
+	CAST_START = 0;
+	CAST_CANCEL = 1;
+	CAST_SUCCESS = 2;
+	ACTION = 3;
+}

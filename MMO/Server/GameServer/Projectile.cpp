@@ -13,7 +13,7 @@ Projectile::~Projectile()
 	//cout << "Projectile " << GetId() << " Destructor" << endl;
 }
 
-void Projectile::Update(float deltaTime)
+void Projectile::Update()
 {
 	if (GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
 		return;
@@ -27,11 +27,11 @@ void Projectile::Update(float deltaTime)
 	}
 
 	Vector3 currentPos = _worldPos;
-	Vector3 destPos = _worldPos + (_dir * _data->speed * deltaTime);
+	Vector3 destPos = _worldPos + (_dir * _data->speed * ServerTickInterval);
 	Vector2Int blocked;
 	
 	MoveToNextPos(destPos, &_dir, &blocked);
-	room->BroadcastMove(_posInfo, GetId());
+	AddMoveFlushQueue(shared_from_this());
 
 	ObjectRef target = nullptr;
 
@@ -55,17 +55,8 @@ void Projectile::Update(float deltaTime)
 	if (target && !target->IsDead())
 	{
 		target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data->damage);
-		{
-			Protocol::HpChange change;
-			change.set_object_id(target->GetId());
-			change.set_hp(target->_statInfo.hp());
-			Protocol::S_CHANGE_HP pkt;
-			*pkt.add_changes() = change;
-			auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-
-			room->BroadcastNearby(sendBuffer, _worldPos, GetId());
-		}
 		
+		target->AddHitFlushQueue(target);
 		room->AddRemoveList(shared_from_this());
 		return;
 	}
@@ -80,5 +71,5 @@ void Projectile::Update(float deltaTime)
 		return;
 	}
 
-	_moveDistance += _data->speed * deltaTime;
+	_moveDistance += _data->speed * ServerTickInterval;
 }

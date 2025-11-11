@@ -22,7 +22,7 @@ namespace _pbi = _pb::internal;
 
 namespace Protocol {
 }  // namespace Protocol
-static const ::_pb::EnumDescriptor* file_level_enum_descriptors_Enum_2eproto[6];
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_Enum_2eproto[7];
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_Enum_2eproto = nullptr;
 const uint32_t TableStruct_Enum_2eproto::offsets[1] = {};
 static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
@@ -46,11 +46,13 @@ const char descriptor_table_protodef_Enum_2eproto[] PROTOBUF_SECTION_VARIABLE(pr
   "ACHINE_SKILL\020\005\022\026\n\022STATE_MACHINE_DEAD\020\006*T"
   "\n\tSkillType\022\016\n\nSKILL_NONE\020\000\022\016\n\nSKILL_AUT"
   "O\020\001\022\024\n\020SKILL_PROJECTILE\020\002\022\021\n\rSKILL_AOE_D"
-  "OT\020\003b\006proto3"
+  "OT\020\003*J\n\tCastState\022\016\n\nCAST_START\020\000\022\017\n\013CAS"
+  "T_CANCEL\020\001\022\020\n\014CAST_SUCCESS\020\002\022\n\n\006ACTION\020\003"
+  "b\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_Enum_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Enum_2eproto = {
-    false, false, 692, descriptor_table_protodef_Enum_2eproto,
+    false, false, 768, descriptor_table_protodef_Enum_2eproto,
     "Enum.proto",
     &descriptor_table_Enum_2eproto_once, nullptr, 0, 0,
     schemas, file_default_instances, TableStruct_Enum_2eproto::offsets,
@@ -150,6 +152,22 @@ const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SkillType_descriptor() {
   return file_level_enum_descriptors_Enum_2eproto[5];
 }
 bool SkillType_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* CastState_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Enum_2eproto);
+  return file_level_enum_descriptors_Enum_2eproto[6];
+}
+bool CastState_IsValid(int value) {
   switch (value) {
     case 0:
     case 1:

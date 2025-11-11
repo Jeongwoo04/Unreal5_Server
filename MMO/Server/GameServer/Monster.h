@@ -12,14 +12,14 @@ public:
 	virtual ~Monster();
 
 	// FSM
-	virtual void Update(float deltaTime) override;
+	virtual void Update() override;
 
-	virtual void UpdateIdle(float deltaTime);
-	virtual void UpdatePatrol(float deltaTime);
-	virtual void UpdateCasting(float deltaTime);
-	virtual void UpdateMoving(float deltaTime);
-	virtual void UpdateSkill(float deltaTime);
-	virtual void UpdateDead(float deltaTime);
+	virtual void UpdateIdle();
+	virtual void UpdatePatrol();
+	virtual void UpdateCasting();
+	virtual void UpdateMoving();
+	virtual void UpdateSkill();
+	virtual void UpdateDead();
 
 	virtual void OnDamaged(ObjectRef attacker, int32 damage) override;
 	virtual void OnDead(ObjectRef attacker) override;

@@ -36,9 +36,9 @@ void Room::Init(int32 mapId)
 
 	_playerGrid = SpatialGrid<PlayerRef>(_gameMap);
 	_monsterGrid = SpatialGrid<MonsterRef>(_gameMap);
-	_flushBCQueue.resize(_gameMap->_sizeX * _gameMap->_sizeY);
+	//_flushBCQueue.resize(_gameMap->_sizeX * _gameMap->_sizeY);
 
-	InitBaseOffsets();
+	//InitBaseOffsets();
 
 	_skillSystem->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 
@@ -79,29 +79,46 @@ void Room::UpdateTick()
 	DoTimer(tick, &Room::UpdateTick);
 
 	_bench.Begin("Room");
-	
-	for (auto& m : _monsters)
-	{
-		m.second->Update(deltaTime);
-	}
-	for (auto& p : _projectiles)
-	{
-		p.second->Update(deltaTime);
-	}
-	for (auto& f : _fields)
-	{
-		f.second->Update(deltaTime);
-	}
-	_skillSystem->Update(deltaTime);
+	_bench.Begin("FlushImmediateBroadcast");
+	FlushImmediateBroadcast();
+	_bench.End("FlushImmediateBroadcast");
 
+	UpdateMonster();
+	UpdateProjectile();
+	UpdateField();
+	UpdateSkillSystem();
 	ClearRemoveList();
-	_bench.Begin("FlushBroadcast");
-	FlushBroadcast();
-	_bench.End("FlushBroadcast");
+
+	_bench.Begin("FlushDeferBroadcast");
+	FlushDeferBroadcast();
+	_bench.End("FlushDeferBroadcast");
 
 	_bench.End("Room");
 
-	_bench.PrintAndSaveSummary(GetRoomId(), "flushbroadcast");
+	//_bench.PrintAndSaveSummary(GetRoomId(), "1000 active dummy Hybrid Flush Server");
+}
+
+void Room::UpdateMonster()
+{
+	for (auto& m : _monsters)
+		m.second->Update();
+}
+
+void Room::UpdateProjectile()
+{
+	for (auto& p : _projectiles)
+		p.second->Update();
+}
+
+void Room::UpdateField()
+{
+	for (auto& f : _fields)
+		f.second->Update();
+}
+
+void Room::UpdateSkillSystem()
+{
+	_skillSystem->Update();
 }
 
 void Room::StartHeartbeat()
@@ -219,7 +236,7 @@ bool Room::EnterRoom(ObjectRef object)
 		return false;
 
 	bool success = AddObject(object);
-	object->_interestCell = InterestCells(object->_gridPos);
+	//object->_interestCell = InterestCells(object->_gridPos);
 
 	NotifySpawn(object, success);
 
@@ -324,7 +341,7 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 	if (player == nullptr)
 		return;
 
-	int32 skillId = pkt.skill_info().skillid();
+	int32 skillId = pkt.skillid();
 
 	auto it = DataManager::Instance().SkillDict.find(skillId);
 	if (it == DataManager::Instance().SkillDict.end())
@@ -349,8 +366,8 @@ void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
 		return;
 	}
 
-	player->_posInfo.set_yaw(Vector3::DirToYaw2D(Vector3(pkt.mutable_skill_info()->targetpos()) - player->_worldPos));
-	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.skill_info().targetpos()), pkt.castid(), pkt.clientsend());
+	player->_posInfo.set_yaw(Vector3::DirToYaw2D(Vector3(pkt.targetpos()) - player->_worldPos));
+	_skillSystem->ExecuteSkill(player, skillId, Vector3(pkt.targetpos()), pkt.castid(), pkt.clientsend());
 }
 
 const SpawnTable* Room::GetSpawnTable(int32 spawnId) const
@@ -416,25 +433,25 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 	switch (object->GetObjectType())
 	{
 	case OBJECT_TYPE_CREATURE:
+	{
 		switch (object->GetCreatureType())
 		{
 		case CREATURE_TYPE_PLAYER:
-			{
-				eraseCount = static_cast<int32>(_players.erase(objectId));
-				auto player = static_pointer_cast<Player>(object);
-				_playerGrid.ApplyRemove(player, player->_gridPos);
-				break;
-			}
+		{
+			eraseCount = static_cast<int32>(_players.erase(objectId));
+			auto player = static_pointer_cast<Player>(object);
+			_playerGrid.ApplyRemove(player, player->_gridPos);
+		} break;
 		case CREATURE_TYPE_MONSTER:
-			{
-				eraseCount = static_cast<int32>(_monsters.erase(objectId));
-				auto monster = static_pointer_cast<Monster>(object);
-				_monsterGrid.ApplyRemove(monster, monster->_gridPos);
-				break;
-			}
+		{
+			eraseCount = static_cast<int32>(_monsters.erase(objectId));
+			auto monster = static_pointer_cast<Monster>(object);
+			_monsterGrid.ApplyRemove(monster, monster->_gridPos);
+		} break;
 		default:
 			break;
 		}
+	} break;
 	case OBJECT_TYPE_PROJECTILE:
 		eraseCount = static_cast<int32>(_projectiles.erase(objectId));
 		break;
@@ -474,17 +491,18 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 
 			for (auto& player : snapshot)
 			{
-		if (auto session = player->GetSession())
-			session->Send(sendBuffer);
-	}
+				if (auto session = player->GetSession())
+					session->Send(sendBuffer);
+			}
 		}));
 }
 
 void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId)
 {
+	_bench.Begin("BCNearbySnapshot");
 	vector<PlayerRef> nearbyPlayers =
 		_playerGrid.FindAround(WorldToGrid(center), BROADCAST_RANGE);
-
+	_bench.End("BCNearbySnapshot");
 	auto enqueueTime = GetTickCount64();
 	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId, enqueueTime, this]()
 		{
@@ -706,116 +724,117 @@ InterestDiff Room::DiffInterestCells(const vector<Vector2Int>& oldCell, const ve
 }
 */
 
-void Room::FlushBroadcast()
+void Room::FlushImmediateBroadcast()
 {
-	_bench.AddDirtyCount(_dirtyPlayers.size());
-	_bench.Begin("DirtyUpdateBCGroup");
-	for (auto& p : _dirtyPlayers)
+	Protocol::S_IMMEDIATE_FLUSH pkt;
+	int32 count = 0;
+
+	for (auto& obj : _immediateFlushQueue)
 	{
-		if (p->IsDead() || !p->_hasMove || !p->IsMoveBatch())
+		count++;
+		switch (obj.type)
 		{
-			p->_hasMove = false;
-			p->_isDirty = false;
-			continue;
-		}
-
-		p->_hasMove = false;
-
-		// interestCell 갱신
+		case Type::CAST_START:
+		case Type::CAST_CANCEL:
+		{
+			if (obj.eventInfo.has_value())
+			{
+				auto* skillPkt = pkt.mutable_skill_pkt();
+				*skillPkt->add_event() = obj.eventInfo.value();
+			}
+		} break;
+		case Type::MOVE:
+		{
+			if (obj.object->IsMoveBatch() && obj.object->_hasMove == true)
+			{
+				auto* movePkt = pkt.mutable_move_pkt();
+				*movePkt->add_info() = obj.object->_posInfo;
+			}
+			obj.object->FlushStateInit();
+		} break;
 		
-		if (WorldToGrid(p->_lastFlushPos) == p->_gridPos)
-		{
-			for (auto& cell : p->_interestCell)
-			{
-				_flushBCQueue[Index(cell)].AddMove(p->_posInfo);
-			}
-		}
-		else
-		{
-			InterestDiff diff = UpdateInterestCell(WorldToGrid(p->_lastFlushPos), WorldToGrid(p->_worldPos));
-
-			for (auto& despawn : diff.despawns)
-			{
-				_flushBCQueue[Index(despawn)].AddDespawn(p->GetId());
-			}
-			for (auto& spawn : diff.spawns)
-			{
-				_flushBCQueue[Index(spawn)].AddSpawn(p->_objectInfo);
-			}
-			for (auto& move : diff.moves)
-			{
-				_flushBCQueue[Index(move)].AddMove(p->_posInfo);
-			}
-		}
-
-		p->_lastFlushPos = p->_worldPos;
-		p->_isDirty = false;
+		default:
+			break;
+		};
 	}
-	_dirtyPlayers.clear();
-	_bench.End("DirtyUpdateBCGroup");
-	_bench.Begin("SerializePktAllCell");
-	for (int32 i = 0; i < _flushBCQueue.size(); i++)
+	_immediateFlushQueue.clear();
+
+	if (IsEmptyImmediatePkt(pkt))
+		return;
+
+	_bench.AddImmediatePktCount(count);
+	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+	Broadcast(sendBuffer);
+}
+
+void Room::FlushDeferBroadcast()
+{
+	Protocol::S_DEFER_FLUSH pkt;
+	Protocol::HpChange hp;
+	Protocol::Death death;
+	int32 count = 0;
+
+	for (auto& obj : _deferFlushQueue)
 	{
-		auto& targets = _playerGrid.GetCellPlayers(i);
-		if (targets.empty())
-			continue;
-
-		auto& bc = _flushBCQueue[i];
-		if (bc.IsEmpty())
-			continue;
-
-		if (!bc._spawns.empty())
+		count++;
+		switch (obj.type)
 		{
-			Protocol::S_SPAWN spawnPkt;
-			for (auto& s : bc._spawns)
-			{
-				*spawnPkt.add_objects() = s;
-			}
-			auto spawnSendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
-			bc._batchBuffers.push_back(spawnSendBuffer);
-		}
-		
-		if (!bc._despawns.empty())
+		case Type::SPAWN:
 		{
-			Protocol::S_DESPAWN despawnPkt;
-			for (auto& d : bc._despawns)
-			{
-				despawnPkt.add_object_ids(d);
-			}
-			auto despawnSendBuffer = ServerPacketHandler::MakeSendBuffer(despawnPkt);
-			bc._batchBuffers.push_back(despawnSendBuffer);
-		}
-
-		if (!bc._moves.empty())
+			auto* spawnPkt = pkt.mutable_spawn_pkt();
+			*spawnPkt->add_objects() = obj.object->_objectInfo;
+		} break;
+		case Type::MOVE:
 		{
-			Protocol::S_MOVE movePkt;
-			for (auto& m : bc._moves)
+			if (obj.object->IsMoveBatch())
 			{
-				*movePkt.add_info() = m;
+				auto* movePkt = pkt.mutable_move_pkt();
+				*movePkt->add_info() = obj.object->_posInfo;
 			}
-			auto moveSendBuffer = ServerPacketHandler::MakeSendBuffer(movePkt);
-			bc._batchBuffers.push_back(moveSendBuffer);
-		}		
+			obj.object->FlushStateInit();
+		} break;
+		case Type::CAST_START:
+		case Type::CAST_CANCEL:
+		case Type::CAST_SUCCESS:
+		case Type::SKILL_ACTION:
+		{
+			if (obj.eventInfo.has_value())
+			{
+				*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
+			}
+		} break;
+		case Type::HIT:
+		{
+			auto* hitPkt = pkt.mutable_hit_pkt();
+			hp.set_object_id(obj.object->GetId());
+			hp.set_hp(obj.object->_statInfo.hp());
+			*hitPkt->add_changes() = hp;
+		} break;
+		case Type::DIE:
+		{
+			auto* diePkt = pkt.mutable_die_pkt();
+			death.set_object_id(obj.object->GetId());
+			death.set_attacker_id(obj.object->_attackerId);
+			*diePkt->add_death() = death;
+		} break;
+		case Type::DESPAWN:
+		{
+			auto* despawnPkt = pkt.mutable_despawn_pkt();
+			despawnPkt->add_object_ids(obj.object->GetId());
+		} break;
+		default:
+			break;
+		};
 	}
-	_bench.End("SerializePktAllCell");
+	_deferFlushQueue.clear();
 
-	_bench.Begin("BroadcastAllCell");
-	for (int32 i = 0; i < _flushBCQueue.size(); i++)
-	{
-		auto& bc = _flushBCQueue[i];
-		if (bc._batchBuffers.empty())
-			continue;
+	if (IsEmptyDeferPkt(pkt))
+		return;
 
-		auto& cellPlayers = _playerGrid.GetCellPlayers(i);
-		for (auto& player : cellPlayers)
-		{
-			for (auto& sendBuffer : bc._batchBuffers)
-				player->GetSession()->Send(sendBuffer);
-		}
+	_bench.AddDeferPktCount(count);
+	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 
-		bc.Clear(); // flush 후 비움
-	}
-	_bench.End("BroadcastAllCell");
+	Broadcast(sendBuffer);
 }
 
 void Room::NotifySpawn(ObjectRef object, bool success)
@@ -837,31 +856,20 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 		{
 			Protocol::S_SPAWN spawnPkt;
 
-			for (auto& cell : object->_interestCell)
+			for (auto& playerIt : _players)
 			{
-				auto& players = _playerGrid.GetCellPlayers(Index(cell));
-				auto& monsters = _monsterGrid.GetCellPlayers(Index(cell));
-				for (auto& p : players)
-				{
-					if (p->GetId() == object->_objectInfo.object_id())
-						continue;
+				if (playerIt.first == object->_objectInfo.object_id())
+					continue;
 
-					*spawnPkt.add_objects() = p->_objectInfo;
-				}
-				for (auto& m : monsters)
-				{
-					*spawnPkt.add_objects() = m->_objectInfo;
-				}
+				*spawnPkt.add_objects() = playerIt.second->_objectInfo;
+			}
+			for (auto& monsterIt : _monsters)
+			{
+				*spawnPkt.add_objects() = monsterIt.second->_objectInfo;
 			}
 			for (auto& projectileIt : _projectiles)
 			{
-				if ((projectileIt.second->_gridPos - object->_gridPos).sqrMagnitude() <= BROADCAST_RANGE * BROADCAST_RANGE)
-					*spawnPkt.add_objects() = projectileIt.second->_objectInfo;
-			}
-			for (auto& fieldIt : _fields)
-			{
-				if ((fieldIt.second->_gridPos - object->_gridPos).sqrMagnitude() <= BROADCAST_RANGE * BROADCAST_RANGE)
-					*spawnPkt.add_objects() = fieldIt.second->_objectInfo;
+				*spawnPkt.add_objects() = projectileIt.second->_objectInfo;
 			}
 
 			SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
@@ -871,14 +879,7 @@ void Room::NotifySpawn(ObjectRef object, bool success)
 	}
 
 	// 다른 플레이어에게 object 입장 알림 (player, monster, projectile 입장 시)
-	{
-		Protocol::S_SPAWN spawnPkt;
-
-		*spawnPkt.add_objects() = object->_objectInfo;
-
-		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
-		BroadcastNearby(sendBuffer, object->_worldPos, object->_objectInfo.object_id());
-	}
+	object->AddSpawnFlushQueue(object);
 }
 
 void Room::AddRemoveList(ObjectRef object)
@@ -888,21 +889,11 @@ void Room::AddRemoveList(ObjectRef object)
 
 void Room::ClearRemoveList()
 {
-	const int32 MAX_REMOVE_COUNT_PER_TICK = 100;
-	int32 count = (int32)_removePending.size() > 100 ? 100 : (int32)_removePending.size();
-
-	Protocol::S_DESPAWN pkt;
-
-	for (int32 i = 0; i < count; i++)
+	for (auto& obj : _removePending)
 	{
-		LeaveRoom(_removePending[i]);
-		pkt.add_object_ids(_removePending[i]->GetId());
+		LeaveRoom(obj);
+		obj->AddDespawnFlushQueue(obj);
 	}
-
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	Broadcast(sendBuffer);
-
-	_removePending.erase(_removePending.begin(), _removePending.begin() + count);
 }
 
 int32 Room::Index(const Vector2Int& pos) const
@@ -911,4 +902,52 @@ int32 Room::Index(const Vector2Int& pos) const
 	int32 localY = pos._y - _gameMap->_minY;
 
 	return localY * _gameMap->_sizeX + localX;
+}
+
+// 조건 확인
+//void Room::AddMoveFlushQueue(ObjectRef obj)
+//{
+//	if (obj->GetCreatureType() == Protocol::CREATURE_TYPE_PLAYER)
+//	{
+//		if (static_pointer_cast<Player>(obj)->_isDirty == false)
+//			_immediateFlushQueue.push_back({ obj, Type::MOVE });
+//		return;
+//	}
+//	_deferFlushQueue.push_back({ obj, Type::MOVE });
+//}
+//
+//void Room::AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const SkillEvent& event)
+//{
+//	
+//
+//}
+//
+//void Room::AddHitFlushQueue(ObjectRef obj)
+//{
+//	_deferFlushQueue.push_back({ obj, Type::HIT });
+//}
+//
+//void Room::AddDieFlushQueue(ObjectRef obj)
+//{
+//	_deferFlushQueue.push_back({ obj, Type::DIE });
+//}
+//
+//void Room::AddSpawnFlushQueue(ObjectRef obj)
+//{
+//	_deferFlushQueue.push_back({ obj, Type::SPAWN});
+//}
+//
+//void Room::AddDespawnFlushQueue(ObjectRef obj)
+//{
+//	_deferFlushQueue.push_back({ obj, Type::DESPAWN });
+//}
+
+bool Room::IsEmptyImmediatePkt(const Protocol::S_IMMEDIATE_FLUSH& pkt)
+{
+	return !pkt.has_move_pkt() && !pkt.has_skill_pkt();
+}
+
+bool Room::IsEmptyDeferPkt(const Protocol::S_DEFER_FLUSH& pkt)
+{
+	return !pkt.has_spawn_pkt() && pkt.has_move_pkt() && !pkt.has_hit_pkt() && !pkt.has_die_pkt() && !pkt.has_despawn_pkt();
 }

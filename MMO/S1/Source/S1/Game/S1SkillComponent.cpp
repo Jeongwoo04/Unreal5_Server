@@ -231,15 +231,15 @@ void US1SkillComponent::ServerCancelCasting(int32 SkillID)
 	//CurrentSkillID = 0;
 }
 
-void US1SkillComponent::HandleActionPkt(const Protocol::S_SKILL& Pkt)
+void US1SkillComponent::HandleActionPkt(const Protocol::S_ACTION& Pkt)
 {
-	auto it = S1DataManager::Instance().SkillDict.find(Pkt.skill_info().skillid());
+	auto it = S1DataManager::Instance().SkillDict.find(Pkt.skillid());
 	if (it == S1DataManager::Instance().SkillDict.end())
 		return;
 
-	const ClientAction& Action = it->second.actions[Pkt.skill_info().actionindex()];
+	const ClientAction& Action = it->second.actions[Pkt.actionindex()];
 	
-	const FVector& TargetPos = { Pkt.skill_info().targetpos().x(),Pkt.skill_info().targetpos().y(), Pkt.skill_info().targetpos().z() };
+	const FVector& TargetPos = { Pkt.targetpos().x(), Pkt.targetpos().y(), Pkt.targetpos().z() };
 	ExecuteAction(Action, TargetPos);
 }
 
@@ -420,10 +420,10 @@ void US1SkillComponent::DoSkillStart(int32 SkillID)
 	uint64 ClientNowTick = static_cast<uint64>(FPlatformTime::Seconds() * 1000);
 
 	C_SKILL SkillPkt;
-	SkillPkt.mutable_skill_info()->set_skillid(State->SkillID);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_x(State->TargetPos.X);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_y(State->TargetPos.Y);
-	SkillPkt.mutable_skill_info()->mutable_targetpos()->set_z(State->TargetPos.Z);
+	SkillPkt.set_skillid(State->SkillID);
+	SkillPkt.mutable_targetpos()->set_x(State->TargetPos.X);
+	SkillPkt.mutable_targetpos()->set_y(State->TargetPos.Y);
+	SkillPkt.mutable_targetpos()->set_z(State->TargetPos.Z);
 	SkillPkt.set_castid(State->CastID);
 	SkillPkt.set_clientsend(ClientNowTick);
 	

@@ -9,6 +9,13 @@ struct AttackActionData;
 struct SpawnActionData;
 struct BuffActionData;
 
+enum class State
+{
+	NONE,
+	SUCCESS,
+	ACTION
+};
+
 struct SkillInstance
 {
 	ObjectRef caster;
@@ -19,6 +26,11 @@ struct SkillInstance
 	bool isCasting = false;
 	bool canceled = false;
 
+	uint64 clientSend = 0;
+	uint64 serverNow = 0;
+	uint64 castEndTime = 0;
+	uint64 cooldownEndTime = 0;
+
 	float castElapsed = 0.f;
 	float actionDelayElapsed = 0.f;
 	int32 currentActionIndex = 0;
@@ -26,6 +38,7 @@ struct SkillInstance
 
 using SkillInstanceRef = shared_ptr<struct SkillInstance>;
 class Room;
+struct ImmediateEvent;
 
 class SkillSystem
 {
@@ -33,11 +46,14 @@ public:
 	void Init();
 	void ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId, uint64 clientSend = 0);
 
-	void Update(float deltaTime);
+	void Update();
 	void CancelCasting(ObjectRef caster, int32 castId);
 
 	RoomRef GetRoom() { return _room.lock(); }
 	void SetRoom(RoomRef room) { _room = room; }
+
+public:
+	void ParseEvent(ObjectRef object, const Protocol::CastState& state, OUT Protocol::S_SKILL_EVENT& event);
 
 private:
 	void HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action, SkillInstanceRef instance);

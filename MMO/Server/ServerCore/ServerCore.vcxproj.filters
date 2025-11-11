@@ -87,6 +87,9 @@
     <ClInclude Include="BufferReader.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="SafeLog.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -150,6 +153,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="BufferReader.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="SafeLog.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

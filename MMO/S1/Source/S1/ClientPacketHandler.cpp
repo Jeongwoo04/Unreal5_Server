@@ -114,11 +114,27 @@ bool Handle_S_SKILL_CAST_CANCEL(PacketSessionRef& session, Protocol::S_SKILL_CAS
 	return true;
 }
 
-bool Handle_S_CHANGE_HP(PacketSessionRef& session, Protocol::S_CHANGE_HP& pkt)
+bool Handle_S_ACTION(PacketSessionRef& session, Protocol::S_ACTION& pkt)
 {
 	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
 	{
-		GameInstance->HandleChangeHp(pkt);
+		GameInstance->HandleAction(pkt);
+	}
+
+	return true;
+}
+
+bool Handle_S_SKILL_EVENT(PacketSessionRef& session, Protocol::S_SKILL_EVENT& pkt)
+{
+
+	return true;
+}
+
+bool Handle_S_HIT(PacketSessionRef& session, Protocol::S_HIT& pkt)
+{
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		GameInstance->HandleHit(pkt);
 	}
 
 	return true;
@@ -139,6 +155,46 @@ bool Handle_S_HEARTBEAT(PacketSessionRef& session, Protocol::S_HEARTBEAT& pkt)
 	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
 	{
 		GameInstance->HandleHeartbeat(pkt);
+	}
+
+	return true;
+}
+
+bool Handle_S_IMMEDIATE_FLUSH(PacketSessionRef& session, Protocol::S_IMMEDIATE_FLUSH& pkt)
+{
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		if (pkt.has_skill_pkt())
+			GameInstance->HandleSkill(pkt.skill_pkt());
+
+		if (pkt.has_move_pkt())
+			GameInstance->HandleMove(pkt.move_pkt());
+	}
+
+	return true;
+}
+
+bool Handle_S_DEFER_FLUSH(PacketSessionRef& session, Protocol::S_DEFER_FLUSH& pkt)
+{
+	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
+	{
+		if (pkt.has_spawn_pkt())
+			GameInstance->HandleSpawn(pkt.spawn_pkt());
+
+		if (pkt.has_move_pkt())
+			GameInstance->HandleMove(pkt.move_pkt());
+
+		if (pkt.has_skill_pkt())
+			GameInstance->HandleSkill(pkt.skill_pkt());
+
+		if (pkt.has_hit_pkt())
+			GameInstance->HandleHit(pkt.hit_pkt());
+
+		if (pkt.has_die_pkt())
+			GameInstance->HandleDie(pkt.die_pkt());
+
+		if (pkt.has_despawn_pkt())
+			GameInstance->HandleDespawn(pkt.despawn_pkt());
 	}
 
 	return true;

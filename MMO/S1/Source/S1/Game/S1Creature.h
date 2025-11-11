@@ -37,8 +37,6 @@ protected:
 	virtual void UpdateAnim();
 
 public:
-	virtual void Move(const Protocol::PosInfo& Info);
-
 	virtual void SetPosInfo(const Protocol::PosInfo& Info);
 	Protocol::PosInfo GetPosInfo() const { return PosInfo; }
 
@@ -46,7 +44,7 @@ public:
 
 	EStateMachine GetCurrentState() const { return StaticCast<EStateMachine>(PosInfo.state()); }
 
-	void HandleActionPkt(const Protocol::S_SKILL& Pkt);
+	void HandleActionPkt(const Protocol::S_ACTION& Pkt);
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -57,6 +55,9 @@ protected:
 	FVector TargetPos;
 	UPROPERTY()
 	FRotator TargetRot;
+
+	float ServerTickInterval = 0.1f;
+	bool bShouldInterp = false;
 
 	Protocol::PosInfo PosInfo;
 };
