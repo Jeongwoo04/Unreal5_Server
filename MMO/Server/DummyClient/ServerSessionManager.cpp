@@ -13,16 +13,21 @@ void ServerSessionManager::Add(ServerSessionRef session)
 void ServerSessionManager::Remove(ServerSessionRef session)
 {
 	WRITE_LOCK;
-	_sessions.erase(session);
+	//_sessions.erase(session);
 }
 
 void ServerSessionManager::Broadcast(SendBufferRef sendBuffer)
 {
 	WRITE_LOCK;
-	for (ServerSessionRef session : _sessions)
-	{
-		session->Send(sendBuffer);
-	}
+	//for (ServerSessionRef session : _sessions)
+	//{
+	//	session->Send(sendBuffer);
+	//}
+}
+
+set<ServerSessionRef>& ServerSessionManager::GetSessions()
+{
+	return _sessions;
 }
 
 void ServerSessionManager::SendRandomPos()
@@ -51,3 +56,4 @@ void ServerSessionManager::SendRandomPos()
 		session->Send(sendBuffer);
 	}
 }
+

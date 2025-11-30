@@ -21,7 +21,9 @@ C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\Player.cpp;C:\Users\jeson\De
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\Projectile.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\Projectile.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\Protocol.pb.cc;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\Protocol.pb.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\Room.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\Room.obj
+C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\RoomDiagnostics.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\RoomDiagnostics.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\RoomManager.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\RoomManager.obj
+C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\SendQueue.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\SendQueue.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\ServerPacketHandler.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\ServerPacketHandler.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\SkillState.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\SkillState.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\SkillSystem.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\GameServer\x64\Debug\SkillSystem.obj

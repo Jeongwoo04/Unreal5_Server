@@ -11,6 +11,7 @@
 
 ThreadManager* GThreadManager = nullptr;
 GlobalQueue* GGlobalQueue = nullptr;
+GlobalQueue* GGlobalSendQueue = nullptr;
 JobTimer* GJobTimer = nullptr;
 
 class CoreGlobal
@@ -20,6 +21,7 @@ public:
 	{
 		GThreadManager = new ThreadManager();
 		GGlobalQueue = new GlobalQueue();
+		GGlobalSendQueue = new GlobalQueue();
 		GJobTimer = new JobTimer();
 		SocketUtils::Init();
 	}
@@ -28,6 +30,7 @@ public:
 	{
 		delete GThreadManager;
 		delete GGlobalQueue;
+		delete GGlobalSendQueue;
 		delete GJobTimer;
 		SocketUtils::Clear();
 	}

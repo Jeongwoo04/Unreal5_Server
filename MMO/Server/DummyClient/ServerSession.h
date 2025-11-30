@@ -26,9 +26,6 @@ public:
 		Protocol::C_ENTER_GAME pkt;
 		pkt.set_playerindex(0);
 
-		// TEMP : MultiRoom 환경 테스트
-		int32 roomid = (GetNextId() / 100) + 1;
-		pkt.set_roomnumber(roomid);
 		auto sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
 		Send(sendBuffer);
 	}

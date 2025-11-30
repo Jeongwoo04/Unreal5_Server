@@ -27,7 +27,7 @@ AS1MyPlayer::AS1MyPlayer()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(CameraRoot);
-	CameraBoom->TargetArmLength = 800.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 1200.0f; // The camera follows at this distance behind the character	
 	CameraBoom->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
 
 	CameraBoom->bDoCollisionTest = false;
@@ -228,7 +228,7 @@ void AS1MyPlayer::OnSkillSlotPressed(int32 SlotIndex)
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Skill Is Cooldown. ID: %d from Slot %d"), SkillID, SlotIndex));
+		// Cooldown ;
 	}
 }
 
@@ -498,8 +498,6 @@ void AS1MyPlayer::SendMovePacket()
 	PosInfo.set_y(NextMoveLocation.Y);
 	PosInfo.set_z(NextMoveLocation.Z);
 	PosInfo.set_yaw(Rot.Yaw);
-
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Send Pos (%f, %f, %f )"), NextMoveLocation.X, NextMoveLocation.Y, NextMoveLocation.Z));
 
 	Info->CopyFrom(PosInfo);
 

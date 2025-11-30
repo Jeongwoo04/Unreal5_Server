@@ -10,6 +10,7 @@ void CommandManager::Init()
 	RegisterCommand("spawn", [this](const vector<string>& args) { CmdSpawn(args); });
 	RegisterCommand("kill", [this](const vector<string>& args) { CmdKill(args); });
 	RegisterCommand("killall", [this](const vector<string>&) { CmdKillAll(); });
+	RegisterCommand("dummy", [this](const vector<string>&) { CmdDummyStart(); });
 }
 
 void CommandManager::Execute(const string& line)
@@ -65,6 +66,7 @@ void CommandManager::PrintHelp()
 	cout << "  spawn <dataId> <x> <y> <count>\n";
 	cout << "  kill <dataId>\n";
 	cout << "  killall\n";
+	cout << "  dummy\n";
 }
 
 void CommandManager::CmdList(const vector<string>& args)
@@ -117,4 +119,40 @@ void CommandManager::CmdKillAll()
 	cout << "[Server] Command: KillAll monsters removed" << endl;
 	auto room = RoomManager::Instance().Find(1);
 	room->DoAsyncPushOnly(&Room::KillAll);
+}
+
+void CommandManager::CmdDummyStart()
+{
+	cout << "[Server] Command: 100 Dummy Start" << endl;
+
+	STARTUPINFOW si = { 0 };
+	si.cb = sizeof(si);
+	PROCESS_INFORMATION pi = { 0 };
+
+	// 서버 실행 파일 기준 상대 경로
+	std::wstring exePath = L"..\\Binaries\\DummyClient.exe";
+
+	BOOL ok = CreateProcessW(
+		exePath.c_str(),   // 실행 파일
+		NULL,              // 인자 없음
+		NULL,
+		NULL,
+		FALSE,
+		CREATE_NEW_CONSOLE, // 콘솔 열고 싶으면 이 옵션
+		NULL,
+		NULL,
+		&si,
+		&pi
+	);
+
+	if (!ok)
+	{
+		DWORD err = GetLastError();
+		wprintf(L"[RunDummyClient] Failed (%d)\n", err);
+		return ;
+	}
+
+	// 프로세스 핸들은 추적하거나 닫을 수 있음
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
 }

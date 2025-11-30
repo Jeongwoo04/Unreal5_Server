@@ -90,6 +90,9 @@
     <ClInclude Include="SafeLog.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="MPSCQueue.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -156,6 +159,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="SafeLog.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="MPSCQueue.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

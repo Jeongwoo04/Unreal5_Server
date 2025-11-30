@@ -43,61 +43,37 @@ void DoGameWorker()
 	}
 }
 
-void CommandThread(CommandManager* commandManager)
+void DoSendWorker()
 {
-	cout << "[Server] CommandThread is running\n";
-	string line;
 	while (true)
 	{
-		cout << "> ";
-		if (!getline(cin, line))
-			break;
+		LEndTickCount = ::GetTickCount64() + WORKER_TICK;
 
-		if (line == "exit" || line == "quit")
-		{
-			cout << "Shut down" << endl;
-			break;
-		}
-
-		commandManager->Execute(line);
+		// 글로벌 큐
+		ThreadManager::DoGlobalSendQueueWork();
 	}
-
-	cout << "[Command Thread] terminated" << endl;
 }
-
-//void LogThreadStart(int32 index)
-//{
-//#ifdef _WIN32
-//	DWORD tid = GetCurrentThreadId();
-//#else
-//	pid_t tid = syscall(SYS_gettid);
-//#endif
-//	cout << "[Thread#" << index << " | ID " << tid << "] start.\n";
-//}
 
 int main()
 {
-	cout << "[Server] Start\n";
 	ServerPacketHandler::Init();
-	cout << "[Server] ServerPacketHandler Init\n";
 
 	ConfigManager::Instance().LoadConfig("../Data/config.json");
 	DataManager::Instance().LoadData("../Data");
-	cout << "[Server] DataManager LoadData\n";
 	
-	
-	cout << "[Server] ServerService Start '127.0.0.1', '7777'\n";
 	ServerServiceRef service = make_shared<ServerService>(
+#ifdef _DEBUG
 		NetAddress(L"127.0.0.1", 7777),
+#else
+		NetAddress(L"192.168.0.10", 7777),
+#endif
 		make_shared<IocpCore>(),
 		[=]() { return make_shared<GameSession>(); },
-		100);
+		10);
 
 	ASSERT_CRASH(service->Start());
-
-	cout << "[Server] IO Worker Start : 8 Thread\n";
-	
-	for (int32 i = 0; i < 5; i++)
+		
+	for (int32 i = 0; i < 4; i++)
 	{
 		GThreadManager->Launch("IOWorker#" + to_string(i), [&service]()
 			{
@@ -105,8 +81,7 @@ int main()
 			});
 	}
 
-	cout << "[Server] Game Worker Start : 8 Thread\n";
-	for (int32 i = 0; i < 5; i++)
+	for (int32 i = 0; i < 3; i++)
 	{
 		GThreadManager->Launch("GameWorker#" + to_string(i), []()
 			{
@@ -114,17 +89,18 @@ int main()
 			});
 	}
 
-	//for (int32 i = 0; i < 2; i++)
-		RoomRef room = RoomManager::Instance().Add(1);
-
-	CommandManager commandManager;
-	commandManager.Init();
-	thread commandThread(CommandThread, &commandManager);
+	for (int32 i = 0; i < 1; i++)
+	{
+		GThreadManager->Launch("SendWorker#" + to_string(i), []()
+			{
+				DoSendWorker();
+			});
+	}
+	
+	RoomRef room = RoomManager::Instance().Add(1);
 
 	// Main Thread
-	//DoWorkerJob(service);
-	if (commandThread.joinable())
-		commandThread.join();
+	//DoGameWorker();
 
 	GThreadManager->Join();
 }

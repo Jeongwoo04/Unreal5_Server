@@ -31,17 +31,21 @@ void Field::GridCaching()
 
 void Field::Update()
 {
-	if (GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
+	auto room = GetRoom();
+	if (room == nullptr)
 		return;
+
+	if (GetOwner() == nullptr)
+	{
+		room->AddRemoveList(shared_from_this());
+		return;
+	}
 
 	if (_cachedGrids.empty()) // °íÁ¤Çü
 		GridCaching();
 
 	_affectedTargets.clear();
-	auto room = GetRoom();
-	if (room == nullptr)
-		return;
-
+	
 	_elapsedTime += ServerTickInterval;
 	if (_elapsedTime >= _data->duration)
 	{

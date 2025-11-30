@@ -193,19 +193,13 @@ void US1GameInstance::HandleSpawn(const Protocol::ObjectInfo& ObjectInfo, bool I
 	AActor* NewActor = ObjectManager->SpawnObject(ObjectInfo, IsMine);
 	if (!NewActor)
 	{
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-				FString::Printf(TEXT("HandleSpawn: SpawnObject returned nullptr for ObjectID %llu"), ObjectInfo.object_id()));
 		return;
 	}
 
 	if (IsMine)
 	{
 		MyPlayer = Cast<AS1MyPlayer>(NewActor);
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
-				FString::Printf(TEXT("HandleSpawn: Set MyPlayer = %s"), MyPlayer ? *MyPlayer->GetName() : TEXT("nullptr")));
-
+		
 		OnMyPlayerSpawned.Broadcast(MyPlayer);
 	}
 }
@@ -276,9 +270,6 @@ void US1GameInstance::HandleMove(const Protocol::PosInfo& PosInfo)
 	if (Creature == nullptr)
 		return;
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("HandleMove: ObjectID %llu Pos(%f, %f, %f)"), PosInfo.object_id(), PosInfo.x(), PosInfo.y(), PosInfo.z()));
-
 	if (Creature == MyPlayer)
 	{
 		FVector ServerPos = FVector(PosInfo.x(), PosInfo.y(), PosInfo.z());
@@ -346,9 +337,6 @@ void US1GameInstance::HandleAction(const Protocol::S_ACTION& ActionPkt)
 	if (Creature == nullptr)
 		return;
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("HandleAction: ObjectID %llu ActionIndex %d"), ActionPkt.object_id(), ActionPkt.actionindex()));
-	
 	//Creature->ChangeState(Protocol::STATE_MACHINE_SKILL);
 	// Creature->UpdateAnim(SkillPkt.skillid());
 
@@ -373,9 +361,6 @@ void US1GameInstance::HandleSkillCastStart(const Protocol::S_SKILL_CAST_START& C
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
 	if (Creature == nullptr)
 		return;
-
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("HandleCastStart: ObjectID %llu SkillId %d"), CastStartPkt.object_id(), CastStartPkt.skillid()));
 
 	// CastId 검증
 	if (Creature == MyPlayer)
@@ -422,9 +407,6 @@ void US1GameInstance::HandleSkillCastSuccess(const Protocol::S_SKILL_CAST_SUCCES
 	AS1Creature* Creature = Cast<AS1Creature>(FindActor);
 	if (Creature == nullptr)
 		return;
-
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("HandleCastSuccess: ObjectID %llu TargetPos (%f, %f, %f)"), CastSuccessPkt.object_id(), CastSuccessPkt.targetpos().x(), CastSuccessPkt.targetpos().y(), CastSuccessPkt.targetpos().z()));
 
 	Vec3 Vec = CastSuccessPkt.targetpos();
 	FVector TargetLoc = {Vec.x(), Vec.y(), Vec.z()};
@@ -490,9 +472,6 @@ void US1GameInstance::HandleSkillCastCancel(const Protocol::S_SKILL_CAST_CANCEL&
 	if (Creature == nullptr)
 		return;
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("HandleCastCancel: ObjectID %llu SkillID %d"), CastCancelPkt.object_id(), CastCancelPkt.skillid()));
-	
 	if (Creature == MyPlayer)
 	{
 		// CastId 검증
@@ -527,8 +506,6 @@ void US1GameInstance::HandleHit(const Protocol::HpChange& Change)
 		return;
 
 	// HpChange UI 업데이트
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("HandleHit: ObjectID %llu Hp %d"), Change.object_id(), Change.hp()));
 }
 
 void US1GameInstance::HandleDie(const Protocol::S_DIE& DiePkt)
@@ -549,8 +526,6 @@ void US1GameInstance::HandleDie(const Protocol::Death& Death)
 		return;
 
 	// Die Anim 업데이트
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("HandleDie: ObjectID %llu by %llu"), Death.object_id(), Death.attacker_id()));
 }
 
 void US1GameInstance::HandleHeartbeat(const Protocol::S_HEARTBEAT& pkt)

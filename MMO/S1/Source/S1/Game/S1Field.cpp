@@ -28,8 +28,6 @@ void AS1Field::BeginPlay()
 		PosInfo.set_z(Location.Z);
 		PosInfo.set_yaw(GetActorRotation().Yaw);
 		PosInfo.set_state(Protocol::STATE_MACHINE_IDLE);
-
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Field Is Spawn. Pos %f , %f , %f"), PosInfo.x(), PosInfo.y(), PosInfo.z()));
 	}
 }
 

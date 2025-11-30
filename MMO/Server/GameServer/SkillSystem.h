@@ -67,5 +67,10 @@ private:
 	weak_ptr<Room> _room;
 	const unordered_map<int32, Skill>* skillDict = nullptr;
 	vector<SkillInstanceRef> activeSkills;
+
+	// TEMP HUD
+public:
+	int32 _activeCount = 0;
+	int32 _endCount = 0;
 };
 

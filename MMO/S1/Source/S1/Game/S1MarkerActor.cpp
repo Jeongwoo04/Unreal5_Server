@@ -29,8 +29,7 @@ void AS1MarkerActor::Init(UMaterialInterface* InMaterial, FVector InSize, float 
     }
     else
     {
-        if (GEngine)
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("[Marker] Init: Material is nullptr!"));
+        ;
     }
 
 
@@ -48,8 +47,6 @@ void AS1MarkerActor::BeginPlay()
         DynMat = DecalComp->CreateDynamicMaterialInstance();
         if (DynMat)
             DynMat->SetScalarParameterValue("Fade", 1.f);
-        else if (GEngine)
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("[Marker] Failed to create DynMat"));
     }
 
     if (LifeTime > 0.f)

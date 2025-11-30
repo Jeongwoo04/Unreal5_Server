@@ -54,9 +54,6 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 	else
 		room = RoomManager::Instance().Find(1);
 
-	//TEMP : MultiRoom 테스트
-	//room = RoomManager::Instance().Find(pkt.roomnumber());
-
 	// 입장
 	room->DoAsyncPushOnly(&Room::HandleEnterPlayer, gameSession);
 

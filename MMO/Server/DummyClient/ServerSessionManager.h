@@ -11,6 +11,8 @@ public:
 	void Remove(ServerSessionRef session);
 	void Broadcast(SendBufferRef sendBuffer);
 
+	set<ServerSessionRef>& GetSessions();
+
 	void SendRandomPos();
 
 private:

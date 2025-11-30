@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Game/S1Creature.h"
+#include "S1MyPlayer.h"
 #include "Components//CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "S1SkillComponent.h"
@@ -34,6 +34,45 @@ void AS1Creature::BeginPlay()
 
 void AS1Creature::Tick(float DeltaTime)
 {
+	auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance());
+	auto MyPlayer = GameInstance ? GameInstance->MyPlayer : nullptr;
+	if (!MyPlayer) return;
+
+	float Range = 2000.f; // 20m 범위
+	float DistSq = FVector::DistSquared(MyPlayer->GetActorLocation(), GetActorLocation());
+
+	// 범위 밖
+	if (DistSq > Range * Range)
+	{
+		// Tick 완전 정지
+		if (IsActorTickEnabled())
+		{
+			SetActorTickEnabled(false);
+		}
+
+		// Anim 정지
+		if (USkeletalMeshComponent* Skel = GetMesh())
+		{
+			Skel->bPauseAnims = true;
+		}
+
+		return; // UpdateState 호출 안 함
+	}
+	else // 범위 안
+	{
+		// Tick 활성화
+		if (!IsActorTickEnabled())
+		{
+			SetActorTickEnabled(true);
+		}
+
+		// Anim 활성화
+		if (USkeletalMeshComponent* Skel = GetMesh())
+		{
+			Skel->bPauseAnims = false;
+		}
+	}
+
 	Super::Tick(DeltaTime);
 	UpdateState(DeltaTime);
 }

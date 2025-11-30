@@ -42,7 +42,7 @@ public:
 		//if (now - _programStartTime < _warmupMs)
 		//    return;
 
-		_records["BCExecuteTime"].push_back(exeTime);
+		_records["ExecuteTime"].push_back(exeTime);
 	}
 
 

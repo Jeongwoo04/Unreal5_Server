@@ -32,7 +32,7 @@
     {
       "id": 3,
       "name": "SkillB_Fireball",
-      "cooldown": 12.0,
+      "cooldown": 3.0,
       "castTime": 1.5,
       "actions": [
         {
@@ -45,7 +45,7 @@
     {
       "id": 4,
       "name": "SkillC_FrozenField",
-      "cooldown": 20.0,
+      "cooldown": 3.0,
       "castTime": 2.0,
       "actions": [
         {

@@ -47,6 +47,8 @@ void Player::AddMoveFlushQueue(ObjectRef obj)
 
 	if (_isDirty == false)
 		room->_immediateFlushQueue.push_back({ obj, Type::MOVE });
+	else
+		return;
 }
 
 void Player::AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const Protocol::S_SKILL_EVENT& event)

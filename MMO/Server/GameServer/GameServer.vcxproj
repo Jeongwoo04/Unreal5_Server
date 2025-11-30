@@ -185,7 +185,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Room.cpp" />
+    <ClCompile Include="RoomDiagnostics.cpp" />
     <ClCompile Include="RoomManager.cpp" />
+    <ClCompile Include="SendQueue.cpp" />
     <ClCompile Include="ServerPacketHandler.cpp" />
     <ClCompile Include="SkillState.cpp" />
     <ClCompile Include="SkillSystem.cpp" />
@@ -220,6 +222,8 @@
     <ClInclude Include="Protocol.pb.h" />
     <ClInclude Include="Room.h" />
     <ClInclude Include="RoomManager.h" />
+    <ClInclude Include="RoomDiagnostics.h" />
+    <ClInclude Include="SendQueue.h" />
     <ClInclude Include="ServerPacketHandler.h" />
     <ClInclude Include="SkillState.h" />
     <ClInclude Include="SkillSystem.h" />

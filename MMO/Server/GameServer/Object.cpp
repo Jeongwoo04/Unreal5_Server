@@ -53,10 +53,10 @@ void Object::MoveToNextPos(const Vector3& destPos, Vector3* dir, Vector2Int* blo
 
 	nextPos = room->GetGameMap()->GetSafePosRayCast(_worldPos, destPos, _statInfo.speed(), blocked);
 
-	float diff = (destPos - nextPos).Length2D();
+	float diff = (destPos - nextPos).LengthSquared2D();
 	if (diff > 0.001f)
 	{
-		cout << "[Server] Collision Fail. Move GetSafePos.\n";
+		;
 	}
 
 	Vector3 direction;
@@ -85,11 +85,8 @@ void Object::MoveToNextPos(const Vector3& destPos, Vector3* dir, Vector2Int* blo
 	}
 	else if (GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
-		auto player = static_pointer_cast<Player>(shared_from_this());
-		room->_playerGrid.ApplyMove(player, currentGrid, _gridPos);
-		
-		player->_isDirty = true;
-		player->_hasMove = true;
+		_isDirty = true;
+		_hasMove = true;
 	}
 }
 
@@ -228,7 +225,7 @@ void Object::AddHitFlushQueue(ObjectRef obj)
 	if (!room)
 		return;
 
-	room->_deferFlushQueue.push_back({ obj, Type::HIT });
+	room->_deferFlushQueue.push_back({ shared_from_this(), Type::HIT});
 }
 
 void Object::AddDieFlushQueue(ObjectRef obj)

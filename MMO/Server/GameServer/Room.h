@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "SpatialGrid.h"
 #include "BenchmarkLogger.h"
+#include "RoomDiagnostics.h"
 #include <optional>
 
 using GameMapRef = shared_ptr<class GameMap>;
@@ -12,21 +13,16 @@ using MonsterRef = shared_ptr<class Monster>;
 using ProjectileRef = shared_ptr<class Projectile>;
 using FieldRef = shared_ptr<class Field>;
 using GameSessionRef = shared_ptr<class GameSession>;
+using SendQueueRef = shared_ptr<class SendQueue>;
 
 struct MapInfo;
 struct SpawnTable;
 
 enum class Type
 {
-	SPAWN = 1,
-	MOVE = 2,
-	CAST_START = 3,
-	CAST_CANCEL = 4,
-	CAST_SUCCESS = 5,
-	SKILL_ACTION = 6,
-	HIT = 7,
-	DIE = 8,	
-	DESPAWN = 9
+	SPAWN, MOVE, HIT, DIE, DESPAWN,
+	CAST_START, CAST_CANCEL,
+	CAST_SUCCESS, SKILL_ACTION
 };
 
 struct FlushQueue
@@ -97,6 +93,8 @@ public:
 	void Kill();
 	void KillAll();
 	void GetList();
+	void RenderingStart();
+	void RenderingStop();
 	//
 
 	void SpawnInit();
@@ -131,13 +129,6 @@ public:
 	vector<Vector2Int> InterestCells(const Vector2Int& center) const;
 	InterestDiff DiffInterestCells(const vector<Vector2Int>& oldCell, const vector<Vector2Int>& newCell, const Vector2Int& delta) const;
 	*/
-
-	//void AddSpawnFlushQueue(ObjectRef obj);
-	//void AddMoveFlushQueue(ObjectRef obj);
-	//void AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const SkillEvent& event = {});
-	//void AddHitFlushQueue(ObjectRef obj);
-	//void AddDieFlushQueue(ObjectRef obj);
-	//void AddDespawnFlushQueue(ObjectRef obj);
 
 	bool IsEmptyImmediatePkt(const Protocol::S_IMMEDIATE_FLUSH& pkt);
 	bool IsEmptyDeferPkt(const Protocol::S_DEFER_FLUSH& pkt);
@@ -174,7 +165,8 @@ public:
 public:
 	vector<FlushQueue> _immediateFlushQueue; // C_Packet
 	vector<FlushQueue> _deferFlushQueue; // Room Object Update
-	//vector<BroadcastGroup> _flushBCQueue;
+	SendQueueRef _sendQueue;
+	//vector<BroadcastGroup> _broadcastQueue;
 
 private:
 	vector<ObjectRef> _removePending;
@@ -186,10 +178,13 @@ public:
 	BenchmarkStat _bench;
 	uint64 _tickCount = 0;
 
-private:
-	shared_ptr<JobQueue> _broadcastQueue;
-
 	//TEMP
 public:
 	std::chrono::high_resolution_clock::time_point _prevTime;
+	uint64 _serverTick;
+	RoomDiagnostics _diag;
+
+	int32 _castingCount = 0;
+	int32 _successCount = 0;
+	int32 _actionCount = 0;
 };

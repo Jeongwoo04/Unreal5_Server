@@ -86,6 +86,22 @@ void ThreadManager::DoGlobalQueueWork()
 	}
 }
 
+void ThreadManager::DoGlobalSendQueueWork()
+{
+	while (true)
+	{
+		uint64 now = ::GetTickCount64();
+		if (now > LEndTickCount)
+			break;
+
+		JobQueueRef jobQueue = GGlobalSendQueue->Pop();
+		if (jobQueue == nullptr)
+			break;
+
+		jobQueue->ExecuteSendJob();
+	}
+}
+
 void ThreadManager::DistributeReservedJobs()
 {
 	const uint64 now = ::GetTickCount64();

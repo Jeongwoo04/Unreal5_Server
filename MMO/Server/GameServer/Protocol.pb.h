@@ -555,7 +555,6 @@ class C_ENTER_GAME final :
 
   enum : int {
     kPlayerIndexFieldNumber = 1,
-    kRoomNumberFieldNumber = 2,
   };
   // uint64 playerIndex = 1;
   void clear_playerindex();
@@ -564,15 +563,6 @@ class C_ENTER_GAME final :
   private:
   uint64_t _internal_playerindex() const;
   void _internal_set_playerindex(uint64_t value);
-  public:
-
-  // int32 roomNumber = 2;
-  void clear_roomnumber();
-  int32_t roomnumber() const;
-  void set_roomnumber(int32_t value);
-  private:
-  int32_t _internal_roomnumber() const;
-  void _internal_set_roomnumber(int32_t value);
   public:
 
   // @@protoc_insertion_point(class_scope:Protocol.C_ENTER_GAME)
@@ -584,7 +574,6 @@ class C_ENTER_GAME final :
   typedef void DestructorSkippable_;
   struct Impl_ {
     uint64_t playerindex_;
-    int32_t roomnumber_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -4190,26 +4179,6 @@ inline void C_ENTER_GAME::_internal_set_playerindex(uint64_t value) {
 inline void C_ENTER_GAME::set_playerindex(uint64_t value) {
   _internal_set_playerindex(value);
   // @@protoc_insertion_point(field_set:Protocol.C_ENTER_GAME.playerIndex)
-}
-
-// int32 roomNumber = 2;
-inline void C_ENTER_GAME::clear_roomnumber() {
-  _impl_.roomnumber_ = 0;
-}
-inline int32_t C_ENTER_GAME::_internal_roomnumber() const {
-  return _impl_.roomnumber_;
-}
-inline int32_t C_ENTER_GAME::roomnumber() const {
-  // @@protoc_insertion_point(field_get:Protocol.C_ENTER_GAME.roomNumber)
-  return _internal_roomnumber();
-}
-inline void C_ENTER_GAME::_internal_set_roomnumber(int32_t value) {
-  
-  _impl_.roomnumber_ = value;
-}
-inline void C_ENTER_GAME::set_roomnumber(int32_t value) {
-  _internal_set_roomnumber(value);
-  // @@protoc_insertion_point(field_set:Protocol.C_ENTER_GAME.roomNumber)
 }
 
 // -------------------------------------------------------------------

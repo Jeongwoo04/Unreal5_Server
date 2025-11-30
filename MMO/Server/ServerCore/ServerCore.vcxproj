@@ -161,6 +161,7 @@
     <ClInclude Include="JobTimer.h" />
     <ClInclude Include="Listener.h" />
     <ClInclude Include="LockQueue.h" />
+    <ClInclude Include="MPSCQueue.h" />
     <ClInclude Include="NetAddress.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="RecvBuffer.h" />
@@ -186,6 +187,7 @@
     <ClCompile Include="JobTimer.cpp" />
     <ClCompile Include="Listener.cpp" />
     <ClCompile Include="LockQueue.cpp" />
+    <ClCompile Include="MPSCQueue.cpp" />
     <ClCompile Include="NetAddress.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

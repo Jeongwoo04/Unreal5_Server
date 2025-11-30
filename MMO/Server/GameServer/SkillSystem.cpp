@@ -119,6 +119,7 @@ void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 void SkillSystem::Update()
 {
 	uint64 now = GetTickCount64();
+	
 	for (auto it = activeSkills.begin(); it != activeSkills.end(); )
 	{
 		SkillInstanceRef instance = *it;

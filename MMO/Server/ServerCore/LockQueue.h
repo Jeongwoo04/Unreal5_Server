@@ -33,6 +33,20 @@ public:
 			items.push_back(item);
 	}
 
+	void PopPop(OUT vector<T>& items)
+	{
+		WRITE_LOCK;
+		int32 count = 0;
+		while (T item = PopNoLock())
+		{
+			if (count >= 200)
+				break;
+
+			items.push_back(item);
+			count++;
+		}			
+	}
+
 	void Clear()
 	{
 		WRITE_LOCK;

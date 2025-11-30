@@ -17,7 +17,7 @@ Monster::Monster()
 		//    continue;
 
 		const Skill& s = it.second;
-		_skillStates.emplace(id, make_shared<SkillState>(id, s.cooldown + 3.f));
+		_skillStates.emplace(id, make_shared<SkillState>(id, s.cooldown));
 	}
 }
 
@@ -90,7 +90,6 @@ void Monster::UpdateIdle()
 			{
 				_posInfo.set_yaw(Vector3::DirToYaw2D(dir.Normalized2D()));
 				ChangeState(Protocol::STATE_MACHINE_MOVING);
-				cout << "[Server] Monster: Cannot skill, chasing target\n";
 				BroadcastMove();
 				return;
 			}
@@ -136,12 +135,11 @@ void Monster::UpdateMoving()
 	{
 		SetPlayer(nullptr);
 		ChangeState(Protocol::STATE_MACHINE_IDLE);
-		cout << "[Server] Monster: Target's out of sight";
 		BroadcastMove();
 		return;
 	}
 
-	if (distanceSq < (CELL_SIZE * CELL_SIZE))
+	if (distanceSq < ((1.5 * CELL_SIZE) * (1.5 * CELL_SIZE)))
 	{
 		ChangeState(Protocol::STATE_MACHINE_IDLE);
 		BroadcastMove();

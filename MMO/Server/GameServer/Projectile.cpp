@@ -15,10 +15,15 @@ Projectile::~Projectile()
 
 void Projectile::Update()
 {
-	if (GetOwner() == nullptr || GetOwner()->GetRoom() == nullptr)
+	auto room = GetRoom();
+	if (room == nullptr)
 		return;
 
-	auto room = GetRoom();
+	if (GetOwner() == nullptr)
+	{
+		room->AddRemoveList(shared_from_this());
+		return;
+	}
 
 	if (_moveDistance >= _data->distance)
 	{

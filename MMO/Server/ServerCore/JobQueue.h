@@ -1,6 +1,7 @@
 #pragma once
 #include "Job.h"
 #include "LockQueue.h"
+#include "MPSCQueue.h"
 #include "JobTimer.h"
 
 /*--------------
@@ -10,7 +11,7 @@
 enum JobQueueFlag
 {
 	DEFAULT = 0,
-	BCQ = 1
+	SQ = 1
 };
 
 class JobQueue : public enable_shared_from_this<JobQueue>
@@ -33,6 +34,18 @@ public:
 	{
 		shared_ptr<T> owner = static_pointer_cast<T>(shared_from_this());
 		Push(make_shared<Job>(owner, memFunc, std::forward<Args>(args)...));
+	}
+
+	void DoAsyncSendJob(CallbackType&& callback)
+	{
+		PushSendJob(make_shared<Job>(std::move(callback)), true);
+	}
+
+	template<typename T, typename Ret, typename... Args>
+	void DoAsyncSendJob(Ret(T::* memFunc)(Args...), Args... args)
+	{
+		shared_ptr<T> owner = static_pointer_cast<T>(shared_from_this());
+		PushSendJob(make_shared<Job>(owner, memFunc, std::forward<Args>(args)...), true);
 	}
 
 	void DoAsyncPushOnly(CallbackType&& callback)
@@ -65,10 +78,13 @@ public:
 
 public:
 	void					Push(JobRef job, bool pushOnly = false);
+	void					PushSendJob(JobRef sendJob, bool pushOnly = false);
 	void					Execute();
+	void					ExecuteSendJob();
 
 protected:
 	LockQueue<JobRef>		_jobs;
+	//MPSCQueue<JobRef>		_jobs;
 	atomic<int32>			_jobCount = 0;
 
 protected:

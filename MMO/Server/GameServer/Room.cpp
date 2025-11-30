@@ -6,12 +6,15 @@
 #include "Field.h"
 #include "ObjectManager.h"
 #include "SkillSystem.h"
+#include "SendQueue.h"
 
 using namespace std::chrono;
+using namespace std::chrono_literals;
 
 Room::Room(string name) : JobQueue(name)
 {
-	_broadcastQueue = make_shared<JobQueue>("BC_" + name);
+	_sendQueue = make_shared<SendQueue>("SendQueue_" + name);
+	_serverTick = static_cast<uint64>(ServerTickInterval * 1000);
 
 	_gameMap = make_shared<GameMap>();
 	_objectManager = make_shared<ObjectManager>();
@@ -36,11 +39,11 @@ void Room::Init(int32 mapId)
 
 	_playerGrid = SpatialGrid<PlayerRef>(_gameMap);
 	_monsterGrid = SpatialGrid<MonsterRef>(_gameMap);
-	//_flushBCQueue.resize(_gameMap->_sizeX * _gameMap->_sizeY);
 
 	//InitBaseOffsets();
 
 	_skillSystem->SetRoom(static_pointer_cast<Room>(shared_from_this()));
+	_sendQueue->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 
 	SpawnInit();
 
@@ -65,23 +68,14 @@ void Room::Init(int32 mapId)
 
 void Room::UpdateTick()
 {
-	using namespace std::chrono;
+	_diag.BeginTick();
+	//_bench.Begin("Room");
 
-	auto now = high_resolution_clock::now();
-	auto diff = duration_cast<milliseconds>(now - _prevTime).count();
-	_prevTime = now;
+	DoTimer(_serverTick, &Room::UpdateTick);
+	_diag.SetObjectCounts(_players.size(), _monsters.size(), _projectiles.size(), _fields.size());
+	_diag.SetRoomWorkerInfo(_queueName + " | Thread: " + LThreadName);
 
-	if (diff > 0)
-		std::cout << "[RoomTick] Interval: " << diff << " ms\n";
-
-	constexpr float deltaTime = 0.1f;
-	uint64 tick = static_cast<uint64>(deltaTime * 1000);
-	DoTimer(tick, &Room::UpdateTick);
-
-	_bench.Begin("Room");
-	_bench.Begin("FlushImmediateBroadcast");
 	FlushImmediateBroadcast();
-	_bench.End("FlushImmediateBroadcast");
 
 	UpdateMonster();
 	UpdateProjectile();
@@ -89,13 +83,12 @@ void Room::UpdateTick()
 	UpdateSkillSystem();
 	ClearRemoveList();
 
-	_bench.Begin("FlushDeferBroadcast");
 	FlushDeferBroadcast();
-	_bench.End("FlushDeferBroadcast");
 
-	_bench.End("Room");
-
-	//_bench.PrintAndSaveSummary(GetRoomId(), "1000 active dummy Hybrid Flush Server");
+	//_bench.End("Room");
+	_diag.EndTick();
+	_diag.Render();
+	//_bench.PrintAndSaveSummary(GetRoomId(), "HandleMove Bench");
 }
 
 void Room::UpdateMonster()
@@ -288,12 +281,13 @@ bool Room::LeaveGame(ObjectRef object, uint64 objectId)
 
 bool Room::HandleEnterPlayer(GameSessionRef gameSession)
 {
-	//printf("[Server] Handle Enter Player\n");
 	PlayerRef player = static_pointer_cast<Player>(_objectManager->Spawn(10101, true, {0, 0, 0}));
 	if (player == nullptr)
 		return false;
 
 	gameSession->_player = player;
+	if (gameSession->_player == nullptr)
+		return false;
 	player->SetSession(gameSession);
 
 	return EnterRoom(player);
@@ -306,6 +300,7 @@ bool Room::HandleLeavePlayer(PlayerRef player)
 
 void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 {
+	//_moveCount++;
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
 		return;
@@ -320,12 +315,10 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 		if (activeSkill)
 		{
 			_skillSystem->CancelCasting(player, activeSkill->castId);
-			cout << "[Server] CancelCasting\n";
 		}
 	}
 	else if (player->GetState() == Protocol::STATE_MACHINE_SKILL)
 	{
-		cout << "[Server] Move Fail: Player state is Skill\n";
 		return;
 	}
 
@@ -461,13 +454,14 @@ bool Room::RemoveObject(ObjectRef object, uint64 objectId)
 	}
 
 	_objectManager->Despawn(object);
-	object->SetRoom(nullptr);
 
 	return eraseCount > 0 ? true : false;
 }
 
 void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 {
+	auto now = GetTickCount64();
+
 	vector<PlayerRef> snapshot;
 	snapshot.reserve(_players.size());
 
@@ -480,49 +474,17 @@ void Room::Broadcast(SendBufferRef sendBuffer, uint64 exceptId)
 	}
 
 	auto enqueueTime = GetTimeMs();
-	_broadcastQueue->Push(make_shared<Job>(
-		[snapshot = std::move(snapshot), sendBuffer, enqueueTime, this]()
-		{
-			double executeTime = GetTimeMs();
-			double delayMs = static_cast<double>(executeTime - enqueueTime);
-
-			_bench.AddBCQDelay(delayMs);
-			_bench.AddSendCount(int32(snapshot.size()));
-
-			for (auto& player : snapshot)
-			{
-				if (auto session = player->GetSession())
-					session->Send(sendBuffer);
-			}
-		}));
+	_sendQueue->DoAsyncSendJob(&SendQueue::SendJob, sendBuffer, snapshot, enqueueTime);
 }
 
 void Room::BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId)
 {
-	_bench.Begin("BCNearbySnapshot");
 	vector<PlayerRef> nearbyPlayers =
 		_playerGrid.FindAround(WorldToGrid(center), BROADCAST_RANGE);
-	_bench.End("BCNearbySnapshot");
-	auto enqueueTime = GetTickCount64();
-	_broadcastQueue->Push(make_shared<Job>([nearbyPlayers = std::move(nearbyPlayers), sendBuffer, exceptId, enqueueTime, this]()
-		{
-			uint64 executeTime = GetTickCount64();
-			double delayMs = static_cast<double>(executeTime - enqueueTime);
 
-			_bench.AddBCQDelay(delayMs);
-			_bench.AddSendCount(int32(nearbyPlayers.size()));
-
-			//auto preExeTime = GetTickCount64();
-			for (auto& player : nearbyPlayers)
-			{
-				if (player->GetId() == exceptId)
-					continue;
-				if (auto session = player->GetSession())
-					session->Send(sendBuffer);
-			}
-			//double exeTime = static_cast<double>(GetTickCount64() - preExeTime);
-			//_bench.AddExecuteTime(exeTime);
-		}));
+	auto enqueueTime = GetTimeMs();
+	_sendQueue->DoAsyncSendJob(&SendQueue::SendJob,
+		sendBuffer, nearbyPlayers, enqueueTime);
 }
 
 void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)
@@ -727,11 +689,9 @@ InterestDiff Room::DiffInterestCells(const vector<Vector2Int>& oldCell, const ve
 void Room::FlushImmediateBroadcast()
 {
 	Protocol::S_IMMEDIATE_FLUSH pkt;
-	int32 count = 0;
-
+	
 	for (auto& obj : _immediateFlushQueue)
 	{
-		count++;
 		switch (obj.type)
 		{
 		case Type::CAST_START:
@@ -754,15 +714,18 @@ void Room::FlushImmediateBroadcast()
 		} break;
 		
 		default:
+			_playerGrid.ApplyMove(static_pointer_cast<Player>(obj.object), WorldToGrid(obj.object->_lastFlushPos), obj.object->_gridPos);
 			break;
 		};
 	}
+	int32 count = _immediateFlushQueue.size();
+	
+	_diag.SetImmediateFlushInfo(count, pkt.ByteSizeLong());
 	_immediateFlushQueue.clear();
 
 	if (IsEmptyImmediatePkt(pkt))
 		return;
 
-	_bench.AddImmediatePktCount(count);
 	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 	Broadcast(sendBuffer);
 }
@@ -770,9 +733,15 @@ void Room::FlushImmediateBroadcast()
 void Room::FlushDeferBroadcast()
 {
 	Protocol::S_DEFER_FLUSH pkt;
+	auto* spawnPkt = pkt.mutable_spawn_pkt();
+	auto* movePkt = pkt.mutable_move_pkt();
+	auto* skillPkt = pkt.mutable_skill_pkt();
+	auto* hitPkt = pkt.mutable_hit_pkt();
+	auto* diePkt = pkt.mutable_die_pkt();
+	auto* despawnPkt = pkt.mutable_despawn_pkt();
 	Protocol::HpChange hp;
 	Protocol::Death death;
-	int32 count = 0;
+	int32 count = _deferFlushQueue.size();
 
 	for (auto& obj : _deferFlushQueue)
 	{
@@ -781,57 +750,83 @@ void Room::FlushDeferBroadcast()
 		{
 		case Type::SPAWN:
 		{
-			auto* spawnPkt = pkt.mutable_spawn_pkt();
+			//auto* spawnPkt = pkt.mutable_spawn_pkt();
 			*spawnPkt->add_objects() = obj.object->_objectInfo;
 		} break;
 		case Type::MOVE:
 		{
 			if (obj.object->IsMoveBatch())
 			{
-				auto* movePkt = pkt.mutable_move_pkt();
+				//auto* movePkt = pkt.mutable_move_pkt();
 				*movePkt->add_info() = obj.object->_posInfo;
 			}
 			obj.object->FlushStateInit();
 		} break;
 		case Type::CAST_START:
+		{
+			if (obj.eventInfo.has_value())
+			{
+				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
+				*skillPkt->add_event() = obj.eventInfo.value();
+			}
+		} break;
 		case Type::CAST_CANCEL:
+		{
+			if (obj.eventInfo.has_value())
+			{
+				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
+				*skillPkt->add_event() = obj.eventInfo.value();
+			}
+		} break;
 		case Type::CAST_SUCCESS:
+		{
+			if (obj.eventInfo.has_value())
+			{
+				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
+				*skillPkt->add_event() = obj.eventInfo.value();
+			}
+		} break;
 		case Type::SKILL_ACTION:
 		{
 			if (obj.eventInfo.has_value())
 			{
-				*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
+				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
+				*skillPkt->add_event() = obj.eventInfo.value();
 			}
 		} break;
 		case Type::HIT:
 		{
-			auto* hitPkt = pkt.mutable_hit_pkt();
+			Protocol::HpChange hp;
+			//auto* hitPkt = pkt.mutable_hit_pkt();
 			hp.set_object_id(obj.object->GetId());
 			hp.set_hp(obj.object->_statInfo.hp());
 			*hitPkt->add_changes() = hp;
 		} break;
 		case Type::DIE:
 		{
-			auto* diePkt = pkt.mutable_die_pkt();
+			Protocol::Death death;
+			//auto* diePkt = pkt.mutable_die_pkt();
 			death.set_object_id(obj.object->GetId());
 			death.set_attacker_id(obj.object->_attackerId);
 			*diePkt->add_death() = death;
 		} break;
 		case Type::DESPAWN:
 		{
-			auto* despawnPkt = pkt.mutable_despawn_pkt();
+			//auto* despawnPkt = pkt.mutable_despawn_pkt();
 			despawnPkt->add_object_ids(obj.object->GetId());
+			obj.object->SetRoom(nullptr);
 		} break;
 		default:
 			break;
 		};
 	}
+
 	_deferFlushQueue.clear();
 
 	if (IsEmptyDeferPkt(pkt))
 		return;
 
-	_bench.AddDeferPktCount(count);
+	_diag.SetDeferFlushInfo(count, pkt.ByteSizeLong());
 	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
 
 	Broadcast(sendBuffer);
@@ -894,6 +889,7 @@ void Room::ClearRemoveList()
 		LeaveRoom(obj);
 		obj->AddDespawnFlushQueue(obj);
 	}
+	_removePending.clear();
 }
 
 int32 Room::Index(const Vector2Int& pos) const
@@ -903,44 +899,6 @@ int32 Room::Index(const Vector2Int& pos) const
 
 	return localY * _gameMap->_sizeX + localX;
 }
-
-// 조건 확인
-//void Room::AddMoveFlushQueue(ObjectRef obj)
-//{
-//	if (obj->GetCreatureType() == Protocol::CREATURE_TYPE_PLAYER)
-//	{
-//		if (static_pointer_cast<Player>(obj)->_isDirty == false)
-//			_immediateFlushQueue.push_back({ obj, Type::MOVE });
-//		return;
-//	}
-//	_deferFlushQueue.push_back({ obj, Type::MOVE });
-//}
-//
-//void Room::AddSkillFlushQueue(ObjectRef obj, const Protocol::CastState& state, const SkillEvent& event)
-//{
-//	
-//
-//}
-//
-//void Room::AddHitFlushQueue(ObjectRef obj)
-//{
-//	_deferFlushQueue.push_back({ obj, Type::HIT });
-//}
-//
-//void Room::AddDieFlushQueue(ObjectRef obj)
-//{
-//	_deferFlushQueue.push_back({ obj, Type::DIE });
-//}
-//
-//void Room::AddSpawnFlushQueue(ObjectRef obj)
-//{
-//	_deferFlushQueue.push_back({ obj, Type::SPAWN});
-//}
-//
-//void Room::AddDespawnFlushQueue(ObjectRef obj)
-//{
-//	_deferFlushQueue.push_back({ obj, Type::DESPAWN });
-//}
 
 bool Room::IsEmptyImmediatePkt(const Protocol::S_IMMEDIATE_FLUSH& pkt)
 {

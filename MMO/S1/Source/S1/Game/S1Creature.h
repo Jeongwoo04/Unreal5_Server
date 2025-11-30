@@ -6,6 +6,7 @@
 #include "Protocol.pb.h"
 #include "S1AnimEnum.h"
 #include "S1AnimInstance.h"
+#include "S1GameInstance.h"
 #include "GameFramework/Character.h"
 #include "S1Creature.generated.h"
 
