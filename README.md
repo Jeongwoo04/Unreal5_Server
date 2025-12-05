@@ -263,7 +263,7 @@ GameWorker idle 시간(64ms Tick 내부 여유)에 **다른 Queue의 Task를 Ste
 | 전략 | 장점 | 단점 및 위험 |
 |------|-------|----------------|
 | **A. 전역 TaskQueue에서 Steal** | - Room 일관성과 완전히 분리<br>- 순수 계산성 작업은 병렬성 극대화 | - Room Context가 필요한 작업은 처리 불가<br>- Sleep 타이밍을 잘못 잡으면 Tick 지연 발생 |
-| **B. 결과만 Room에 Echo(Return)** | - Room 로직과 자연스럽게 통합<br>- Race Condition 위험 매우 낮음 | - Echo 작업 증가 → SendWorker 부하 가능성<br>- 결과가 Tick에 반영되는 시점이 뒤로 밀릴 위험 |
+| **B. 결과만 Room에 Echo(Return)** | - Room 로직과 자연스럽게 통합<br>- Race Condition 위험 매우 낮음 | - Echo 작업 증가 → GameWorker 부하 가능성<br>- 결과가 Tick에 반영되는 시점이 뒤로 밀릴 위험 |
 | **C. Object 단위 TaskQueue** | - 미세 단위 병렬화로 성능 최고 | - Queue 관리비용 증가<br>- 잘못 설계하면 Room 직렬성과 충돌 가능 |
 
 **핵심 원칙**
