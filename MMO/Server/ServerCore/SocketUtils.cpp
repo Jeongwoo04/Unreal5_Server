@@ -63,7 +63,7 @@ bool SocketUtils::SetSendBufferSize(SOCKET socket, int32 size)
 
 bool SocketUtils::SetTcpNoDelay(SOCKET socket, bool flag)
 {
-	return SetSockOpt(socket, SOL_SOCKET, TCP_NODELAY, flag);
+	return SetSockOpt(socket, IPPROTO_TCP, TCP_NODELAY, flag);
 }
 
 // ListenSocket의 특성을 ClientSocket에 그대로 적용

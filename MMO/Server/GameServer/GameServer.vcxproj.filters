@@ -188,9 +188,6 @@
     <ClInclude Include="DataManager.h">
       <Filter>Game\Data</Filter>
     </ClInclude>
-    <ClInclude Include="SpatialGrid.h">
-      <Filter>Game\Room</Filter>
-    </ClInclude>
     <ClInclude Include="CombatSystem.h">
       <Filter>Game\System</Filter>
     </ClInclude>
@@ -220,6 +217,9 @@
     </ClInclude>
     <ClInclude Include="SendQueue.h">
       <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="SpatialGrid.h">
+      <Filter>Game\Room</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

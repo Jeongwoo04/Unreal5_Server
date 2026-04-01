@@ -1,0 +1,235 @@
+#include "pch.h"
+#include "MemoryManager.h"
+
+void* MyAllocator::Alloc(uint32 size)
+{
+    return ::malloc(size);
+}
+
+void MyAllocator::Release(void* ptr)
+{
+    ::free(ptr);
+}
+
+void* PoolAllocator::Alloc(int32 size)
+{
+    return GMemoryManager->Alloc(size);
+}
+
+void PoolAllocator::Release(void* ptr)
+{
+    GMemoryManager->Release(ptr);
+}
+
+MemoryManager::MemoryManager()
+{
+    int32 size = 0;
+    int32 tableIndex = 0;
+
+    for (size = 32; size <= 1024; size += 32)
+    {
+        MemoryPool* pool = new MemoryPool(size);
+        _pools.push_back(pool);
+
+        while (tableIndex <= size)
+        {
+            _poolTable[tableIndex] = pool;
+            tableIndex++;
+        }
+    }
+    for (; size <= 2048; size += 128)
+    {
+        MemoryPool* pool = new MemoryPool(size);
+        _pools.push_back(pool);
+
+        while (tableIndex <= size)
+        {
+            _poolTable[tableIndex] = pool;
+            tableIndex++;
+        }
+    }
+    for (; size <= 4096; size += 256)
+    {
+        MemoryPool* pool = new MemoryPool(size);
+        _pools.push_back(pool);
+
+        while (tableIndex <= size)
+        {
+            _poolTable[tableIndex] = pool;
+            tableIndex++;
+        }
+    }
+}
+
+MemoryManager::~MemoryManager()
+{
+    for (MemoryPool* pool : _pools)
+        delete pool;
+
+    _pools.clear();
+}
+
+void* MemoryManager::Alloc(uint32 size)
+{
+    MemoryHeader* header = nullptr;
+    const int32 allocSize = size + sizeof(MemoryHeader);
+
+    if (allocSize > MAX_ALLOC_SIZE)
+    {
+        header = reinterpret_cast<MemoryHeader*>(::_aligned_malloc(allocSize, MEMORY_ALIGNMENT));
+    }
+    else
+    {
+        header = _poolTable[allocSize]->Pop();
+    }
+
+    return MemoryHeader::AttachHeader(header, allocSize);
+}
+
+void MemoryManager::Release(void* ptr)
+{
+    MemoryHeader* header = MemoryHeader::DetachHeader(ptr);
+
+    const int32 allocSize = header->_allocSize;
+
+    if (allocSize > MAX_ALLOC_SIZE)
+    {
+        ::_aligned_free(header);
+    }
+    else
+    {
+        _poolTable[allocSize]->Push(header);
+    }
+}
+
+// LocalChunk
+
+LocalChunk::LocalChunk()
+{
+    cout << "Chunk Alloc ! 0x10000 !" << endl;
+    _basePtr = ::_aligned_malloc(CHUNK_SIZE, MEMORY_ALIGNMENT);
+}
+
+LocalChunk::~LocalChunk()
+{
+    cout << "Chunk Free ! 0x10000 !" << endl;
+    ::_aligned_free(_basePtr);
+}
+
+void LocalChunk::Init(uint32 typeSize)
+{
+    uint32 count = (typeSize - 1 + MEMORY_ALIGNMENT) / MEMORY_ALIGNMENT;
+    uint32 alignSize = MEMORY_ALIGNMENT * count;
+
+    _header = reinterpret_cast<void**>(_basePtr);
+    void** current = _header;
+
+    uint32 offset = 0;
+
+    while (offset + (alignSize * 2) <= CHUNK_SIZE)
+    {
+        uint32 nextOffset = offset + alignSize;
+
+        *current = reinterpret_cast<void*>(static_cast<BYTE*>(_basePtr) + nextOffset);
+        current = reinterpret_cast<void**>(*current);
+
+        offset = nextOffset;
+    }
+
+    *current = nullptr;
+    _activeCount = 0;
+}
+
+// ChunkList
+
+LocalChunkRef ChunkList::FindChunk()
+{
+    LocalChunkRef find = nullptr;
+    uint32 maxCount = 0;
+
+    for (auto& chunk : _chunks)
+    {
+        if (chunk == nullptr || chunk->IsFull())
+            continue;
+
+        uint32 currentCount = chunk->GetActiveCount();
+
+        if (currentCount > maxCount) {
+            maxCount = currentCount;
+            find = chunk;
+        }
+    }
+
+    return find;
+}
+
+int32 ChunkList::AddChunk()
+{
+    LocalChunkRef newChunk = GLocalMemoryManager->PopChunk();
+    newChunk->SetOwner(shared_from_this());
+
+    int32 index;
+
+    if (_emptyIndex.empty() == false)
+    {
+        index = _emptyIndex.top();
+        _emptyIndex.pop();
+        newChunk->SetIndex(index);
+        _chunks[index] = newChunk;
+    }
+    else
+    {
+        index = static_cast<int32>(_chunks.size());
+        newChunk->SetIndex(index);
+        _chunks.push_back(newChunk);
+    }
+
+    return index;
+}
+
+void ChunkList::ChunkEmpty(int32 index)
+{
+    _chunks[index] = nullptr;
+    _emptyIndex.push(index);
+}
+
+// LocalMemoryManager
+
+LocalMemoryManager::~LocalMemoryManager()
+{
+    if (_localChunks.empty() == false)
+    {
+        for (LocalChunk* chunk : _localChunks)
+            S1_Delete<LocalChunk>(chunk);
+    }
+
+    _localChunks.clear();
+}
+
+LocalChunkRef LocalMemoryManager::PopChunk()
+{
+    {
+        WRITE_LOCK;
+        if (_localChunks.empty() == false)
+        {
+            LocalChunk* localChunk = _localChunks.back();
+            _localChunks.pop_back();
+
+            return LocalChunkRef(localChunk, PushGlobal);
+        }
+    }
+
+    return LocalChunkRef(S1_New<LocalChunk>(), PushGlobal);
+}
+
+void LocalMemoryManager::PushChunk(LocalChunk* chunk)
+{
+    WRITE_LOCK;
+    _localChunks.push_back(chunk);
+}
+
+void LocalMemoryManager::PushGlobal(LocalChunk* buffer)
+{
+    //cout << buffer->GetIndex() << " Chunk PushGlobal !" << endl;
+    GLocalMemoryManager->PushChunk(buffer);
+}

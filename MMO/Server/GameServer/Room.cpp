@@ -19,6 +19,7 @@ Room::Room(string name) : JobQueue(name)
 	_gameMap = make_shared<GameMap>();
 	_objectManager = make_shared<ObjectManager>();
 	_skillSystem = make_shared<SkillSystem>();
+
 	_objectManager->Init();
 	_skillSystem->Init();
 }
@@ -48,6 +49,7 @@ void Room::Init(int32 mapId)
 	SpawnInit();
 
 	UpdateTick();
+
 	//StartHeartbeat();
 }
 
@@ -86,8 +88,8 @@ void Room::UpdateTick()
 	FlushDeferBroadcast();
 
 	//_bench.End("Room");
-	_diag.EndTick();
-	_diag.Render();
+	//_diag.EndTick();
+	//_diag.Render();
 	//_bench.PrintAndSaveSummary(GetRoomId(), "HandleMove Bench");
 }
 
@@ -132,7 +134,7 @@ void Room::CheckHeartbeat()
 	//DoTimer(Tick, &Room::CheckHeartbeat);
 }
 
-// TEMP: Command Spawn
+// TEMP: Command Spawn ///////////////////////////////
 void Room::Spawn(int32 dataId, bool randPos, Vector3 pos, int32 count)
 {
 	for (int32 i = 0; i < count; i++)
@@ -168,6 +170,8 @@ void Room::GetList()
 		cout << "Monster ID: " << id << endl;
 	}	
 }
+
+/////////////////////////////////////////////////////
 
 void Room::SpawnInit()
 {
@@ -300,7 +304,7 @@ bool Room::HandleLeavePlayer(PlayerRef player)
 
 void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 {
-	//_moveCount++;
+	_moveCount++;
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
 		return;
@@ -689,6 +693,9 @@ InterestDiff Room::DiffInterestCells(const vector<Vector2Int>& oldCell, const ve
 void Room::FlushImmediateBroadcast()
 {
 	Protocol::S_IMMEDIATE_FLUSH pkt;
+
+	_diag.AddMoveCount(_moveCount);
+	_moveCount = 0;
 	
 	for (auto& obj : _immediateFlushQueue)
 	{

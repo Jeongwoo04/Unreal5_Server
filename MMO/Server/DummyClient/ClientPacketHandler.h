@@ -113,7 +113,7 @@ private:
 #if UE_BUILD_DEBUG + UE_BUILD_DEVELOPMENT + UE_BUILD_TEST + UE_BUILD_SHIPPING >= 1
 		SendBufferRef sendBuffer = MakeShared<SendBuffer>(packetSize);
 #else
-		SendBufferRef sendBuffer = make_shared<SendBuffer>(packetSize);
+		SendBufferRef sendBuffer = GSendBufferManager->Open(packetSize);
 #endif
 
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());

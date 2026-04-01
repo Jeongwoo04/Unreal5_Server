@@ -11,6 +11,7 @@ C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\JobQueue.cpp;C:\Users\jeson\
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\JobTimer.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Release\JobTimer.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\Listener.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Release\Listener.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\LockQueue.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Release\LockQueue.obj
+C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\MemoryManager.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Release\MemoryManager.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\MPSCQueue.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Release\MPSCQueue.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\NetAddress.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Release\NetAddress.obj
 C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\pch.cpp;C:\Users\jeson\Desktop\unreal\MMO\Server\ServerCore\x64\Release\pch.obj

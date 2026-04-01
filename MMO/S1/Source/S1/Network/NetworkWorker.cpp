@@ -30,12 +30,12 @@ uint32 RecvWorker::Run()
 
 		if (ReceivePacket(OUT Packet))
 		{
-			if (TSharedPtr<PacketSession> Session = SessionRef.Pin())
-			{
-				Session->RecvPacketQueue.Enqueue(Packet);
+				if (TSharedPtr<PacketSession> Session = SessionRef.Pin())
+				{
+					Session->RecvPacketQueue.Enqueue(MoveTemp(Packet));
+				}
 			}
 		}
-	}
 
 	return 0;
 }

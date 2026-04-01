@@ -34,6 +34,8 @@ USING_SHARED_PTR(Session);
 USING_SHARED_PTR(PacketSession);
 USING_SHARED_PTR(SendBuffer);
 
+using RecvBufferRef = TSharedPtr<TArray<uint8>>;
+
 #include "ClientPacketHandler.h"
 #include "S1GameInstance.h"
 #include "Kismet/GameplayStatics.h"

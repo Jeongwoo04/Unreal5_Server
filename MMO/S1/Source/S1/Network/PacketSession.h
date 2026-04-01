@@ -19,6 +19,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleRecvPackets();
 
+	void WritePeriodicStats(double Timestamp);
+
 	void SendPacket(SendBufferRef SendBuffer);
 
 	void Disconnect();

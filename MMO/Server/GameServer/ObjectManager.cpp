@@ -11,20 +11,33 @@ void ObjectManager::Init()
 	_createRegistry.clear();
 	_objects.clear();
 
+	_playerPool = make_shared<ChunkList>();
+	_monsterPool = make_shared<ChunkList>();
+	_projectilePool = make_shared<ChunkList>();
+	_fieldPool = make_shared<ChunkList>();
+
 	AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_PLAYER),
-		[]() -> ObjectRef { return make_shared<Player>(); }
+		[this]() -> ObjectRef {
+			return _playerPool->AllocShared<Player>();
+		}
 	);
 
 	AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_MONSTER),
-		[]() -> ObjectRef { return make_shared<Monster>(); }
+		[this]() -> ObjectRef {
+			return _monsterPool->AllocShared<Monster>();
+		}
 	);
 
 	AddFactory(FactoryHash(OBJECT_TYPE_PROJECTILE, 0),
-		[]() -> ObjectRef { return make_shared<Projectile>(); }
+		[this]() -> ObjectRef {
+			return _projectilePool->AllocShared<Projectile>();
+		}
 	);
 
 	AddFactory(FactoryHash(OBJECT_TYPE_ENV, ENV_TYPE_FIELD),
-		[]() -> ObjectRef { return make_shared<Field>(); }
+		[this]() -> ObjectRef {
+			return _fieldPool->AllocShared<Field>();
+		}
 	);
 }
 

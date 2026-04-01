@@ -14,6 +14,8 @@
 #include "ConfigManager.h"
 #include "CommandManager.h"
 
+#include "Monster.h"
+
 enum
 {
 	WORKER_TICK = 64
@@ -62,18 +64,18 @@ int main()
 	DataManager::Instance().LoadData("../Data");
 	
 	ServerServiceRef service = make_shared<ServerService>(
-#ifdef _DEBUG
+//#ifdef _DEBUG
 		NetAddress(L"127.0.0.1", 7777),
-#else
-		NetAddress(L"192.168.0.10", 7777),
-#endif
+//#else
+//		NetAddress(L"192.168.0.10", 7777),
+//#endif
 		make_shared<IocpCore>(),
 		[=]() { return make_shared<GameSession>(); },
 		10);
 
 	ASSERT_CRASH(service->Start());
 		
-	for (int32 i = 0; i < 4; i++)
+	for (int32 i = 0; i < 2; i++)
 	{
 		GThreadManager->Launch("IOWorker#" + to_string(i), [&service]()
 			{
@@ -81,7 +83,7 @@ int main()
 			});
 	}
 
-	for (int32 i = 0; i < 3; i++)
+	for (int32 i = 0; i < 1; i++)
 	{
 		GThreadManager->Launch("GameWorker#" + to_string(i), []()
 			{

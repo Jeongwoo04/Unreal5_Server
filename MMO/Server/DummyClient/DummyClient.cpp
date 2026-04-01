@@ -14,14 +14,14 @@ int main()
 	this_thread::sleep_for(1s);
 
 	ClientServiceRef service = make_shared<ClientService>(
-#ifdef _DEBUG
+//#ifdef _DEBUG
 		NetAddress(L"127.0.0.1", 7777),
-#else
-		NetAddress(L"192.168.0.10", 7777),
-#endif
+//#else
+//		NetAddress(L"192.168.0.10", 7777),
+//#endif
 		make_shared<IocpCore>(),
 		[=]() { return make_shared<ServerSession>(); }, // TODO : SessionManager 등
-		100);
+		1000);
 
 	ASSERT_CRASH(service->Start());
 

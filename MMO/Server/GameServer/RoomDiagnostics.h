@@ -13,7 +13,7 @@ public:
 	void SetImmediateFlushInfo(int32 flushQueueSize, int32 flushPktBytes);
 	void SetDeferFlushInfo(int32 flushQueueSize, int32 flushPktBytes);
 	void AddSendDelay(double delayMs); // for avg / peak
-	//void AddMoveCount(int32 count);
+	void AddMoveCount(int32 count);
 	//void AddSkillInstance(int32 count);
 	//void AddCastingStart(int32 count);
 	//void AddCastingSuccess(int32 count);
@@ -58,45 +58,45 @@ private:
 	int32 _sendDelayCount = 0;
 
 	// TEMP : Move Burst 재현
-	//bool _zeroActive;
-	//std::chrono::steady_clock::time_point _zeroStart;
+	bool _zeroActive;
+	std::chrono::steady_clock::time_point _zeroStart;
 
-	//std::deque<std::pair<
-	//	std::chrono::steady_clock::time_point,
-	//	std::chrono::duration<double>>> _zeroHistory; // (기록시각, 지속시간)
-	//std::deque<std::pair<
-	//	std::chrono::steady_clock::time_point,
-	//	int>> _moveHistory;
+	std::deque<std::pair<
+		std::chrono::steady_clock::time_point,
+		std::chrono::duration<double>>> _zeroHistory; // (기록시각, 지속시간)
+	std::deque<std::pair<
+		std::chrono::steady_clock::time_point,
+		int>> _moveHistory;
 
-	//double GetZeroPeak(std::chrono::steady_clock::time_point now) const
-	//{
-	//	double peak = 0.0;
+	double GetZeroPeak(std::chrono::steady_clock::time_point now) const
+	{
+		double peak = 0.0;
 
-	//	for (const auto& pair : _zeroHistory) // 기록된 streak
-	//	{
-	//		double d = pair.second.count();
-	//		if (d > peak)
-	//			peak = d;
-	//	}
+		for (const auto& pair : _zeroHistory) // 기록된 streak
+		{
+			double d = pair.second.count();
+			if (d > peak)
+				peak = d;
+		}
 
-	//	if (_zeroActive) // 진행 중인 streak도 반영
-	//	{
-	//		double live = std::chrono::duration<double>(now - _zeroStart).count();
-	//		if (live > peak)
-	//			peak = live;
-	//	}
+		if (_zeroActive) // 진행 중인 streak도 반영
+		{
+			double live = std::chrono::duration<double>(now - _zeroStart).count();
+			if (live > peak)
+				peak = live;
+		}
 
-	//	return peak;
-	//}
+		return peak;
+	}
 
-	//double GetMoveAvg() const
-	//{
-	//	int sum = 0;
-	//	for (const auto& item : _moveHistory)
-	//		sum += item.second;
+	double GetMoveAvg() const
+	{
+		int sum = 0;
+		for (const auto& item : _moveHistory)
+			sum += item.second;
 
-	//	return static_cast<double>(sum); // 최근 1초 → 초당 합계 = 평균
-	//}
+		return static_cast<double>(sum); // 최근 1초 → 초당 합계 = 평균
+	}
 
 	// Worker thread
 	string _roomWorker;

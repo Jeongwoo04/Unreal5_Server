@@ -41,52 +41,52 @@ void RoomDiagnostics::SetDeferFlushInfo(int32 flushQueueSize, int32 flushPktByte
 }
 
 // TEMP : Move Burst 확인
-//void RoomDiagnostics::AddMoveCount(int32 moveCount)
-//{
-//	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-//
-//	// Zero 시작
-//	if (moveCount == 0)
-//	{
-//	    if (_zeroActive == false)
-//	    {
-//	        _zeroActive = true;
-//	        _zeroStart = now;
-//	    }
-//	}
-//	else
-//	{
-//	    // Zero 종료 → 기록
-//	    if (_zeroActive)
-//	    {
-//	        std::chrono::duration<double> dur = now - _zeroStart;
-//	        _zeroHistory.emplace_back(now, dur);
-//	        _zeroActive = false;
-//	    }
-//	}
-//
-//	// 5초 이상 지난 기록 제거
-//	while (!_zeroHistory.empty())
-//	{
-//	    auto age = now - _zeroHistory.front().first;
-//	    if (age > std::chrono::seconds(5))
-//	        _zeroHistory.pop_front();
-//	    else
-//	        break;
-//	}
-//
-//	_moveHistory.emplace_back(now, moveCount);
-//
-//	// 최근 1초 유지
-//	while (!_moveHistory.empty())
-//	{
-//	    auto age = now - _moveHistory.front().first;
-//	    if (age > std::chrono::seconds(1))
-//	        _moveHistory.pop_front();
-//	    else
-//	        break;
-//	}
-//}
+void RoomDiagnostics::AddMoveCount(int32 moveCount)
+{
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+
+	// Zero 시작
+	if (moveCount == 0)
+	{
+	    if (_zeroActive == false)
+	    {
+	        _zeroActive = true;
+	        _zeroStart = now;
+	    }
+	}
+	else
+	{
+	    // Zero 종료 → 기록
+	    if (_zeroActive)
+	    {
+	        std::chrono::duration<double> dur = now - _zeroStart;
+	        _zeroHistory.emplace_back(now, dur);
+	        _zeroActive = false;
+	    }
+	}
+
+	// 5초 이상 지난 기록 제거
+	while (!_zeroHistory.empty())
+	{
+	    auto age = now - _zeroHistory.front().first;
+	    if (age > std::chrono::seconds(5))
+	        _zeroHistory.pop_front();
+	    else
+	        break;
+	}
+
+	_moveHistory.emplace_back(now, moveCount);
+
+	// 최근 1초 유지
+	while (!_moveHistory.empty())
+	{
+	    auto age = now - _moveHistory.front().first;
+	    if (age > std::chrono::seconds(1))
+	        _moveHistory.pop_front();
+	    else
+	        break;
+	}
+}
 
 // TEMP : SkillSystem
 //void RoomDiagnostics::AddSkillInstance(int32 count)
@@ -225,10 +225,10 @@ void RoomDiagnostics::Render()
 	printf("SendDelayPeak(10s): %.2f ms\n\n", _sendDelayPeak);
 
 	// TEMP : Move Burst 재현
-	//printf("[C_MOVE EXECUTE(1s)]\n");
-	//printf("MoveCountAvg: %.0f \n", GetMoveAvg());
-	//std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	//printf("MoveCountZeroDurationPeak(5s): %.2f ms\n\n", GetZeroPeak(now) * 1000.0);
+	printf("[C_MOVE EXECUTE(1s)]\n");
+	printf("MoveCountAvg: %.0f \n", GetMoveAvg());
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	printf("MoveCountZeroDurationPeak(5s): %.2f ms\n\n", GetZeroPeak(now) * 1000.0);
 
 	printf("[WORKER]\n");
 	printf("RoomWorker: %s\n", _roomWorker.c_str());

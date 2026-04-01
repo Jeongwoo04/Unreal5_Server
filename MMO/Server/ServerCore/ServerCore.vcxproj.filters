@@ -16,6 +16,9 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{13f8da5f-8028-43f7-908f-ab7928fa6c57}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Memory">
+      <UniqueIdentifier>{2ec0624e-607b-4da0-a25c-45d08afacceb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorePch.h">
@@ -93,6 +96,15 @@
     <ClInclude Include="MPSCQueue.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryManager.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectPool.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryPool.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -163,6 +175,12 @@
     </ClCompile>
     <ClCompile Include="MPSCQueue.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryManager.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryPool.cpp">
+      <Filter>Memory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -40,6 +40,10 @@ bool Listener::StartAccept(ServerServiceRef service)
 	if (SocketUtils::SetLinger(_socket, 0, 0) == false)
 		return false;
 
+	// Nagle ²ô±â
+	if (SocketUtils::SetTcpNoDelay(_socket, true) == false)
+		return false;
+
 	if (SocketUtils::Bind(_socket, _service->GetNetAddress()) == false)
 		return false;
 

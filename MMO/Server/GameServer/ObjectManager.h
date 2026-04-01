@@ -28,4 +28,9 @@ private:
 
 	unordered_map<int32, createFunc> _createRegistry;
 	unordered_map<uint64, ObjectRef> _objects;
+
+	ChunkListRef _playerPool;
+	ChunkListRef _monsterPool;
+	ChunkListRef _projectilePool;
+	ChunkListRef _fieldPool;
 };

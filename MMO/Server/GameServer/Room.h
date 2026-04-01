@@ -70,7 +70,7 @@ class Room : public JobQueue
 {
 public:
 	Room(string name);
-	virtual ~Room();
+	~Room();
 
 	void SetRoomId(int32 roomId) { _roomId = roomId; }
 	int32 GetRoomId() { return _roomId; }
@@ -79,6 +79,7 @@ public:
 
 	void Init(int32 mapId);
 	//void InitBaseOffsets();
+
 	void UpdateTick();
 	void UpdateMonster();
 	void UpdateProjectile();
@@ -187,4 +188,6 @@ public:
 	int32 _castingCount = 0;
 	int32 _successCount = 0;
 	int32 _actionCount = 0;
+
+	int32 _moveCount = 0;
 };

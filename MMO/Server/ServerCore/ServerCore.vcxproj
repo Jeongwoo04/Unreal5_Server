@@ -161,8 +161,11 @@
     <ClInclude Include="JobTimer.h" />
     <ClInclude Include="Listener.h" />
     <ClInclude Include="LockQueue.h" />
+    <ClInclude Include="MemoryManager.h" />
+    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="MPSCQueue.h" />
     <ClInclude Include="NetAddress.h" />
+    <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="RecvBuffer.h" />
     <ClInclude Include="SafeLog.h" />
@@ -187,6 +190,8 @@
     <ClCompile Include="JobTimer.cpp" />
     <ClCompile Include="Listener.cpp" />
     <ClCompile Include="LockQueue.cpp" />
+    <ClCompile Include="MemoryManager.cpp" />
+    <ClCompile Include="MemoryPool.cpp" />
     <ClCompile Include="MPSCQueue.cpp" />
     <ClCompile Include="NetAddress.cpp" />
     <ClCompile Include="pch.cpp">
