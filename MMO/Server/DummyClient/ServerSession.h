@@ -46,6 +46,9 @@ public:
 
 	virtual void OnDisconnected() override
 	{
+		Protocol::C_LEAVE_GAME pkt;
+		auto sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
+		this->Send(sendBuffer);
 		GSessionManager.Remove(static_pointer_cast<ServerSession>(shared_from_this()));
 		//cout << "Disconnected" << endl;
 	}

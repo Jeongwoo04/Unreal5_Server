@@ -72,7 +72,7 @@ bool Handle_C_LEAVE_GAME(PacketSessionRef& session, Protocol::C_LEAVE_GAME& pkt)
 	if (room == nullptr)
 		return false;
 
-	room->DoAsyncPushOnly(&Room::HandleLeavePlayer, player);
+	room->DoAsyncPushOnly(&Room::HandleLeavePlayer, gameSession);
 
 	return true;
 }

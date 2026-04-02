@@ -87,6 +87,13 @@ void Room::UpdateTick()
 
 	FlushDeferBroadcast();
 
+	_objectManager->CheckPools();
+	
+	{
+		_players.size();
+		_playerGrid.GetCount();
+	}
+
 	//_bench.End("Room");
 	//_diag.EndTick();
 	//_diag.Render();
@@ -171,6 +178,18 @@ void Room::GetList()
 	}	
 }
 
+void Room::RenderingStart()
+{
+}
+
+void Room::KillPlayer()
+{
+	for (auto& [id, player] : _players)
+	{
+		AddRemoveList(player);
+	}
+}
+
 /////////////////////////////////////////////////////
 
 void Room::SpawnInit()
@@ -252,31 +271,31 @@ bool Room::LeaveRoom(ObjectRef object)
 	return success;
 }
 
-bool Room::LeaveGame(ObjectRef object, uint64 objectId)
+bool Room::LeaveGame(GameSessionRef session)
 {
-	if (object == nullptr)
+	PlayerRef player = session->_player;
+
+	if (player == nullptr)
 		return false;
 
-	bool removed = LeaveRoom(object);
+	session->_player = nullptr;
+
+	bool removed = LeaveRoom(player);
 
 	if (removed)
 	{
 		// 성공적으로 Room에서 빠졌으니 클라에 알림
 		Protocol::S_DESPAWN pkt;
-		pkt.add_object_ids(object->GetId());
-		auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-		Broadcast(sendBuffer);
+		pkt.add_object_ids(player->GetId());
+		player->AddDespawnFlushQueue(player);
 	}
 
 	// 나에게 퇴장 패킷 보내기
-	if (object->_objectInfo.creature_type() == Protocol::CREATURE_TYPE_PLAYER)
 	{
-		PlayerRef player = static_pointer_cast<Player>(object);
-
 		Protocol::S_LEAVE_GAME leaveGamePkt;
 
 		SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(leaveGamePkt);
-		if (auto session = player->GetSession())
+		if (session)
 			session->Send(sendBuffer);
 	}
 
@@ -297,9 +316,9 @@ bool Room::HandleEnterPlayer(GameSessionRef gameSession)
 	return EnterRoom(player);
 }
 
-bool Room::HandleLeavePlayer(PlayerRef player)
+bool Room::HandleLeavePlayer(GameSessionRef session)
 {	
-	return LeaveGame(static_pointer_cast<Object>(player), player->GetId());
+	return LeaveGame(session);
 }
 
 void Room::HandleMovePlayer(Protocol::C_MOVE pkt)

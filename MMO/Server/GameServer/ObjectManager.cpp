@@ -121,3 +121,23 @@ void ObjectManager::Despawn(uint64 objId)
 {
 	_objects.erase(objId);
 }
+
+void ObjectManager::CheckPools()
+{
+	for (auto& pool : _playerPool->_chunks)
+	{
+
+	}
+	for (auto& pool : _monsterPool->_chunks)
+	{
+
+	}
+	for (auto& pool : _projectilePool->_chunks)
+	{
+
+	}
+	for (auto& pool : _fieldPool->_chunks)
+	{
+
+	}
+}

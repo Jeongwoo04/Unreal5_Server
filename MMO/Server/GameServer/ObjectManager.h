@@ -23,6 +23,8 @@ public:
 	void Despawn(ObjectRef obj);
 	void Despawn(uint64 objId);
 
+	void CheckPools();
+
 private:
 	int32 _counter = 0;
 

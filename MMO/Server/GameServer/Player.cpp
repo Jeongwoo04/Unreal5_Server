@@ -17,7 +17,7 @@ Player::Player()
 
 Player::~Player()
 {
-
+	cout << "~Player()" << endl;
 }
 
 void Player::OnDamaged(ObjectRef attacker, int32 damage)

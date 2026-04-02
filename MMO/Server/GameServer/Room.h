@@ -93,6 +93,7 @@ public:
 	void Spawn(int32 dataId, bool randPos, Vector3 pos, int32 count);
 	void Kill();
 	void KillAll();
+	void KillPlayer();
 	void GetList();
 	void RenderingStart();
 	void RenderingStop();
@@ -106,10 +107,10 @@ public:
 public:
 	bool EnterRoom(ObjectRef object);
 	bool LeaveRoom(ObjectRef object);
-	bool LeaveGame(ObjectRef object, uint64 objectId);
+	bool LeaveGame(GameSessionRef session);
 
 	bool HandleEnterPlayer(GameSessionRef gameSession);
-	bool HandleLeavePlayer(PlayerRef player);
+	bool HandleLeavePlayer(GameSessionRef session);
 	void HandleMovePlayer(Protocol::C_MOVE pkt);
 	void HandleSkill(PlayerRef player, Protocol::C_SKILL pkt);
 

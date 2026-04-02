@@ -85,6 +85,7 @@ void Object::MoveToNextPos(const Vector3& destPos, Vector3* dir, Vector2Int* blo
 	}
 	else if (GetCreatureType() == CREATURE_TYPE_PLAYER)
 	{
+		room->_playerGrid.ApplyMove(static_pointer_cast<Player>(shared_from_this()), currentGrid, _gridPos);
 		_isDirty = true;
 		_hasMove = true;
 	}

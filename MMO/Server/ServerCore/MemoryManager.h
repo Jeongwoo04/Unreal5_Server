@@ -82,7 +82,7 @@ public:
     LocalChunk();
     ~LocalChunk();
 
-    void Init(uint32 typeSize);
+    void Init(const size_t typeSize, const size_t alignment);
     bool IsFull() { return _header == nullptr; }
     uint32 GetActiveCount() { return _activeCount; }
     void SetOwner(ChunkListRef owner) { _owner = owner; }
@@ -172,7 +172,7 @@ public:
         {
             AddChunk();
             target = _chunks.back();
-            target->Init(static_cast<uint32>(sizeof(Type)));
+            target->Init(sizeof(Type), alignof(Type));
         }
 
         return target->Alloc(std::forward<Args>(args)...);
@@ -187,7 +187,7 @@ public:
         {
             int32 index = AddChunk();
             target = _chunks[index];
-            target->Init(static_cast<uint32>(sizeof(Type)));
+            target->Init(sizeof(Type), alignof(Type));
         }
 
         //Type* ptr = this->Alloc<Type>(std::forward<Args>(args)...);
@@ -202,14 +202,19 @@ public:
     LocalChunkRef FindChunk();
     int32 AddChunk();
 
-private:
+public:
     vector<LocalChunkRef> _chunks;
     stack<int32> _emptyIndex;
 };
 
 class LocalMemoryManager
 {
+    enum {
+        MAX_CHUNK_LIMIT = 10
+    };
+
 public:
+    LocalMemoryManager();
     ~LocalMemoryManager();
 
 public:
@@ -219,6 +224,7 @@ public:
     static void PushGlobal(LocalChunk* buffer);
 
 private:
-    USE_LOCK;
-    vector<LocalChunk*> _localChunks;
+    DECLSPEC_ALIGN(16) SLIST_HEADER _sListHeader;
+    atomic<int32> _useCount = 0;
+    atomic<int32> _reserveCount = 0;
 };

@@ -43,8 +43,6 @@ void Field::Update()
 
 	if (_cachedGrids.empty()) // °íÁ¤Çü
 		GridCaching();
-
-	_affectedTargets.clear();
 	
 	_elapsedTime += ServerTickInterval;
 	if (_elapsedTime >= _data->duration)
@@ -104,4 +102,5 @@ void Field::Update()
 			}
 		}
 	}
+	_affectedTargets.clear();
 }

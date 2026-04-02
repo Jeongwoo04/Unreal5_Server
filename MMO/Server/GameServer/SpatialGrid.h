@@ -39,6 +39,20 @@ public:
 	{
 		if (!IsValid(gridPos))
 			return;
+
+		//for (auto& cell : _cells)
+		//{
+		//	auto it = std::remove_if(cell.begin(), cell.end(), [&](const ObjectPtr& ptr) {
+		//		return ptr.get() == object.get();
+		//		});
+
+		//	if (it != cell.end())
+		//	{
+		//		cell.erase(it, cell.end());
+		//		break;
+		//	}
+		//}
+
 		auto& vec = _cells[Index(gridPos)];
 		vec.erase(remove(vec.begin(), vec.end(), object), vec.end());
 	}
@@ -238,6 +252,19 @@ public:
 		int32 localX = pos._x - _minX;
 		int32 localY = pos._y - _minY;
 		return localY * _width + localX;
+	}
+
+	int32 GetCount() {
+		int32 count = 0;
+		for (auto& cell : _cells)
+		{
+			for (auto& obj : cell)
+			{
+				count++;
+			}
+		}
+
+		return count;
 	}
 
 private:

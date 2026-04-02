@@ -67,7 +67,8 @@ void Projectile::Update()
 	}
 	else
 	{
-		;
+		target = nullptr;
+		return;
 	}
 
 	if (!room->GetGameMap()->CanGo(blocked))

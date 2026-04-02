@@ -66,8 +66,13 @@ void Monster::UpdateIdle()
 
 		target = room->_playerGrid.FindNearest(_gridPos, _searchRadius, _worldPos);
 
-		if (target == nullptr || target->IsDead())
+		if (target == nullptr)
 			return;
+		if (target->IsDead())
+		{
+			target = nullptr;
+			return;
+		}
 
 		SetPlayer(target);
 		ChangeState(Protocol::STATE_MACHINE_MOVING);
@@ -141,6 +146,7 @@ void Monster::UpdateMoving()
 
 	if (distanceSq < ((1.5 * CELL_SIZE) * (1.5 * CELL_SIZE)))
 	{
+		SetPlayer(nullptr);
 		ChangeState(Protocol::STATE_MACHINE_IDLE);
 		BroadcastMove();
 		return;
@@ -299,8 +305,13 @@ void Monster::SelectSkill()
 void Monster::DoSkill()
 {
 	PlayerRef target = GetPlayer();
-	if (target == nullptr || target->IsDead())
+	if (target == nullptr)
 		return;
+	if (target->IsDead())
+	{
+		target = nullptr;
+		return;
+	}
 
 	Vector3 dir = target->_worldPos - _worldPos;
 	_posInfo.set_yaw(Vector3::DirToYaw2D(dir));
@@ -329,8 +340,13 @@ bool Monster::CanUseSkill(int32 skillId, uint64 now) const
 	const Skill* skill = &skillIt->second;
 
 	PlayerRef target = GetPlayer();
-	if (target == nullptr || target->IsDead())
+	if (target == nullptr)
 		return false;
+	if (target->IsDead())
+	{
+		target = nullptr;
+		return false;
+	}
 
 	// 사거리 및 시야 체크
 	if ((target->_worldPos - _worldPos).Length2D() > skill->actions[0]->distance * CELL_SIZE)
