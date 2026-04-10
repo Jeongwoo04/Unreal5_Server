@@ -6,10 +6,10 @@
 void CommandManager::Init()
 {
 	RegisterCommand("help", [this](const vector<string>&) { PrintHelp(); });
-	RegisterCommand("list", [this](const vector<string>& args) { CmdList(args); });
-	RegisterCommand("spawn", [this](const vector<string>& args) { CmdSpawn(args); });
-	RegisterCommand("kill", [this](const vector<string>& args) { CmdKill(args); });
-	RegisterCommand("killall", [this](const vector<string>&) { CmdKillAll(); });
+	//RegisterCommand("list", [this](const vector<string>& args) { CmdList(args); });
+	//RegisterCommand("spawn", [this](const vector<string>& args) { CmdSpawn(args); });
+	//RegisterCommand("kill", [this](const vector<string>& args) { CmdKill(args); });
+	//RegisterCommand("killall", [this](const vector<string>&) { CmdKillAll(); });
 	RegisterCommand("dummy", [this](const vector<string>&) { CmdDummyStart(); });
 }
 
@@ -68,7 +68,7 @@ void CommandManager::PrintHelp()
 	cout << "  killall\n";
 	cout << "  dummy\n";
 }
-
+/*
 void CommandManager::CmdList(const vector<string>& args)
 {
 	if (args.empty())
@@ -120,6 +120,7 @@ void CommandManager::CmdKillAll()
 	auto room = RoomManager::Instance().Find(1);
 	room->DoAsyncPushOnly(&Room::KillAll);
 }
+*/
 
 void CommandManager::CmdDummyStart()
 {

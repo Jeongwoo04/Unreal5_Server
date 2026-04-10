@@ -47,12 +47,7 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 		return false;
 
 	RoomRef room = nullptr;
-	if (!RoomManager::Instance().FindUsableRoom())
-	{
-		room = RoomManager::Instance().Add(1);
-	}
-	else
-		room = RoomManager::Instance().Find(1);
+	room = RoomManager::Instance().FindUsableRoom();
 
 	// ÀÔÀå
 	room->DoAsyncPushOnly(&Room::HandleEnterPlayer, gameSession);

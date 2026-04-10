@@ -37,6 +37,7 @@ void Field::Update()
 
 	if (GetOwner() == nullptr)
 	{
+		SetOwner(nullptr);
 		room->AddRemoveList(shared_from_this());
 		return;
 	}
@@ -47,6 +48,7 @@ void Field::Update()
 	_elapsedTime += ServerTickInterval;
 	if (_elapsedTime >= _data->duration)
 	{
+		SetOwner(nullptr);
 		room->AddRemoveList(shared_from_this());
 		return;
 	}
@@ -61,8 +63,13 @@ void Field::Update()
 
 			for (auto target : targets)
 			{
-				if (target == nullptr || target->IsDead())
+				if (target == nullptr)
 					continue;
+				if (target->IsDead())
+				{
+					target = nullptr;
+					continue;
+				}
 				if (_affectedTargets.find(target) != _affectedTargets.end())
 					continue;
 				if ((target->_worldPos - _worldPos).LengthSquared2D() > (_data->range * _data->range))
@@ -84,8 +91,13 @@ void Field::Update()
 
 			for (auto target : targets)
 			{
-				if (target == nullptr || target->IsDead())
+				if (target == nullptr)
 					continue;
+				if (target->IsDead())
+				{
+					target = nullptr;
+					continue;
+				}
 				if (_affectedTargets.find(target) != _affectedTargets.end())
 					continue;
 				if ((target->_worldPos - _worldPos).LengthSquared2D() > (_data->range * _data->range))

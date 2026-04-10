@@ -34,6 +34,8 @@ struct SkillInstance
 	float castElapsed = 0.f;
 	float actionDelayElapsed = 0.f;
 	int32 currentActionIndex = 0;
+
+	void Update() {};
 };
 
 using SkillInstanceRef = shared_ptr<struct SkillInstance>;
@@ -47,13 +49,17 @@ public:
 	void ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId, uint64 clientSend = 0);
 
 	void Update();
+
 	void CancelCasting(ObjectRef caster, int32 castId);
 
 	RoomRef GetRoom() { return _room.lock(); }
 	void SetRoom(RoomRef room) { _room = room; }
 
+	void AddRemovePendings(int32 index);
+	void DeferRemoveInstance();
+
 public:
-	void ParseEvent(ObjectRef object, const Protocol::CastState& state, OUT Protocol::S_SKILL_EVENT& event);
+	void ParseEvent(ObjectRef object, SkillInstanceRef instance, const Protocol::CastState& state, OUT Protocol::S_SKILL_EVENT& event);
 
 private:
 	void HandleAction(ObjectRef caster, const Vector3& targetPos, ActionData* action, SkillInstanceRef instance);
@@ -66,7 +72,10 @@ private:
 private:
 	weak_ptr<Room> _room;
 	const unordered_map<int32, Skill>* skillDict = nullptr;
-	vector<SkillInstanceRef> activeSkills;
+	ChunkListRef _skillPools;
+	vector<SkillInstanceRef> _activeSkills;
+	vector<SkillInstanceRef> _tempSkills;
+	vector<int32> _removePendings;
 
 	// TEMP HUD
 public:

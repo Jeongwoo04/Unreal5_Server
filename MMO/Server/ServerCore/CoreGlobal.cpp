@@ -25,7 +25,9 @@ public:
 		GThreadManager = new ThreadManager();
 		GMemoryManager = new MemoryManager();
 		GLocalMemoryManager = new LocalMemoryManager();
+#ifdef USE_OPTIMIZED_SENDBUFFER_CHUNK
 		GSendBufferManager = new SendBufferManager();
+#endif
 		GGlobalQueue = new GlobalQueue();
 		GGlobalSendQueue = new GlobalQueue();
 		GJobTimer = new JobTimer();
@@ -37,7 +39,9 @@ public:
 		delete GThreadManager;
 		delete GMemoryManager;
 		delete GLocalMemoryManager;
+#ifdef USE_OPTIMIZED_SENDBUFFER_CHUNK
 		delete GSendBufferManager;
+#endif
 		delete GGlobalQueue;
 		delete GGlobalSendQueue;
 		delete GJobTimer;

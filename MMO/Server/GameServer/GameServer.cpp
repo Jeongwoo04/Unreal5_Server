@@ -62,6 +62,8 @@ int main()
 
 	ConfigManager::Instance().LoadConfig("../Data/config.json");
 	DataManager::Instance().LoadData("../Data");
+
+	RoomManager::Instance().Init(200, 1);
 	
 	ServerServiceRef service = make_shared<ServerService>(
 //#ifdef _DEBUG
@@ -83,7 +85,7 @@ int main()
 			});
 	}
 
-	for (int32 i = 0; i < 1; i++)
+	for (int32 i = 0; i < 3; i++)
 	{
 		GThreadManager->Launch("GameWorker#" + to_string(i), []()
 			{
@@ -91,15 +93,13 @@ int main()
 			});
 	}
 
-	for (int32 i = 0; i < 1; i++)
+	for (int32 i = 0; i < 5; i++)
 	{
 		GThreadManager->Launch("SendWorker#" + to_string(i), []()
 			{
 				DoSendWorker();
 			});
 	}
-	
-	RoomRef room = RoomManager::Instance().Add(1);
 
 	// Main Thread
 	//DoGameWorker();

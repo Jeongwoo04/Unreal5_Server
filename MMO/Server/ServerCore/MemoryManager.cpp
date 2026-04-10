@@ -115,20 +115,21 @@ LocalChunk::~LocalChunk()
     ::_aligned_free(_basePtr);
 }
 
-void LocalChunk::Init(const size_t typeSize, const size_t alignment)
+void LocalChunk::Init(const size_t typeSize, const size_t alignment, UpdateFunc func)
 {
     //uint32 count = (typeSize - 1 + MEMORY_ALIGNMENT) / MEMORY_ALIGNMENT;
     //uint32 alignSize = MEMORY_ALIGNMENT * count;
-    
-    size_t alignSize = (typeSize + alignment - 1) & ~(alignment - 1);
+    _updateFunc = func;
+
+    _alignSize = (typeSize + alignment - 1) & ~(alignment - 1);
 
     _header = reinterpret_cast<void**>(_basePtr);
     void** current = _header;
     uint32 offset = 0;
 
-    while (offset + (alignSize * 2) <= CHUNK_SIZE)
+    while (offset + (_alignSize * 2) <= CHUNK_SIZE)
     {
-        uint32 nextOffset = offset + static_cast<uint32>(alignSize);
+        uint32 nextOffset = offset + static_cast<uint32>(_alignSize);
 
         *current = reinterpret_cast<void*>(static_cast<BYTE*>(_basePtr) + nextOffset);
         current = reinterpret_cast<void**>(*current);
@@ -137,6 +138,7 @@ void LocalChunk::Init(const size_t typeSize, const size_t alignment)
     }
 
     *current = nullptr;
+    ::memset(_bitmap, 0, sizeof(_bitmap));
     _activeCount = 0;
 }
 
@@ -165,7 +167,7 @@ LocalChunkRef ChunkList::FindChunk()
 
 int32 ChunkList::AddChunk()
 {
-    LocalChunkRef newChunk = GLocalMemoryManager->PopChunk();
+    LocalChunkRef newChunk = GLocalMemoryManager->PopChunk(_type);
     newChunk->SetOwner(shared_from_this());
 
     int32 index;
@@ -209,7 +211,7 @@ LocalMemoryManager::~LocalMemoryManager()
     }
 }
 
-LocalChunkRef LocalMemoryManager::PopChunk()
+LocalChunkRef LocalMemoryManager::PopChunk(const string& type)
 {
     MemoryHeader* header = static_cast<MemoryHeader*>(InterlockedPopEntrySList(&_sListHeader));
 
@@ -219,8 +221,12 @@ LocalChunkRef LocalMemoryManager::PopChunk()
         _reserveCount.fetch_sub(1);
         _useCount.fetch_add(1);
 
+        //cout << "Pop Chunk " << type << " ! remain " << _reserveCount.load() << endl;
+
         return LocalChunkRef(static_cast<LocalChunk*>(ptr), PushGlobal);
     }
+
+    //cout << "Pop Chunk " << type << " ! remain " << _reserveCount.load() << endl;
 
     _useCount.fetch_add(1);
     return LocalChunkRef(S1_New<LocalChunk>(), PushGlobal);
@@ -237,7 +243,6 @@ LocalChunkRef LocalMemoryManager::PopChunk()
     //        return LocalChunkRef(localChunk, PushGlobal);
     //    }
     //}
-    cout << "Pop Chunk ! remain " << _reserveCount.load() << endl;
 
     //return LocalChunkRef(S1_New<LocalChunk>(), PushGlobal);
 }
@@ -261,11 +266,11 @@ void LocalMemoryManager::PushChunk(LocalChunk* chunk)
 
     //WRITE_LOCK;
     //_localChunks.push_back(chunk);
-    cout << "Push Chunk ! remain " << _reserveCount.load() << endl;
+    //cout << "Push Chunk ! remain " << _reserveCount.load() << endl;
 }
 
 void LocalMemoryManager::PushGlobal(LocalChunk* buffer)
 {
-    cout << buffer->GetIndex() << " Chunk PushGlobal !" << endl;
+    //cout << buffer->GetIndex() << " Chunk PushGlobal !" << endl;
     GLocalMemoryManager->PushChunk(buffer);
 }

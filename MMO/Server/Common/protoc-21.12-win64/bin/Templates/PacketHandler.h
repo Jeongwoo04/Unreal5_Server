@@ -1,6 +1,8 @@
 #pragma once
 #include "Protocol.pb.h"
 
+#define USE_OPTIMIZED_SENDBUFFER_CHUNK
+
 #if UE_BUILD_DEBUG + UE_BUILD_DEVELOPMENT + UE_BUILD_TEST + UE_BUILD_SHIPPING >= 1
 #include "S1.h"
 #endif
@@ -65,7 +67,11 @@ private:
 #if UE_BUILD_DEBUG + UE_BUILD_DEVELOPMENT + UE_BUILD_TEST + UE_BUILD_SHIPPING >= 1
 		SendBufferRef sendBuffer = MakeShared<SendBuffer>(packetSize);
 #else
+#ifdef USE_OPTIMIZED_SENDBUFFER_CHUNK
 		SendBufferRef sendBuffer = GSendBufferManager->Open(packetSize);
+#else
+		SendBufferRef sendBuffer = make_shared<SendBuffer>(packetSize);
+#endif
 #endif
 
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(sendBuffer->Buffer());

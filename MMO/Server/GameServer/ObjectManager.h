@@ -22,8 +22,10 @@ public:
 	
 	void Despawn(ObjectRef obj);
 	void Despawn(uint64 objId);
-
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
+	void Update();
 	void CheckPools();
+#endif
 
 private:
 	int32 _counter = 0;
@@ -31,8 +33,10 @@ private:
 	unordered_map<int32, createFunc> _createRegistry;
 	unordered_map<uint64, ObjectRef> _objects;
 
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
 	ChunkListRef _playerPool;
 	ChunkListRef _monsterPool;
 	ChunkListRef _projectilePool;
 	ChunkListRef _fieldPool;
+#endif
 };

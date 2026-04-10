@@ -254,19 +254,6 @@ public:
 		return localY * _width + localX;
 	}
 
-	int32 GetCount() {
-		int32 count = 0;
-		for (auto& cell : _cells)
-		{
-			for (auto& obj : cell)
-			{
-				count++;
-			}
-		}
-
-		return count;
-	}
-
 private:
 	int32 _minX = 0;
 	int32 _maxX = 0;

@@ -21,12 +21,14 @@ void Projectile::Update()
 
 	if (GetOwner() == nullptr)
 	{
+		SetOwner(nullptr);
 		room->AddRemoveList(shared_from_this());
 		return;
 	}
 
 	if (_moveDistance >= _data->distance)
 	{
+		SetOwner(nullptr);
 		room->AddRemoveList(shared_from_this());
 		return;
 	}
@@ -57,22 +59,26 @@ void Projectile::Update()
 		}
 	}
 
-	if (target && !target->IsDead())
+	if (target)
 	{
-		target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data->damage);
-		
-		target->AddHitFlushQueue(target);
-		room->AddRemoveList(shared_from_this());
-		return;
-	}
-	else
-	{
-		target = nullptr;
-		return;
+		if (!target->IsDead())
+		{
+			target->OnDamaged(GetOwner(), GetOwner()->_statInfo.attack() + _data->damage);
+
+			target->AddHitFlushQueue(target);
+			SetOwner(nullptr);
+			room->AddRemoveList(shared_from_this());
+			return;
+		}
+		else
+		{
+			target = nullptr;
+		}
 	}
 
 	if (!room->GetGameMap()->CanGo(blocked))
 	{
+		SetOwner(nullptr);
 		room->AddRemoveList(shared_from_this());
 		return;
 	}

@@ -17,10 +17,12 @@ private:
 
 	void PrintHelp();
 
+	/*
 	void CmdList(const vector<string>& args);
 	void CmdSpawn(const vector<string>& args);
 	void CmdKill(const vector<string>& args);
 	void CmdKillAll();
+	*/
 	void CmdDummyStart();
 };
 

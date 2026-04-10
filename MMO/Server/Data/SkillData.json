@@ -3,7 +3,7 @@
     {
       "id": 1,
       "name": "Melee_Slash",
-      "cooldown": 1.0,
+      "cooldown": 3.0,
       "castTime": 0.0,
       "actions": [
         {
@@ -19,7 +19,7 @@
     {
       "id": 2,
       "name": "Ranged_Arrow",
-      "cooldown": 1.5,
+      "cooldown": 5.0,
       "castTime": 0.5,
       "actions": [
         {
@@ -32,7 +32,7 @@
     {
       "id": 3,
       "name": "SkillB_Fireball",
-      "cooldown": 3.0,
+      "cooldown": 8.0,
       "castTime": 1.5,
       "actions": [
         {
@@ -45,8 +45,8 @@
     {
       "id": 4,
       "name": "SkillC_FrozenField",
-      "cooldown": 3.0,
-      "castTime": 2.0,
+      "cooldown": 10.0,
+      "castTime": 1.5,
       "actions": [
         {
           "actionType": "SpawnField",
@@ -58,7 +58,7 @@
     {
       "id": 5,
       "name": "SkillA_DashStrike",
-      "cooldown": 8.0,
+      "cooldown": 7.0,
       "castTime": 0.0,
       "actions": [
         {

@@ -71,6 +71,14 @@ private:
 
 class ChunkList;
 
+template<typename Type>
+void UpdateHelper(void* ptr)
+{
+    static_cast<Type*>(ptr)->Update();
+}
+
+using UpdateFunc = void(*)(void*);
+
 class LocalChunk : public enable_shared_from_this<LocalChunk>
 {
     enum LOCAL_CHUNK_SIZE
@@ -82,20 +90,53 @@ public:
     LocalChunk();
     ~LocalChunk();
 
-    void Init(const size_t typeSize, const size_t alignment);
+    void Init(const size_t typeSize, const size_t alignment, UpdateFunc func);
     bool IsFull() { return _header == nullptr; }
     uint32 GetActiveCount() { return _activeCount; }
     void SetOwner(ChunkListRef owner) { _owner = owner; }
     int32 GetIndex() { return _index; }
     void SetIndex(int32 index) { _index = index; }
 
+    void Update() {
+        if (_activeCount == 0)
+            return;
+
+        for (uint32 i = 0; i < BITMAP_SIZE; ++i)
+        {
+            uint64 mask = _bitmap[i];
+            if (mask == 0)
+                continue;
+
+            while (mask > 0)
+            {
+                unsigned long relativeIdx;
+
+                if (_BitScanForward64(&relativeIdx, mask))
+                {
+                    uint32 absoluteIdx = (i * 64) + relativeIdx;
+
+                    void* ptr = static_cast<BYTE*>(_basePtr) + (absoluteIdx * _alignSize);
+
+                    if (_updateFunc)
+                        _updateFunc(ptr);
+
+                    mask &= (~1ULL << relativeIdx);
+                }
+            }
+        }
+    }
+
     template<typename Type, typename... Args>
     Type* Alloc(Args&&... args) {
-        if (_header == nullptr)
+        void* ptr = _header;
+        if (ptr == nullptr)
             return nullptr;
         
+        ptrdiff_t offset = static_cast<BYTE*>(ptr) - static_cast<BYTE*>(_basePtr);
+        uint32 idx = static_cast<uint32>(offset / _alignSize);
+        _bitmap[idx / 64] |= (1ULL << (idx % 64));
+
         // _header 역참조로 다음 체인 연결
-        void* ptr = _header;
         _header = static_cast<void**>(*_header);
 
         ++_activeCount;
@@ -105,6 +146,10 @@ public:
     
     template<typename Type>
     void Release(Type* ptr){
+        ptrdiff_t offset = reinterpret_cast<BYTE*>(ptr) - static_cast<BYTE*>(_basePtr);
+        uint32 idx = static_cast<uint32>(offset / _alignSize);
+        _bitmap[idx / 64] &= ~(1ULL << (idx % 64));
+
         ptr->~Type();
 
         // ptr 주소를 가리키는 next를 새로운 헤더로
@@ -138,6 +183,11 @@ private:
     int32 _index;
     weak_ptr<ChunkList> _owner;
     void** _header = nullptr;
+    static constexpr uint32 BITMAP_SIZE = 1024 / 64;
+    uint64 _bitmap[BITMAP_SIZE] = { 0, };
+    size_t _alignSize = 0;
+
+    UpdateFunc _updateFunc = nullptr;
 };
 
 /*          ChunkList - [Chunk][Chunk]...[Chunk]
@@ -163,6 +213,19 @@ public:
     void ChunkEmpty(int32 index);
 
 public:
+    ChunkList() {}
+    ChunkList(const string& type):_type(type) { }
+
+    void Update() {
+        for (auto& chunk : _chunks)
+        {
+            if (chunk == nullptr)
+                continue;
+
+            chunk->Update();
+        }
+    }
+
     template<typename Type, typename... Args>
     Type* Alloc(Args&&... args) {
         
@@ -172,7 +235,8 @@ public:
         {
             AddChunk();
             target = _chunks.back();
-            target->Init(sizeof(Type), alignof(Type));
+            target->Init(sizeof(Type), alignof(Type), [](void* p) {
+                static_cast<Type*>(p)->Update(); });
         }
 
         return target->Alloc(std::forward<Args>(args)...);
@@ -187,7 +251,8 @@ public:
         {
             int32 index = AddChunk();
             target = _chunks[index];
-            target->Init(sizeof(Type), alignof(Type));
+            target->Init(sizeof(Type), alignof(Type), [](void* p) {
+                static_cast<Type*>(p)->Update(); });
         }
 
         //Type* ptr = this->Alloc<Type>(std::forward<Args>(args)...);
@@ -202,9 +267,26 @@ public:
     LocalChunkRef FindChunk();
     int32 AddChunk();
 
+    pair<int32, int32> CheckList() {
+        int32 chunkCount = 0;
+        int32 objectCount = 0;
+        for (auto& chunk : _chunks)
+        {
+            if (chunk == nullptr)
+                continue;
+            chunkCount++;
+            objectCount += chunk->GetActiveCount();
+        }
+
+        return {chunkCount, objectCount};
+    }
+
 public:
     vector<LocalChunkRef> _chunks;
     stack<int32> _emptyIndex;
+
+    //TEMP
+    string _type = "";
 };
 
 class LocalMemoryManager
@@ -218,7 +300,7 @@ public:
     ~LocalMemoryManager();
 
 public:
-    LocalChunkRef PopChunk();
+    LocalChunkRef PopChunk(const string& type);
     void PushChunk(LocalChunk* chunk);
 
     static void PushGlobal(LocalChunk* buffer);

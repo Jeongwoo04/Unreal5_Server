@@ -70,34 +70,60 @@ void Room::Init(int32 mapId)
 
 void Room::UpdateTick()
 {
-	_diag.BeginTick();
-	//_bench.Begin("Room");
+	//if (_roomId == 0)
+	//	_diag.BeginTick();
+	_bench.Begin("Room");
 
 	DoTimer(_serverTick, &Room::UpdateTick);
-	_diag.SetObjectCounts(_players.size(), _monsters.size(), _projectiles.size(), _fields.size());
-	_diag.SetRoomWorkerInfo(_queueName + " | Thread: " + LThreadName);
 
+	//if (_roomId == 0)
+	//{
+	//	_diag.SetObjectCounts(_players.size(), _monsters.size(), _projectiles.size(), _fields.size());
+	//	_diag.SetRoomWorkerInfo(_queueName + " | Thread: " + LThreadName);
+	//}
+
+	if (_roomId == 0)
+		_bench.Begin("I-Flush");
 	FlushImmediateBroadcast();
+	if (_roomId == 0)
+		_bench.End("I-Flush");
 
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
+	if (_roomId == 0)
+		_bench.Begin("Update");
+	_objectManager->Update();
+	if (_roomId == 0)
+		_bench.End("Update");
+#else
+	if (_roomId == 0)
+		_bench.Begin("Update");
 	UpdateMonster();
 	UpdateProjectile();
 	UpdateField();
+	if (_roomId == 0)
+		_bench.End("Update");
+#endif
 	UpdateSkillSystem();
 	ClearRemoveList();
 
+	if (_roomId == 0)
+		_bench.Begin("D-Flush");
 	FlushDeferBroadcast();
-
-	_objectManager->CheckPools();
+	if (_roomId == 0)
+		_bench.End("D-Flush");
+	//_objectManager->CheckPools();
 	
-	{
-		_players.size();
-		_playerGrid.GetCount();
-	}
+	if (_roomId == 0)
+		_bench.End("Room");
+	if (_roomId == 0)
+	//{
+	//	_diag.EndTick();
+	//	_diag.Render();
+	//}
+		_bench.PrintAndSaveSummary(GetRoomId(), "200Room+20P+300M Y Pooling Y Chunk");
 
-	//_bench.End("Room");
-	//_diag.EndTick();
-	//_diag.Render();
-	//_bench.PrintAndSaveSummary(GetRoomId(), "HandleMove Bench");
+	if (_roomId == 0)
+		_objectManager->CheckPools();
 }
 
 void Room::UpdateMonster()
@@ -334,7 +360,7 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 
 	if (player->GetState() == Protocol::STATE_MACHINE_CASTING)
 	{
-		auto activeSkill = player->GetActiveSkill();
+		SkillInstanceRef activeSkill = player->GetActiveSkill();
 		if (activeSkill)
 		{
 			_skillSystem->CancelCasting(player, activeSkill->castId);

@@ -306,9 +306,13 @@ void Monster::DoSkill()
 {
 	PlayerRef target = GetPlayer();
 	if (target == nullptr)
+	{
+		_currentSkillId = 0;
 		return;
+	}
 	if (target->IsDead())
 	{
+		_currentSkillId = 0;
 		target = nullptr;
 		return;
 	}

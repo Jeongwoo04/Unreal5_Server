@@ -11,10 +11,11 @@ void ObjectManager::Init()
 	_createRegistry.clear();
 	_objects.clear();
 
-	_playerPool = make_shared<ChunkList>();
-	_monsterPool = make_shared<ChunkList>();
-	_projectilePool = make_shared<ChunkList>();
-	_fieldPool = make_shared<ChunkList>();
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
+	_playerPool = make_shared<ChunkList>("Player");
+	_monsterPool = make_shared<ChunkList>("Monster");
+	_projectilePool = make_shared<ChunkList>("Projectile");
+	_fieldPool = make_shared<ChunkList>("Field");
 
 	AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_PLAYER),
 		[this]() -> ObjectRef {
@@ -39,6 +40,31 @@ void ObjectManager::Init()
 			return _fieldPool->AllocShared<Field>();
 		}
 	);
+#else
+	AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_PLAYER),
+		[this]() -> ObjectRef {
+			return make_shared<Player>();
+		}
+	);
+
+	AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_MONSTER),
+		[this]() -> ObjectRef {
+			return make_shared<Monster>();
+		}
+	);
+
+	AddFactory(FactoryHash(OBJECT_TYPE_PROJECTILE, 0),
+		[this]() -> ObjectRef {
+			return make_shared<Projectile>();
+		}
+	);
+
+	AddFactory(FactoryHash(OBJECT_TYPE_ENV, ENV_TYPE_FIELD),
+		[this]() -> ObjectRef {
+			return make_shared<Field>();
+		}
+	);
+#endif // !1
 }
 
 int32 ObjectManager::GenerateId(ObjectType type)
@@ -122,22 +148,24 @@ void ObjectManager::Despawn(uint64 objId)
 	_objects.erase(objId);
 }
 
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
+void ObjectManager::Update()
+{
+	_monsterPool->Update();
+	_projectilePool->Update();
+	_fieldPool->Update();
+}
 void ObjectManager::CheckPools()
 {
-	for (auto& pool : _playerPool->_chunks)
-	{
+	pair<int32, int32> check;
 
-	}
-	for (auto& pool : _monsterPool->_chunks)
-	{
-
-	}
-	for (auto& pool : _projectilePool->_chunks)
-	{
-
-	}
-	for (auto& pool : _fieldPool->_chunks)
-	{
-
-	}
+	check = _playerPool->CheckList();
+	cout << "Player] Chunk : " << check.first << ", Object : " << check.second<< endl;
+	check = _monsterPool->CheckList();
+	cout << "Monster] Chunk : " << check.first << ", Object : " << check.second << endl;
+	check = _projectilePool->CheckList();
+	cout << "Projectile] Chunk : " << check.first << ", Object : " << check.second << endl;
+	check = _fieldPool->CheckList();
+	cout << "Field] Chunk : " << check.first << ", Object : " << check.second << endl;
 }
+#endif

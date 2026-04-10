@@ -2,19 +2,24 @@
 #include "RoomManager.h"
 #include "ObjectManager.h"
 
-RoomRef RoomManager::Add(int32 mapId)
+void RoomManager::Init(int32 count, int32 mapId)
 {
-	WRITE_LOCK;
-	RoomRef room = make_shared<Room>("Room#" + to_string(_roomId));
+	{
+		WRITE_LOCK;
+		int32 id = 0;
+		while (id < count)
+		{
+			RoomRef room = make_shared<Room>("Room#" + to_string(id));
 
-	room->SetRoomId(_roomId);
-	_rooms[_roomId++] = room;
+			room->SetRoomId(id++);
+			_rooms.push_back(room);
 
-	room->DoAsyncPushOnly(&Room::Init, mapId);
-
-	return room;
+			room->DoAsyncPushOnly(&Room::Init, mapId);
+		}
+	}
 }
 
+/*
 bool RoomManager::Remove(int32 roomId)
 {
 	WRITE_LOCK;
@@ -30,24 +35,25 @@ RoomRef RoomManager::Find(int32 roomId)
 
 	return nullptr;
 }
+*/
 
-bool RoomManager::FindUsableRoom()
+RoomRef RoomManager::FindUsableRoom()
 {
 	if (_rooms.empty())
-		return false;
+		return nullptr;
 
-	// TODO : Room 입장 허용치에 관해 처리.
-	return true;
-}
+	int32 index = _roomCounter.fetch_add(1);
 
-void RoomManager::Init()
-{
-	UpdateReserveAllRooms();
+	int32 targetIndex = index % _rooms.size();
+
+	return _rooms[targetIndex];
+
+	//return true;
 }
 
 // 현재 Add -> Init -> Timer로 진행중.
-void RoomManager::UpdateReserveAllRooms()
-{
+//void RoomManager::UpdateReserveAllRooms()
+//{
 	//for (auto& it : _rooms)
 	//{
 	//	RoomRef room = it.second;
@@ -55,4 +61,4 @@ void RoomManager::UpdateReserveAllRooms()
 	//		return;
 	//	room->DoAsync(&Room::UpdateTick);
 	//}
-}
+//}

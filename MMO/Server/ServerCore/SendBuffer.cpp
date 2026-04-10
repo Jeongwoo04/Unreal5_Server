@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "SendBuffer.h"
 
+#ifdef USE_OPTIMIZED_SENDBUFFER_CHUNK
 /*----------------
 	SendBuffer
 -----------------*/
@@ -114,3 +115,25 @@ void SendBufferManager::PushGlobal(SendBufferChunk* buffer)
 {
 	GSendBufferManager->Push(buffer);
 }
+#else
+SendBuffer::SendBuffer(int32 bufferSize)
+{
+	_buffer.resize(bufferSize);
+}
+
+SendBuffer::~SendBuffer()
+{
+}
+
+void SendBuffer::CopyData(void* data, int32 len)
+{
+	assert(Capacity() >= len);
+	::memcpy(_buffer.data(), data, len);
+	_writeSize = len;
+}
+
+void SendBuffer::Close(uint32 writeSize)
+{
+	_writeSize = writeSize;
+}
+#endif

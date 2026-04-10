@@ -27,3 +27,6 @@ extern float ServerTickInterval;
 #define SEND_PACKET(pkt)													\
 	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);	\
 	session->Send(sendBuffer);
+
+#define USE_OPTIMIZED_MEMORY_POOLING
+#define USE_OPTIMIZED_SENDBUFFER_CHUNK

@@ -1,11 +1,12 @@
 #pragma once
-
+#define USE_OPTIMIZED_SENDBUFFER_CHUNK
 /*----------------
 	SendBuffer
 -----------------*/
 
 class SendBufferChunk;
 
+#ifdef USE_OPTIMIZED_SENDBUFFER_CHUNK
 class SendBuffer
 {
 public:
@@ -68,3 +69,22 @@ private:
 	USE_LOCK;
 	vector<SendBufferChunk*> _sendBufferChunks;
 };
+#else
+class SendBuffer : enable_shared_from_this<SendBuffer>
+{
+public:
+	SendBuffer(int32 bufferSize);
+	~SendBuffer();
+
+	BYTE* Buffer() { return _buffer.data(); }
+	int32 WriteSize() { return _writeSize; }
+	int32 Capacity() { return static_cast<int32>(_buffer.size()); }
+
+	void CopyData(void* data, int32 len);
+	void Close(uint32 writeSize);
+
+private:
+	vector<BYTE>	_buffer;
+	int32			_writeSize = 0;
+};
+#endif
