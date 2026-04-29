@@ -25,7 +25,7 @@ int main()
 
 	ASSERT_CRASH(service->Start());
 
-	for (int32 i = 0; i < 2; i++)
+	for (int32 i = 0; i < 1; i++)
 	{
 		GThreadManager->Launch("ClientIOWorker", [=]()
 			{

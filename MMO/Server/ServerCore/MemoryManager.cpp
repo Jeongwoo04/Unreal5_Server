@@ -98,6 +98,7 @@ void MemoryManager::Release(void* ptr)
     }
     else
     {
+        //TEMP
         _poolTable[allocSize]->Push(header);
     }
 }
@@ -115,12 +116,10 @@ LocalChunk::~LocalChunk()
     ::_aligned_free(_basePtr);
 }
 
-void LocalChunk::Init(const size_t typeSize, const size_t alignment, UpdateFunc func)
+void LocalChunk::Init(const size_t typeSize, const size_t alignment)
 {
     //uint32 count = (typeSize - 1 + MEMORY_ALIGNMENT) / MEMORY_ALIGNMENT;
     //uint32 alignSize = MEMORY_ALIGNMENT * count;
-    _updateFunc = func;
-
     _alignSize = (typeSize + alignment - 1) & ~(alignment - 1);
 
     _header = reinterpret_cast<void**>(_basePtr);
@@ -142,6 +141,15 @@ void LocalChunk::Init(const size_t typeSize, const size_t alignment, UpdateFunc 
     _activeCount = 0;
 }
 
+void LocalChunk::SwapOwnership(LocalChunk* other)
+{
+    this->_basePtr = other->_basePtr;
+    this->_header = other->_header;
+
+    other->_basePtr = nullptr;
+    other->_header = nullptr;
+}
+
 // ChunkList
 
 LocalChunkRef ChunkList::FindChunk()
@@ -156,37 +164,13 @@ LocalChunkRef ChunkList::FindChunk()
 
         uint32 currentCount = chunk->GetActiveCount();
 
-        if (currentCount > maxCount) {
+        if (currentCount >= maxCount) {
             maxCount = currentCount;
             find = chunk;
         }
     }
 
     return find;
-}
-
-int32 ChunkList::AddChunk()
-{
-    LocalChunkRef newChunk = GLocalMemoryManager->PopChunk(_type);
-    newChunk->SetOwner(shared_from_this());
-
-    int32 index;
-
-    if (_emptyIndex.empty() == false)
-    {
-        index = _emptyIndex.top();
-        _emptyIndex.pop();
-        newChunk->SetIndex(index);
-        _chunks[index] = newChunk;
-    }
-    else
-    {
-        index = static_cast<int32>(_chunks.size());
-        newChunk->SetIndex(index);
-        _chunks.push_back(newChunk);
-    }
-
-    return index;
 }
 
 void ChunkList::ChunkEmpty(int32 index)
@@ -199,73 +183,77 @@ void ChunkList::ChunkEmpty(int32 index)
 
 LocalMemoryManager::LocalMemoryManager()
 {
-    InitializeSListHead(&_sListHeader);
+    //InitializeSListHead(&_sListHeader);
 }
 
 LocalMemoryManager::~LocalMemoryManager()
 {
-    while (MemoryHeader* header = static_cast<MemoryHeader*>(::InterlockedPopEntrySList(&_sListHeader)))
-    {
-        void* ptr = MemoryHeader::AttachHeader(header, header->_allocSize);
-        S1_Delete<LocalChunk>(static_cast<LocalChunk*>(ptr));
-    }
+    //while (MemoryHeader* header = static_cast<MemoryHeader*>(::InterlockedPopEntrySList(&_sListHeader)))
+    //{
+    //    void* ptr = MemoryHeader::AttachHeader(header, header->_allocSize);
+    //    S1_Delete<LocalChunk>(static_cast<LocalChunk*>(ptr));
+    //}
 }
 
-LocalChunkRef LocalMemoryManager::PopChunk(const string& type)
+LocalChunk* LocalMemoryManager::PopChunk(const string& type)
 {
-    MemoryHeader* header = static_cast<MemoryHeader*>(InterlockedPopEntrySList(&_sListHeader));
+    //MemoryHeader* header = static_cast<MemoryHeader*>(InterlockedPopEntrySList(&_sListHeader));
 
-    if (header) {
-        void* ptr = MemoryHeader::AttachHeader(header, header->_allocSize);
-    
-        _reserveCount.fetch_sub(1);
-        _useCount.fetch_add(1);
+    //if (header) {
+    //    void* ptr = MemoryHeader::AttachHeader(header, header->_allocSize);
+    //
+    //    _reserveCount.fetch_sub(1);
+    //    _useCount.fetch_add(1);
 
-        //cout << "Pop Chunk " << type << " ! remain " << _reserveCount.load() << endl;
+    //    //cout << "Pop Chunk " << type << " ! remain " << _reserveCount.load() << endl;
 
-        return LocalChunkRef(static_cast<LocalChunk*>(ptr), PushGlobal);
-    }
+    //    return LocalChunkRef(static_cast<LocalChunk*>(ptr), PushGlobal);
+    //}
 
     //cout << "Pop Chunk " << type << " ! remain " << _reserveCount.load() << endl;
 
-    _useCount.fetch_add(1);
-    return LocalChunkRef(S1_New<LocalChunk>(), PushGlobal);
+    //_useCount.fetch_add(1);
+    //return LocalChunkRef(S1_New<LocalChunk>(), PushGlobal);
 
-    //{
-    //    WRITE_LOCK;
-    //    if (_localChunks.empty() == false)
-    //    {
-    //        LocalChunk* localChunk = _localChunks.back();
-    //        _localChunks.pop_back();
+    {
+        WRITE_LOCK;
+        if (_localChunks.empty() == false)
+        {
+            LocalChunk* localChunk = _localChunks.back();
+            _localChunks.pop_back();
 
-    //        cout << "Pop Chunk ! remain " << GetSize() << endl;
+            cout << "Pop Chunk " << type << " ! remain " << _localChunks.size() << endl;
 
-    //        return LocalChunkRef(localChunk, PushGlobal);
-    //    }
-    //}
+            //return LocalChunkRef(localChunk, PushGlobal);
+            return localChunk;
+        }
+    }
+
+    cout << "Pop Chunk " << type << " ! remain " << _localChunks.size() << endl;
 
     //return LocalChunkRef(S1_New<LocalChunk>(), PushGlobal);
+    return new LocalChunk();
 }
 
 void LocalMemoryManager::PushChunk(LocalChunk* chunk)
 {
-    if (_reserveCount.load() >= MAX_CHUNK_LIMIT)
-    {
-        S1_Delete<LocalChunk>(chunk);
-        _useCount.fetch_sub(1);
+    //if (_reserveCount.load() >= MAX_CHUNK_LIMIT)
+    //{
+    //    S1_Delete<LocalChunk>(chunk);
+    //    _useCount.fetch_sub(1);
 
-        return;
-    }
+    //    return;
+    //}
 
-    MemoryHeader* header = MemoryHeader::DetachHeader(chunk);
+    //MemoryHeader* header = MemoryHeader::DetachHeader(chunk);
 
-    InterlockedPushEntrySList(&_sListHeader, header);
+    //InterlockedPushEntrySList(&_sListHeader, header);
 
-    _useCount.fetch_sub(1);
-    _reserveCount.fetch_add(1);
+    //_useCount.fetch_sub(1);
+    //_reserveCount.fetch_add(1);
 
-    //WRITE_LOCK;
-    //_localChunks.push_back(chunk);
+    WRITE_LOCK;
+    _localChunks.push_back(chunk);
     //cout << "Push Chunk ! remain " << _reserveCount.load() << endl;
 }
 

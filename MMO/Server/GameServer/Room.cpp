@@ -70,17 +70,17 @@ void Room::Init(int32 mapId)
 
 void Room::UpdateTick()
 {
-	//if (_roomId == 0)
-	//	_diag.BeginTick();
+	if (_roomId == 0)
+		_diag.BeginTick();
 	_bench.Begin("Room");
 
 	DoTimer(_serverTick, &Room::UpdateTick);
 
-	//if (_roomId == 0)
-	//{
-	//	_diag.SetObjectCounts(_players.size(), _monsters.size(), _projectiles.size(), _fields.size());
-	//	_diag.SetRoomWorkerInfo(_queueName + " | Thread: " + LThreadName);
-	//}
+	if (_roomId == 0)
+	{
+		_diag.SetObjectCounts(_players.size(), _monsters.size(), _projectiles.size(), _fields.size());
+		_diag.SetRoomWorkerInfo(_queueName + " | Thread: " + LThreadName);
+	}
 
 	if (_roomId == 0)
 		_bench.Begin("I-Flush");
@@ -103,7 +103,11 @@ void Room::UpdateTick()
 	if (_roomId == 0)
 		_bench.End("Update");
 #endif
+	if (_roomId == 0)
+		_bench.Begin("SkillSystem");
 	UpdateSkillSystem();
+	if (_roomId == 0)
+		_bench.End("SkillSystem");
 	ClearRemoveList();
 
 	if (_roomId == 0)
@@ -111,19 +115,18 @@ void Room::UpdateTick()
 	FlushDeferBroadcast();
 	if (_roomId == 0)
 		_bench.End("D-Flush");
-	//_objectManager->CheckPools();
 	
 	if (_roomId == 0)
 		_bench.End("Room");
 	if (_roomId == 0)
-	//{
-	//	_diag.EndTick();
-	//	_diag.Render();
-	//}
-		_bench.PrintAndSaveSummary(GetRoomId(), "200Room+20P+300M Y Pooling Y Chunk");
+	{
+		_diag.EndTick();
+		_diag.Render();
+	}
+	//_bench.PrintAndSaveSummary(GetRoomId(), "[1000P/1Room + 100M]After MemoryPooling + TypeChunk[Update inline]");
 
-	if (_roomId == 0)
-		_objectManager->CheckPools();
+	//if (_roomId == 0)
+		//_objectManager->CheckPools();
 }
 
 void Room::UpdateMonster()

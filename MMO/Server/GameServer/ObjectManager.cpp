@@ -13,9 +13,13 @@ void ObjectManager::Init()
 
 #ifdef USE_OPTIMIZED_MEMORY_POOLING
 	_playerPool = make_shared<ChunkList>("Player");
+	_playerPool->Init<Player>();
 	_monsterPool = make_shared<ChunkList>("Monster");
+	_monsterPool->Init<Monster>();
 	_projectilePool = make_shared<ChunkList>("Projectile");
+	_projectilePool->Init<Projectile>();
 	_fieldPool = make_shared<ChunkList>("Field");
+	_fieldPool->Init<Field>();
 
 	AddFactory(FactoryHash(OBJECT_TYPE_CREATURE, CREATURE_TYPE_PLAYER),
 		[this]() -> ObjectRef {

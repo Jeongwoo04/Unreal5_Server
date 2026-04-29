@@ -32,4 +32,4 @@ using namespace std;
 #include "JobQueue.h"
 #include "SafeLog.h"
 
-#define USE_OPTIMIZED_SENDBUFFER_CHUNK
+//#define USE_OPTIMIZED_SENDBUFFER_CHUNK

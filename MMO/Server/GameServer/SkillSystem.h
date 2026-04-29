@@ -74,7 +74,6 @@ private:
 	const unordered_map<int32, Skill>* skillDict = nullptr;
 	ChunkListRef _skillPools;
 	vector<SkillInstanceRef> _activeSkills;
-	vector<SkillInstanceRef> _tempSkills;
 	vector<int32> _removePendings;
 
 	// TEMP HUD

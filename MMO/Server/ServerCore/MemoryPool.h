@@ -50,4 +50,7 @@ private:
     int32 _allocSize = 0;
     atomic<int32> _useCount = 0;
     atomic<int32> _reserveCount = 0;
+
+    //TEMP
+    int32 _maxReserveCount = 0;
 };

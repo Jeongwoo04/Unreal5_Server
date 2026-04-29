@@ -29,4 +29,4 @@ extern float ServerTickInterval;
 	session->Send(sendBuffer);
 
 #define USE_OPTIMIZED_MEMORY_POOLING
-#define USE_OPTIMIZED_SENDBUFFER_CHUNK
+//#define USE_OPTIMIZED_SENDBUFFER_CHUNK

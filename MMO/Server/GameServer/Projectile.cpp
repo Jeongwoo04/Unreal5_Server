@@ -17,7 +17,10 @@ void Projectile::Update()
 {
 	auto room = GetRoom();
 	if (room == nullptr)
+	{
+		SetOwner(nullptr);
 		return;
+	}
 
 	if (GetOwner() == nullptr)
 	{

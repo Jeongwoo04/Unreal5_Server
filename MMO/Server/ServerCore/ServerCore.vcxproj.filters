@@ -54,9 +54,6 @@
     <ClInclude Include="SocketUtils.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="IocpCore.h">
-      <Filter>Network</Filter>
-    </ClInclude>
     <ClInclude Include="IocpEvent.h">
       <Filter>Network</Filter>
     </ClInclude>
@@ -104,6 +101,9 @@
     </ClInclude>
     <ClInclude Include="MemoryPool.h">
       <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="IocpCore.h">
+      <Filter>Job</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

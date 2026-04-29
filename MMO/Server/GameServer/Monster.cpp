@@ -272,6 +272,7 @@ void Monster::OnDead(ObjectRef attacker)
 	room->_skillSystem->CancelCasting(shared_from_this(), _castId);
 
 	AddDieFlushQueue(shared_from_this());
+	SetPlayer(nullptr);
 	room->AddRemoveList(shared_from_this());
 	room->DoTimer(room->GetSpawnTable(_spTableId)->respawnInterval, &Room::SpawnMonster, _spTableId);
 }

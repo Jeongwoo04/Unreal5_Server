@@ -106,7 +106,10 @@ void SendBufferManager::Push(SendBufferChunk* chunk)
 {
 	WRITE_LOCK;
 	if (_sendBufferChunks.size() > 10)
+	{
+		S1_Delete<SendBufferChunk>(chunk);
 		return;
+	}
 
 	_sendBufferChunks.push_back(chunk);
 }

@@ -13,6 +13,7 @@ void SkillSystem::Init()
 {
 	skillDict = &DataManager::Instance().SkillDict;
 	_skillPools = make_shared<ChunkList>();
+	_skillPools->Init<SkillInstance>();
 }
 
 void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId, uint64 clientSend)
@@ -94,6 +95,7 @@ void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 
 void SkillSystem::Update()
 {
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
 	uint64 now = GetTickCount64();
 	
 	for (int32 i = 0; i < _activeSkills.size(); i++)
@@ -163,6 +165,84 @@ void SkillSystem::Update()
 	}
 
 	DeferRemoveInstance();
+#else
+	uint64 now = GetTickCount64();
+
+	for (auto it = _activeSkills.begin(); it != _activeSkills.end(); )
+	{
+		SkillInstanceRef instance = *it;
+		if (instance == nullptr || instance->caster == nullptr)
+		{
+			it = _activeSkills.erase(it);
+			continue;
+		}
+
+		auto creature = static_pointer_cast<Creature>(instance->caster);
+		const auto& actions = instance->skill->actions;
+
+		// 취소된 스킬이면 제거
+		if (instance->canceled)
+		{
+			if (creature->GetActiveSkill() == instance)
+				creature->SetActiveSkill(nullptr);
+
+			it = _activeSkills.erase(it);
+			continue;
+		}
+		// 캐스팅 중이면 캐스팅 처리
+		if (instance->isCasting)
+		{
+			if (now >= creature->GetSkillState(instance->skill->id)->GetCastEndTime())
+			{
+				instance->isCasting = false;
+				instance->actionDelayElapsed = 0.f;
+				// 캐스팅 완료 패킷 전송
+				{
+					Protocol::S_SKILL_EVENT event;
+					instance->cooldownEndTime = now + static_cast<uint64>(instance->skill->cooldown * 1000);
+					ParseEvent(creature, instance, CastState::CAST_SUCCESS, event);
+					instance->caster->AddSkillFlushQueue(instance->caster, CastState::CAST_SUCCESS, event);
+				}
+				creature->StartSkillCooldown(instance->skill->id, now);
+			}
+			else
+			{
+				++it;
+				continue;
+			}
+		}
+		// 액션 처리 시간 Update 후 Index에 따라 HandleAction호출
+		while (instance->currentActionIndex < (int32)actions.size())
+		{
+			ActionData* action = actions[instance->currentActionIndex];
+			instance->actionDelayElapsed += ServerTickInterval;
+
+			if (instance->actionDelayElapsed < action->actionDelay)
+				break;
+
+			HandleAction(instance->caster, instance->targetPos, action, instance);
+			instance->currentActionIndex++;
+			instance->actionDelayElapsed = 0.f;
+		}
+		// Action 종료 -> 제거
+		if (instance->currentActionIndex >= (int32)actions.size())
+		{
+			instance->canceled = true;
+			creature->SetActiveSkill(nullptr);
+			creature->ChangeState(Protocol::STATE_MACHINE_IDLE);
+
+			if (auto monster = dynamic_pointer_cast<Monster>(instance->caster))
+			{
+				monster->_currentSkillId = -1;
+			}
+
+			it = _activeSkills.erase(it);
+			continue;
+		}
+
+		++it;
+	}
+#endif
 }
 
 void SkillSystem::AddRemovePendings(int32 index)
@@ -181,8 +261,8 @@ void SkillSystem::DeferRemoveInstance()
 	int32 currentSize = static_cast<int32>(_activeSkills.size());
 	int32 pendingSize = static_cast<int32>(_removePendings.size());
 
-	_tempSkills.clear();
-	_tempSkills.reserve(currentSize > pendingSize ? currentSize - pendingSize : 0);
+	vector<SkillInstanceRef> tempSkills;
+	tempSkills.reserve(currentSize > pendingSize ? currentSize - pendingSize : 0);
 
 	std::sort(_removePendings.begin(), _removePendings.end());
 
@@ -200,10 +280,10 @@ void SkillSystem::DeferRemoveInstance()
 			continue;
 		}
 
-		_tempSkills.push_back(_activeSkills[i]);
+		tempSkills.push_back(_activeSkills[i]);
 	}
 
-	_activeSkills.swap(_tempSkills);
+	_activeSkills.swap(tempSkills);
 
 	_removePendings.clear();
 }

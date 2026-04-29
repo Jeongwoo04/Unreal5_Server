@@ -23,7 +23,7 @@ void Object::Update()
 void Object::OnDamaged(ObjectRef attacker, int32 damage)
 {
 	auto room = _room.lock();
-	if (!room)
+	if (room == nullptr)
 		return;
 
 	_statInfo.set_hp(_statInfo.hp() - damage);

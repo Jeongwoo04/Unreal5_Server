@@ -5,7 +5,7 @@
       "name": "FrozenField",
       "shape": "Circle",
       "damagePerTick": 1,
-      "duration": 2.5,
+      "duration": 1.5,
       "distance": 1200.0,
       "range": 300.0,
       "buffId": 1
@@ -15,7 +15,7 @@
       "name": "FlameField",
       "shape": "Circle",
       "damagePerTick": 1,
-      "duration": 5.0,
+      "duration": 1.5,
       "distance": 1200.0,
       "range": 300.0,
       "buffId": 2

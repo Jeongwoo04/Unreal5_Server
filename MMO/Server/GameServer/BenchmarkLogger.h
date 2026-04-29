@@ -55,6 +55,15 @@ public:
 		_records["BCQueueDelay"].push_back(delayMs);
 	}
 
+	void AddChunk(pair<int32, int32> count, const string& name)
+	{
+		int32 chunkCount = count.first;
+		int32 objectCount = count.second;
+
+		_records[name + "Chunk"].push_back(chunkCount);
+		_records[name + "Object"].push_back(objectCount);
+	}
+
 	void AddSendCount(int32 sendCount)
 	{
 		double now = GetTimeMs();
@@ -101,7 +110,7 @@ public:
 		_startTimes.erase(it);
 	}
 
-	void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "BenchmarkResult_BCQ.csv")
+	void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "Benchmark_MemoryPooling.csv")
 	{
 		double now = GetTimeMs();
 

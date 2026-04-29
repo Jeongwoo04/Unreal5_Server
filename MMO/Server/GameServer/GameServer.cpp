@@ -56,6 +56,37 @@ void DoSendWorker()
 	}
 }
 
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
+
+void DoMonitoringWorker()
+{
+	while (true)
+	{
+
+
+		PROCESS_MEMORY_COUNTERS_EX pmc;
+		// 현재 프로세스의 메모리 정보 가져오기
+		if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+		{
+			// WorkingSetSize: 현재 실제 물리 메모리 점유량 (RAM)
+			// PrivateUsage: 이 프로세스에 할당된 가상 메모리 점유량 (Commit Charge)
+			size_t physicalMem = pmc.WorkingSetSize;
+			size_t virtualMem = pmc.PrivateUsage;
+
+			std::cout << "========================================" << std::endl;
+			std::cout << "[Memory Monitor]" << std::endl;
+			std::cout << "Physical Memory (RAM): " << std::fixed << std::setprecision(2)
+				<< (double)physicalMem / (1024 * 1024) << " MB" << std::endl;
+			std::cout << "Virtual Memory (Commit): " << (double)virtualMem / (1024 * 1024) << " MB" << std::endl;
+
+			// std::cout << "Active Objects: " << MemoryManager::Instance().GetActiveCount() << std::endl;
+			// std::cout << "Chunk Count: " << MemoryManager::Instance().GetChunkCount() << std::endl;
+			std::cout << "========================================" << std::endl;
+		}
+	}
+}
+
 int main()
 {
 	ServerPacketHandler::Init();
@@ -63,7 +94,7 @@ int main()
 	ConfigManager::Instance().LoadConfig("../Data/config.json");
 	DataManager::Instance().LoadData("../Data");
 
-	RoomManager::Instance().Init(200, 1);
+	RoomManager::Instance().Init(1, 1);
 	
 	ServerServiceRef service = make_shared<ServerService>(
 //#ifdef _DEBUG
@@ -93,13 +124,18 @@ int main()
 			});
 	}
 
-	for (int32 i = 0; i < 5; i++)
+	for (int32 i = 0; i < 2; i++)
 	{
 		GThreadManager->Launch("SendWorker#" + to_string(i), []()
 			{
 				DoSendWorker();
 			});
 	}
+
+	//GThreadManager->Launch("MemoryMonitoring#", []()
+	//	{
+	//		DoMonitoringWorker();
+	//	});
 
 	// Main Thread
 	//DoGameWorker();

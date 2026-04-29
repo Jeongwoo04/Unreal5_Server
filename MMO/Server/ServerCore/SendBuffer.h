@@ -1,5 +1,5 @@
 #pragma once
-#define USE_OPTIMIZED_SENDBUFFER_CHUNK
+//#define USE_OPTIMIZED_SENDBUFFER_CHUNK
 /*----------------
 	SendBuffer
 -----------------*/
@@ -22,7 +22,7 @@ private:
 	uint32 _allocSize = 0;
 	uint32 _writeSize = 0;
 	
-	// Async IO 완료 전 Chunk 메모리 반납이 되지 않도록 참조해야한다.
+	// Async IO 완료 전 Chunk 메모리 반납이 되지 않도록 참조.
 	SendBufferChunkRef _owner;
 };
 
@@ -31,7 +31,7 @@ class SendBufferChunk : public enable_shared_from_this<SendBufferChunk>
 	enum SENDBUFFER_CHUNK_SIZE
 	{
 		LARGE_SENDBUFFER_CHUNK_SIZE = 0x100000,
-		SMALL_SENDBUFFER_CHUNK_SIZE = 0x10000
+		SENDBUFFER_CHUNK_SIZE = 0x10000
 	};
 
 public:
