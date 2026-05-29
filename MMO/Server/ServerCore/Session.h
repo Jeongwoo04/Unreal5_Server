@@ -16,13 +16,15 @@ class Session : public IocpObject
 	friend class IocpCore;
 	friend class Service;
 
-	enum
+public:
+	enum BUFFER_SIZE : int32
 	{
-		BUFFER_SIZE = 0x10000, // 64KB
+		CLIENT = 0x10000, // 64KB
+		SERVER = 0x1000 // 4KB
 	};
 
 public:
-	Session();
+	Session(BUFFER_SIZE bufferSize = BUFFER_SIZE::SERVER);
 	virtual ~Session();
 
 public:
@@ -104,7 +106,7 @@ struct PacketHeader
 class PacketSession : public Session
 {
 public:
-	PacketSession();
+	PacketSession(Session::BUFFER_SIZE bufferSize = BUFFER_SIZE::SERVER);
 	virtual ~PacketSession();
 
 	PacketSessionRef	GetPacketSessionRef() { return static_pointer_cast<PacketSession>(shared_from_this()); }

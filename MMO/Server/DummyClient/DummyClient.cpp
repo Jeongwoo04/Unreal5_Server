@@ -21,7 +21,7 @@ int main()
 //#endif
 		make_shared<IocpCore>(),
 		[=]() { return make_shared<ServerSession>(); }, // TODO : SessionManager 등
-		1000);
+		2000);
 
 	ASSERT_CRASH(service->Start());
 

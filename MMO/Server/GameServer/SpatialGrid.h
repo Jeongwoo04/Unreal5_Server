@@ -8,7 +8,8 @@ public:
 
 	SpatialGrid() = default;
 
-	SpatialGrid(const GameMapRef& map)
+	// DEBUG
+	SpatialGrid(const GameMapRef& map, int32 maxObjectPerCell = 0)
 	{
 		_minX = map->_minX;
 		_maxX = map->_maxX;
@@ -19,6 +20,14 @@ public:
 		_height = _maxY - _minY + 1;
 
 		_cells.resize(_width * _height);
+
+		if (maxObjectPerCell > 0)
+		{
+			for (int32 i = 0; i < _cells.size(); ++i)
+			{
+				_cells[i].reserve(maxObjectPerCell);
+			}
+		}
 	}
 
 	void Clear()

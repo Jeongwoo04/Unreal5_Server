@@ -7,6 +7,8 @@ using PlayerRef = shared_ptr<Player>;
 class GameSession : public PacketSession
 {
 public:
+	GameSession() {}
+
 	~GameSession()
 	{
 		cout << "~GameSession" << endl;

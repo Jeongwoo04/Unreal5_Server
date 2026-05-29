@@ -9,6 +9,7 @@ class ServerSession : public PacketSession
 {
 public:
 	ServerSession()
+		: PacketSession(Session::BUFFER_SIZE::CLIENT)
 	{
 		
 	}

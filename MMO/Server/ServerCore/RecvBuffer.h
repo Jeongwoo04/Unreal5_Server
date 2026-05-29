@@ -6,7 +6,12 @@
 
 class RecvBuffer
 {
-	enum { BUFFER_COUNT = 10 };
+	enum
+	{
+		//CLIENT_BUFFER_COUNT = 2,
+		//SERVER_BUFFER_COUNT = 1
+		BUFFER_COUNT = 5
+	};
 
 public:
 	RecvBuffer(int32 bufferSize);

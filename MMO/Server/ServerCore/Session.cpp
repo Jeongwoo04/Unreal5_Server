@@ -7,7 +7,7 @@
 	Session
 ---------------*/
 
-Session::Session() : _recvBuffer(BUFFER_SIZE)
+Session::Session(BUFFER_SIZE bufferSize) : _recvBuffer(bufferSize)
 {
 	_socket = SocketUtils::CreateSocket();
 }
@@ -298,7 +298,8 @@ void Session::HandleError(int32 errorCode)
 	PacketSession
 ------------------*/
 
-PacketSession::PacketSession()
+PacketSession::PacketSession(Session::BUFFER_SIZE bufferSize)
+	: Session(bufferSize)
 {
 }
 

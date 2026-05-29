@@ -94,21 +94,25 @@ int main()
 	ConfigManager::Instance().LoadConfig("../Data/config.json");
 	DataManager::Instance().LoadData("../Data");
 
-	RoomManager::Instance().Init(1, 1);
+	//ConfigManager::Instance().LoadConfig("../../Data/config.json");
+	//DataManager::Instance().LoadData("../../Data");
+
+	RoomManager::Instance().Init(200, 1);
 	
 	ServerServiceRef service = make_shared<ServerService>(
 //#ifdef _DEBUG
-		NetAddress(L"127.0.0.1", 7777),
+		NetAddress(L"0.0.0.0", 7777),
+		//NetAddress(L"127.0.0.1", 7777),
 //#else
 //		NetAddress(L"192.168.0.10", 7777),
 //#endif
 		make_shared<IocpCore>(),
 		[=]() { return make_shared<GameSession>(); },
-		10);
+		100);
 
 	ASSERT_CRASH(service->Start());
 		
-	for (int32 i = 0; i < 2; i++)
+	for (int32 i = 0; i < 3; i++)
 	{
 		GThreadManager->Launch("IOWorker#" + to_string(i), [&service]()
 			{
@@ -116,7 +120,7 @@ int main()
 			});
 	}
 
-	for (int32 i = 0; i < 3; i++)
+	for (int32 i = 0; i < 2; i++)
 	{
 		GThreadManager->Launch("GameWorker#" + to_string(i), []()
 			{

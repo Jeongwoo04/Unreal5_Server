@@ -38,8 +38,8 @@ void Room::Init(int32 mapId)
 	_mapInfo = &mapIt->second;
 	_gameMap->LoadGameMap(_mapInfo->filePath);
 
-	_playerGrid = SpatialGrid<PlayerRef>(_gameMap);
-	_monsterGrid = SpatialGrid<MonsterRef>(_gameMap);
+	_playerGrid = SpatialGrid<PlayerRef>(_gameMap, 20);
+	_monsterGrid = SpatialGrid<MonsterRef>(_gameMap, 50);
 
 	//InitBaseOffsets();
 
@@ -72,7 +72,7 @@ void Room::UpdateTick()
 {
 	if (_roomId == 0)
 		_diag.BeginTick();
-	_bench.Begin("Room");
+	//_bench.Begin("Room");
 
 	DoTimer(_serverTick, &Room::UpdateTick);
 
@@ -123,10 +123,16 @@ void Room::UpdateTick()
 		_diag.EndTick();
 		_diag.Render();
 	}
-	//_bench.PrintAndSaveSummary(GetRoomId(), "[1000P/1Room + 100M]After MemoryPooling + TypeChunk[Update inline]");
+	_bench.PrintAndSaveSummary(GetRoomId(), "MacOS Dummy + Windows Server - 5 Dummy (per 1000 P) + 200 Room");
 
 	//if (_roomId == 0)
-		//_objectManager->CheckPools();
+	//	_objectManager->CheckPools();
+
+	//cout << "Player Size = " << sizeof(Player) << endl;
+	//cout << "Monster Size = " << sizeof(Monster) << endl;
+	//cout << "Projectile Size = " << sizeof(Projectile) << endl;
+	//cout << "Field Size = " << sizeof(Field) << endl;
+	//cout << "SkillInstance Size = " << sizeof(SkillInstance) << endl;
 }
 
 void Room::UpdateMonster()

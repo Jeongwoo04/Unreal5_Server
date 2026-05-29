@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "/csY+Fwp8XRScYTzeeupg/rTWSDTn5nZPilUFsz+hdoy6c8nlLXZ1F4tIV4v9P5q4cZmCEouI6bh1GDoA3CDRA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\jeson\\Desktop\\unreal\\DotNet_Dummy\\ServerCore\\ServerCore.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jeson\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\3.1.0\\microsoft.windowsdesktop.app.ref.3.1.0.nupkg.sha512",
+    "C:\\Users\\jeson\\.nuget\\packages\\microsoft.netcore.app.ref\\3.1.0\\microsoft.netcore.app.ref.3.1.0.nupkg.sha512",
+    "C:\\Users\\jeson\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\3.1.10\\microsoft.aspnetcore.app.ref.3.1.10.nupkg.sha512"
+  ],
+  "logs": []
+}
