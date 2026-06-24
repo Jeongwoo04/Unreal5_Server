@@ -35,6 +35,17 @@ void DoGameWorker()
 {
 	while (true)
 	{
+		if (GBenchMarkManager->GetProcessState() == ProcessState::WAIT_WORKER_FLUSH && GBenchMarkManager->GetBenchRound() == LBenchRound)
+		{
+			GBenchMarkManager->AddWorkerData(LBenchRound, LThreadId, { LExecuteJobCount , LExecuteJobQueues , LWorkerActiveTime , LTimeSliceExceeded });
+
+			LBenchRound++;
+			LExecuteJobCount = 0;
+			LExecuteJobQueues = 0;
+			LWorkerActiveTime = 0;
+			LTimeSliceExceeded = 0;
+		}
+
 		LEndTickCount = ::GetTickCount64() + WORKER_TICK;
 
 		// 예약된 일감 처리
@@ -56,36 +67,53 @@ void DoSendWorker()
 	}
 }
 
-#include <psapi.h>
-#pragma comment(lib, "psapi.lib")
-
-void DoMonitoringWorker()
+void BenchMarksWriter()
 {
 	while (true)
 	{
-
-
-		PROCESS_MEMORY_COUNTERS_EX pmc;
-		// 현재 프로세스의 메모리 정보 가져오기
-		if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+		switch (GBenchMarkManager->GetProcessState())
 		{
-			// WorkingSetSize: 현재 실제 물리 메모리 점유량 (RAM)
-			// PrivateUsage: 이 프로세스에 할당된 가상 메모리 점유량 (Commit Charge)
-			size_t physicalMem = pmc.WorkingSetSize;
-			size_t virtualMem = pmc.PrivateUsage;
+		case ProcessState::COLLECT_ROOM:
+		{
+			if (GBenchMarkManager->_roundTime.startTick == 0)
+			{
+				GBenchMarkManager->_roundTime.startTick = GetTickCount64();
+			}
 
-			std::cout << "========================================" << std::endl;
-			std::cout << "[Memory Monitor]" << std::endl;
-			std::cout << "Physical Memory (RAM): " << std::fixed << std::setprecision(2)
-				<< (double)physicalMem / (1024 * 1024) << " MB" << std::endl;
-			std::cout << "Virtual Memory (Commit): " << (double)virtualMem / (1024 * 1024) << " MB" << std::endl;
-
-			// std::cout << "Active Objects: " << MemoryManager::Instance().GetActiveCount() << std::endl;
-			// std::cout << "Chunk Count: " << MemoryManager::Instance().GetChunkCount() << std::endl;
-			std::cout << "========================================" << std::endl;
+			if (GBenchMarkManager->CheckRoundRoom())
+			{
+				GBenchMarkManager->SetProcessState(ProcessState::WAIT_WORKER_FLUSH);
+			}
+			break;
 		}
+
+		case ProcessState::WAIT_WORKER_FLUSH:
+		{
+			if (GBenchMarkManager->CheckRoundWorker())
+			{
+				GBenchMarkManager->_roundTime.endTick = ::GetTickCount64();
+				GBenchMarkManager->SetProcessState(ProcessState::CALCULATE);
+			}
+			break;
+		}
+
+		case ProcessState::CALCULATE:
+		{
+			GBenchMarkManager->CalculateData();
+			GBenchMarkManager->_roundTime.startTick = 0;
+			GBenchMarkManager->_roundTime.endTick = 0;
+			GBenchMarkManager->WriteCSV();
+			GBenchMarkManager->SetProcessState(ProcessState::COLLECT_ROOM);
+			break;
+		}
+		}
+
+		this_thread::sleep_for(10ms);
 	}
 }
+
+#include <psapi.h>
+
 
 int main()
 {
@@ -97,12 +125,12 @@ int main()
 	//ConfigManager::Instance().LoadConfig("../../Data/config.json");
 	//DataManager::Instance().LoadData("../../Data");
 
-	RoomManager::Instance().Init(200, 1);
+	RoomManager::Instance().Init(250, 1);
 	
 	ServerServiceRef service = make_shared<ServerService>(
 //#ifdef _DEBUG
-		NetAddress(L"0.0.0.0", 7777),
-		//NetAddress(L"127.0.0.1", 7777),
+		//NetAddress(L"0.0.0.0", 7777),
+		NetAddress(L"127.0.0.1", 7777),
 //#else
 //		NetAddress(L"192.168.0.10", 7777),
 //#endif
@@ -112,7 +140,7 @@ int main()
 
 	ASSERT_CRASH(service->Start());
 		
-	for (int32 i = 0; i < 3; i++)
+	for (int32 i = 0; i < 2; i++)
 	{
 		GThreadManager->Launch("IOWorker#" + to_string(i), [&service]()
 			{
@@ -135,6 +163,11 @@ int main()
 				DoSendWorker();
 			});
 	}
+
+	GThreadManager->Launch("BenchMarkWorker#", []()
+		{
+			BenchMarksWriter();
+		});
 
 	//GThreadManager->Launch("MemoryMonitoring#", []()
 	//	{

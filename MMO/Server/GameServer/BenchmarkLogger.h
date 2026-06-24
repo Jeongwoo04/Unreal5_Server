@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "BenchMarkManager.h"
 #include <numeric>
 
 using namespace std;
@@ -16,70 +17,6 @@ public:
 	void SetWarmupTime(double seconds)
 	{
 		_warmupMs = seconds * 1000.0;
-	}
-
-	void AddDeferPktCount(int32 count)
-	{
-		double now = GetTimeMs();
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
-		_records["DeferPktCount"].push_back(count);
-	}
-
-	void AddImmediatePktCount(int32 count)
-	{
-		double now = GetTimeMs();
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
-		_records["ImmediatePktCount"].push_back(count);
-	}
-
-	void AddExecuteTime(double exeTime)
-	{
-		double now = GetTimeMs();
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
-		_records["ExecuteTime"].push_back(exeTime);
-	}
-
-
-	void AddBCQDelay(double delayMs)
-	{
-		double now = GetTimeMs();
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
-		_records["BCQueueDelay"].push_back(delayMs);
-	}
-
-	void AddChunk(pair<int32, int32> count, const string& name)
-	{
-		int32 chunkCount = count.first;
-		int32 objectCount = count.second;
-
-		_records[name + "Chunk"].push_back(chunkCount);
-		_records[name + "Object"].push_back(objectCount);
-	}
-
-	void AddSendCount(int32 sendCount)
-	{
-		double now = GetTimeMs();
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
-		_records["SendCount"].push_back(sendCount);
-	}
-
-	void AddDirtyCount(int32 dirtyCount)
-	{
-		double now = GetTimeMs();
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
-		_records["DirtyCount"].push_back(dirtyCount);
 	}
 
 	void Begin(const std::string& name)
@@ -110,74 +47,14 @@ public:
 		_startTimes.erase(it);
 	}
 
-	void PrintAndSaveSummary(int32 roomId, const string& benchWhat, const std::string& filename = "Benchmark_MemoryPooling.csv")
+	void SendData(int32 roomId, const string& benchWhat, const std::string& filename = "Benchmark_MemoryPooling.csv")
 	{
-		double now = GetTimeMs();
-
-		// 워밍업 구간 스킵
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
 		if (_records["Room"].size() < 100)
 			return ;
 
-		std::ofstream file(filename, std::ios::app);
-		if (!file.is_open())
-		{
-			std::cerr << "Failed to open benchmark log file: " << filename << std::endl;
-			return;
-		}
-
-		std::cout << "\n========== " << benchWhat << " BENCHMARK SUMMARY ==========\n";
-		file << "========== RoomId : " << roomId << " " << benchWhat << " BENCHMARK SUMMARY ==========\n";
-		file << "Name,Samples,Avg,Min,Max,p01,p99,StdDev\n";
-
-		for (auto& [name, samples] : _records)
-		{
-			if (samples.empty())
-				continue;
-
-			std::sort(samples.begin(), samples.end());
-			double sum = std::accumulate(samples.begin(), samples.end(), 0.0);
-			double avg = sum / samples.size();
-			double min = samples.front();
-			double max = samples.back();
-
-			double p01 = samples[(int)(samples.size() * 0.01)];
-			double p99 = samples[(int)(samples.size() * 0.99)];
-
-			double variance = 0.0;
-			for (double v : samples)
-				variance += (v - avg) * (v - avg);
-			variance /= samples.size();
-			double stddev = std::sqrt(variance);
-
-			// CSV 저장
-			file << name << ","
-				<< samples.size() << ","
-				<< avg << ","
-				<< min << ","
-				<< max << ","
-				<< p01 << ","
-				<< p99 << ","
-				<< stddev << "\n";
-
-			// 콘솔 출력
-			std::cout
-				<< name << "\n"
-				<< "  Count: " << samples.size()
-				<< " | Avg: " << avg
-				<< " | Min: " << min
-				<< " | Max: " << max
-				<< " | 1%: " << p01
-				<< " | 99%: " << p99
-				<< " | StdDev: " << stddev << " (ms)\n";
-		}
-
-		std::cout << "======================================\n";
-		file << "======================================\n";
-		file.close();
+		GBenchMarkManager->AddData(_roundCount, roomId, std::move(_records));
 		_records.clear();
+		++_roundCount;
 	}
 
 private:
@@ -188,6 +65,7 @@ private:
 		return duration_cast<microseconds>(now.time_since_epoch()).count() / 1000.0;
 	}
 
+	int32 _roundCount = 1;
 	double _programStartTime;
 	double _warmupMs = 30000.0;
 	std::unordered_map<std::string, double> _startTimes;

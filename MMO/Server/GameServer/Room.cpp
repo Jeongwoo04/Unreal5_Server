@@ -70,9 +70,10 @@ void Room::Init(int32 mapId)
 
 void Room::UpdateTick()
 {
-	if (_roomId == 0)
-		_diag.BeginTick();
-	//_bench.Begin("Room");
+	//if (_roomId == 0)
+	//	_diag.BeginTick();
+	_bench.End("TickInterval");
+	_bench.Begin("Room");
 
 	DoTimer(_serverTick, &Room::UpdateTick);
 
@@ -82,49 +83,46 @@ void Room::UpdateTick()
 		_diag.SetRoomWorkerInfo(_queueName + " | Thread: " + LThreadName);
 	}
 
-	if (_roomId == 0)
-		_bench.Begin("I-Flush");
+	_bench.Begin("I-Flush");
 	FlushImmediateBroadcast();
-	if (_roomId == 0)
-		_bench.End("I-Flush");
+	_bench.End("I-Flush");
 
 #ifdef USE_OPTIMIZED_MEMORY_POOLING
-	if (_roomId == 0)
-		_bench.Begin("Update");
+	
+	_bench.Begin("Update");
 	_objectManager->Update();
-	if (_roomId == 0)
-		_bench.End("Update");
+	_bench.End("Update");
+
 #else
-	if (_roomId == 0)
-		_bench.Begin("Update");
+
+	_bench.Begin("Update");
+
 	UpdateMonster();
 	UpdateProjectile();
 	UpdateField();
-	if (_roomId == 0)
-		_bench.End("Update");
+
+	_bench.End("Update");
+
 #endif
-	if (_roomId == 0)
-		_bench.Begin("SkillSystem");
+
+	_bench.Begin("SkillSystem");
 	UpdateSkillSystem();
-	if (_roomId == 0)
-		_bench.End("SkillSystem");
+	_bench.End("SkillSystem");
+
 	ClearRemoveList();
 
-	if (_roomId == 0)
-		_bench.Begin("D-Flush");
+	_bench.Begin("D-Flush");
 	FlushDeferBroadcast();
-	if (_roomId == 0)
-		_bench.End("D-Flush");
+	_bench.End("D-Flush");
 	
-	if (_roomId == 0)
-		_bench.End("Room");
-	if (_roomId == 0)
-	{
-		_diag.EndTick();
-		_diag.Render();
-	}
-	_bench.PrintAndSaveSummary(GetRoomId(), "MacOS Dummy + Windows Server - 5 Dummy (per 1000 P) + 200 Room");
-
+	_bench.End("Room");
+	//if (_roomId == 0)
+	//{
+	//	_diag.EndTick();
+	//	_diag.Render();
+	//}
+	_bench.Begin("TickInterval");
+	_bench.SendData(GetRoomId(), "MacOS Dummy + Windows Server - 5 Dummy (per 1000 P) + 200 Room");
 	//if (_roomId == 0)
 	//	_objectManager->CheckPools();
 

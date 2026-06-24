@@ -20,6 +20,7 @@
 #include "GameSession.h"
 #include "GameMap.h"
 #include "Room.h"
+#include "BenchMarkManager.h"
 
 using GameSessionRef = shared_ptr<class GameSession>;
 extern float ServerTickInterval;

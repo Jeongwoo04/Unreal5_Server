@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BenchmarkLogger.cpp" />
+    <ClCompile Include="BenchMarkManager.cpp" />
     <ClCompile Include="BuffSystem.cpp" />
     <ClCompile Include="CombatSystem.cpp" />
     <ClCompile Include="CommandManager.cpp" />
@@ -200,6 +201,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BenchmarkLogger.h" />
+    <ClInclude Include="BenchMarkManager.h" />
     <ClInclude Include="BuffSystem.h" />
     <ClInclude Include="CombatSystem.h" />
     <ClInclude Include="CommandManager.h" />

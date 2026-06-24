@@ -126,6 +126,9 @@
     <ClCompile Include="SendQueue.cpp">
       <Filter>Main</Filter>
     </ClCompile>
+    <ClCompile Include="BenchMarkManager.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -220,6 +223,9 @@
     </ClInclude>
     <ClInclude Include="SpatialGrid.h">
       <Filter>Game\Room</Filter>
+    </ClInclude>
+    <ClInclude Include="BenchMarkManager.h">
+      <Filter>Main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -31,5 +31,6 @@ using namespace std;
 #include "Session.h"
 #include "JobQueue.h"
 #include "SafeLog.h"
+#include "Time.h"
 
 //#define USE_OPTIMIZED_SENDBUFFER_CHUNK

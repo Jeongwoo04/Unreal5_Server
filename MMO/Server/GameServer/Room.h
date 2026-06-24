@@ -182,7 +182,6 @@ public:
 
 	//TEMP
 public:
-	std::chrono::high_resolution_clock::time_point _prevTime;
 	uint64 _serverTick;
 	RoomDiagnostics _diag;
 
