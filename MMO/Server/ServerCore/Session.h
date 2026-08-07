@@ -29,7 +29,7 @@ public:
 
 public:
 						/* 외부에서 사용 */
-	void				Send(SendBufferRef sendBuffer);
+	void				Send(SendBufferRef sendBuffer, bool justEnqueue = false);
 	bool				Connect();
 	void				Disconnect(const WCHAR* cause);
 

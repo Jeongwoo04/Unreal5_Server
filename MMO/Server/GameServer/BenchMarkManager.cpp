@@ -2,6 +2,7 @@
 #include "BenchMarkManager.h"
 #include <Psapi.h>
 #include <iomanip>
+#include "RoomManager.h"
 #pragma comment(lib, "psapi.lib")
 
 BenchMarkManager* GBenchMarkManager = new BenchMarkManager();
@@ -13,13 +14,6 @@ void BenchMarkManager::AddData(int32 roundCount, int32 roomId, unordered_map<str
 	RoundData& roundData = _roundData[roundCount];
 	roundData._roomData[roomId] = std::move(data);
 	roundData.received.set(roomId);
-
-	for (auto& [name, samples] : roundData._roomData[roomId])
-	{
-		auto& total = _roundTotalData[roundCount].samples[name];
-
-		total.insert(total.end(), samples.begin(), samples.end());
-	}
 }
 
 void BenchMarkManager::AddWorkerData(int32 roundCount, int32 workerId, WorkerStats stats)
@@ -27,8 +21,14 @@ void BenchMarkManager::AddWorkerData(int32 roundCount, int32 workerId, WorkerSta
 	WRITE_LOCK;
 
 	auto& data = _workerRoundData[roundCount];
-	data.workers[workerId] = std::move(stats);
-	data.received.set(workerId);
+	data.workers.push_back(std::move(stats));
+}
+
+void BenchMarkManager::AddIOData(const string& name, vector<double>&& data)
+{
+	WRITE_LOCK;
+
+	_ioData.samples[name] = std::move(data);
 }
 
 bool BenchMarkManager::CheckRoundRoom()
@@ -50,7 +50,7 @@ bool BenchMarkManager::CheckRoundWorker()
 	if (iter == _workerRoundData.end())
 		return false;
 
-	return iter->second.received.count() == LOGIC_WORKER_COUNT;
+	return iter->second.workers.size() == 6;
 }
 
 vector<BenchState> BenchMarkManager::CalculateStates(unordered_map<string, vector<double>>& records)
@@ -92,24 +92,64 @@ vector<BenchState> BenchMarkManager::CalculateStates(unordered_map<string, vecto
 	return result;
 }
 
+void BenchMarkManager::AbstractData()
+{
+	_snapshot = {};
+
+	{
+		WRITE_LOCK;
+
+		_snapshot.roundData = std::move(_roundData[_roundCount]);
+		_snapshot.workerRoundData = std::move(_workerRoundData[_roundCount]);
+		_snapshot.roundTime = _roundTime;
+		_snapshot.ioData = std::move(_ioData);
+		_ioData.samples.clear();
+		_snapshot.GlobalIOPendingCounts = GIOPendingCounts.load();
+
+		_roundData.erase(_roundCount);
+		_workerRoundData.erase(_roundCount);
+	}
+
+	for (auto& data : _snapshot.roundData._roomData)
+	{
+		for (auto& [name, samples] : data)
+		{
+			auto& total = _snapshot.totalData.samples[name];
+
+			total.insert(total.end(), samples.begin(), samples.end());
+		}
+	}
+
+	for (auto& [name, samples] : _snapshot.ioData.samples)
+	{
+		auto& total = _snapshot.totalData.samples[name];
+
+		total.insert(total.end(), samples.begin(), samples.end());
+	}
+
+	SetProcessState(ProcessState::CALCULATE);
+
+	return ;
+}
+
 void BenchMarkManager::CalculateData()
 {
 	_result = {};
-
-	RoundData& round = _roundData[_roundCount];
+	_result.Round = _roundCount;
 
 	for (int32 roomId = 0; roomId < ROOM_COUNT; roomId++)
 	{
 		RoomBenchResult roomResult;
 		roomResult.roomId = roomId;
-		roomResult.states = CalculateStates(round._roomData[roomId]);
+		roomResult.states = CalculateStates(_snapshot.roundData._roomData[roomId]);
 
 		_result.rooms.push_back(std::move(roomResult));
 	}
 
-	_result.totalStates = CalculateStates(_roundTotalData[_roundCount].samples);
+	_result.totalStates = CalculateStates(_snapshot.totalData.samples);
+	_result.globalIoPendingCounts = _snapshot.GlobalIOPendingCounts;
 
-	WorkerRoundData& workerRound = _workerRoundData[_roundCount];
+	WorkerRoundData& workerRound = _snapshot.workerRoundData;
 	
 	for (auto& w : workerRound.workers)
 	{
@@ -117,9 +157,24 @@ void BenchMarkManager::CalculateData()
 			continue;
 
 		w.ActiveTimeMs = QpcToMilliseconds(w.ActiveTime);
-		double roundTimeMs = static_cast<double>(_roundTime.endTick - _roundTime.startTick);
+		double roundTimeMs = static_cast<double>(_snapshot.roundTime.endTick - _snapshot.roundTime.startTick);
 		w.ActiveRatio = (w.ActiveTimeMs / roundTimeMs) * 100.0;
+
+		_result.Workers.push_back(w);
 	}
+
+	//PROCESS_MEMORY_COUNTERS_EX pmc;
+	//// 현재 프로세스의 메모리 정보 가져오기
+	//if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+	//{
+	//	// WorkingSetSize: 현재 실제 물리 메모리 점유량 (RAM)
+	//	// PrivateUsage: 이 프로세스에 할당된 가상 메모리 점유량 (Commit Charge)
+	//	size_t physicalMem = pmc.WorkingSetSize;
+	//	size_t virtualMem = pmc.PrivateUsage;
+
+	//	_result.Memory.PhysicalMB = (double)physicalMem / (1024 * 1024);
+	//	_result.Memory.VirtualMB = (double)virtualMem / (1024 * 1024);
+	//}
 }
 
 void BenchMarkManager::WriteCSV()
@@ -129,17 +184,125 @@ void BenchMarkManager::WriteCSV()
 	if (!file.is_open())
 		return;
 
+	file << "========== Direct LAN MultiRoom Bench ==========\n\n";
 
 	file << "==============================\n";
-	file << "Multi Room Benchmark\n";
-	file << "Round : "
-		<< _roundCount << "\n\n";
+	file << "환경\n";
+	file << "CPU : Intel i5-12400F (6C/12T)\n";
+	file << "OS : Windows\n";
+	file << "Build : Release x64\n";
+	file << "Direct LAN TEST\n\n";
 
+	file << "Server\n";
+	file << "IO Worker : 2\n";
+	file << "Logic Worker : 2\n";
+	file << "Send Worker : 4\n";
+	file << "Round = 100Ticks / Room\n\n";
 
+	file << "Client\n";
+	file << "ARM Mac M1 Dummy Client (.NET)\n";
+	file << "5000 Dummy Session\n\n";
+
+	file << "250 Room\n";
+	file << "20 Sessions / Room\n";
+	file << "50 Monsters AI / Room\n";
+	file << "==============================\n\n";
+
+	file << "==============================\n";
+	file << "Multi Room Benchmark Round : ";
+	file << _roundCount << "\n";
+	file << "==============================\n\n";
+
+	// Total
+	file << "========== TOTAL ==========\n";
+	file << "Name,Samples,Avg,Min,Max,p01,p99,StdDev\n";
+
+	for (auto& state : _result.totalStates)
+	{
+		file
+			<< state.Name << ","
+			<< state.Samples << ","
+			<< state.Avg << ","
+			<< state.Min << ","
+			<< state.Max << ","
+			<< state.p01 << ","
+			<< state.p99 << ","
+			<< state.StdDev
+			<< "\n";
+	}
+
+	file << "\n=== Global IO Pending Counts ===\n";
+	file << _result.globalIoPendingCounts << "\n";
+	file << "============================\n";
+
+	// Worker
+	file << "\n========== LOGIC WORKER ==========\n";
+	file << "Worker#,JobCounts,JobQueueCount,TimeSliceExceeded,ActiveTime,Utilization\n";
+
+	int32 workerNum = 0;
+	for (auto& w : _result.Workers)
+	{
+		if (w.type != WorkerType::LOGIC)
+			continue;
+
+		file
+			<< workerNum << ","
+			<< w.JobCounts << ","
+			<< w.ExecuteQueueCounts << ","
+			<< w.TimeSliceExceeded << ","
+			//<< w.ImmediateEmpty << ","
+			//<< w.DeferEmpty << ","
+			<< w.ActiveTimeMs << ","
+			<< std::fixed << std::setprecision(2)
+			<< w.ActiveRatio << "%"
+			<< "\n";
+
+		workerNum++;
+	}
+	file << std::defaultfloat;
+
+	file << "\n========== SEND WORKER ==========\n";
+	file << "Worker#,JobCounts,JobQueueCount,TimeSliceExceeded,ActiveTime,Utilization\n";
+
+	workerNum = 0;
+	for (auto& w : _result.Workers)
+	{
+		if (w.type != WorkerType::SEND)
+			continue;
+
+		file
+			<< workerNum << ","
+			<< w.JobCounts << ","
+			<< w.ExecuteQueueCounts << ","
+			<< w.TimeSliceExceeded << ","
+			<< w.ActiveTimeMs << ","
+			<< std::fixed << std::setprecision(2)
+			<< w.ActiveRatio << "%"
+			<< "\n";
+
+		workerNum++;
+	}
+	file << std::defaultfloat;
+
+	// Memory
+	//{
+	//	file << "\n========================================\n";
+	//	file << "[Memory Monitor]\n";
+	//	file << "Physical Memory (RAM): " << std::fixed << std::setprecision(2)
+	//		<< _result.Memory.PhysicalMB << " MB\n";
+	//	file << "Virtual Memory (Commit): " << _result.Memory.VirtualMB << " MB\n";
+
+	//	file << "========================================\n\n";
+	//}
+	//file << std::defaultfloat;
+
+	// All Rooms
 	for (auto& room : _result.rooms)
 	{
 		file << "========== RoomId : "
 			<< room.roomId
+			<< " Session : "
+			<< RoomManager::Instance().GetSessionCount(room.roomId)
 			<< " ==========\n";
 
 		file << "Name,Samples,Avg,Min,Max,p01,p99,StdDev\n";
@@ -161,71 +324,9 @@ void BenchMarkManager::WriteCSV()
 		file << "\n";
 	}
 
-	file << "========== TOTAL ==========\n";
-	file << "Name,Samples,Avg,Min,Max,p01,p99,StdDev\n";
-
-	for (auto& state : _result.totalStates)
-	{
-		file
-			<< state.Name << ","
-			<< state.Samples << ","
-			<< state.Avg << ","
-			<< state.Min << ","
-			<< state.Max << ","
-			<< state.p01 << ","
-			<< state.p99 << ","
-			<< state.StdDev
-			<< "\n";
-	}
-
-	file << "========== LOGIC WORKER ==========\n";
-	file << "Worker#,JobCounts,JobQueueCount,TimeSliceExceeded,ActiveTime,Utilization\n";
-
-	int32 workerNum = 0;
-	for (auto& w : _workerRoundData[_roundCount].workers)
-	{
-		if (w.JobCounts == 0)
-			continue;
-
-		file
-			<< workerNum << ","
-			<< w.JobCounts << ","
-			<< w.ExecuteQueueCounts << ","
-			<< w.TimeSliceExceeded << ","
-			<< w.ActiveTimeMs << ","
-			<< std::fixed << std::setprecision(2)
-			<< w.ActiveRatio << "%"
-			<< "\n";
-
-		workerNum++;
-	}
-	file << std::defaultfloat;
-
-	PROCESS_MEMORY_COUNTERS_EX pmc;
-	// 현재 프로세스의 메모리 정보 가져오기
-	if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
-	{
-		// WorkingSetSize: 현재 실제 물리 메모리 점유량 (RAM)
-		// PrivateUsage: 이 프로세스에 할당된 가상 메모리 점유량 (Commit Charge)
-		size_t physicalMem = pmc.WorkingSetSize;
-		size_t virtualMem = pmc.PrivateUsage;
-
-		file << "========================================\n";
-		file << "[Memory Monitor]\n";
-		file << "Physical Memory (RAM): " << std::fixed << std::setprecision(2)
-			<< (double)physicalMem / (1024 * 1024) << " MB\n";
-		file << "Virtual Memory (Commit): " << (double)virtualMem / (1024 * 1024) << " MB\n";
-
-		file << "========================================\n";
-	}
-
-	file << "====================================\n\n";
 	file.close();
 
-	WRITE_LOCK;
-	_roundData.erase(_roundCount);
-	_roundTotalData.erase(_roundCount);
-	_workerRoundData.erase(_roundCount);
+	cout << "Round " << _roundCount << " Clear\n";
 
 	++_roundCount;
 }

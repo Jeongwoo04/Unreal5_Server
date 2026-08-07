@@ -1,5 +1,6 @@
 #pragma once
 #include "Room.h"
+#include "ConfigManager.h"
 
 class RoomManager
 {
@@ -10,12 +11,15 @@ public:
 		return instance;
 	}
 
-	void Init(int32 count, int32 mapId);
+	void Start(RoomConfig roomConfig);
+
+	void Init(int32 count, int32 mapId, uint64 roomTick);
 	//RoomRef Add(int32 count, int32 mapId);
 	//bool Remove(int32 roomId);
 	//RoomRef Find(int32 roomId);
 
 	RoomRef FindUsableRoom();
+	int32 GetSessionCount(int32 roomId);
 
 	//void UpdateReserveAllRooms();
 

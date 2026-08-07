@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -51,8 +52,9 @@ namespace ServerCore
 		int _disconnected = 0;
 
 		RecvBuffer _recvBuffer = new RecvBuffer(65535);
+        private static ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
 
-		object _lock = new object();
+        object _lock = new object();
 		Queue<ArraySegment<byte>> _sendQueue = new Queue<ArraySegment<byte>>();
 		List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
 		SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
@@ -108,13 +110,21 @@ namespace ServerCore
 			}
 		}
 
-		public void Disconnect()
+		public void Disconnect(string reason)
 		{
 			if (Interlocked.Exchange(ref _disconnected, 1) == 1)
 				return;
 
-			OnDisconnected(_socket.RemoteEndPoint);
-			_socket.Shutdown(SocketShutdown.Both);
+            Console.WriteLine($"Disconnect : {reason}");
+
+            OnDisconnected(_socket.RemoteEndPoint);
+
+			try
+			{
+				_socket.Shutdown(SocketShutdown.Both);
+			}
+			catch { }
+			
 			_socket.Close();
 			Clear();
 
@@ -156,6 +166,12 @@ namespace ServerCore
 				{
 					try
 					{
+						// TEMP
+						foreach (var buffer in _pendingList)
+						{
+							_pool.Return(buffer.Array);
+						}
+
 						_sendArgs.BufferList = null;
 						_pendingList.Clear();
 
@@ -171,7 +187,7 @@ namespace ServerCore
 				}
 				else
 				{
-					Disconnect();
+					Disconnect($"SendCompleted Error={args.SocketError} Bytes={args.BytesTransferred}");
 				}
 			}
 		}
@@ -206,7 +222,7 @@ namespace ServerCore
 					// Write 커서 이동
 					if (_recvBuffer.OnWrite(args.BytesTransferred) == false)
 					{
-						Disconnect();
+						Disconnect("RecvBuffer OnWrite Fail");
 						return;
 					}
 
@@ -214,14 +230,14 @@ namespace ServerCore
 					int processLen = OnRecv(_recvBuffer.ReadSegment);
 					if (processLen < 0 || _recvBuffer.DataSize < processLen)
 					{
-						Disconnect();
+						Disconnect("Packet Parse Fail");
 						return;
 					}
 
 					// Read 커서 이동
 					if (_recvBuffer.OnRead(processLen) == false)
 					{
-						Disconnect();
+						Disconnect("RecvBuffer OnRead Fail");
 						return;
 					}
 
@@ -234,7 +250,7 @@ namespace ServerCore
 			}
 			else
 			{
-				Disconnect();
+				Disconnect($"RecvCompleted Error={args.SocketError} Bytes={args.BytesTransferred}");
 			}
 		}
 

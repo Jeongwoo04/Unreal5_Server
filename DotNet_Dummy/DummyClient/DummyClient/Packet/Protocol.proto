@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package Protocol;
+import "Enum.proto";
+import "Struct.proto";
+option csharp_namespace = "Google.Protobuf.Protocol";
+
+message C_ENTER_GAME
+{
+	uint64 playerIndex = 1;
+}
+
+message S_ENTER_GAME
+{
+	bool success = 1;
+	ObjectInfo object = 2;
+}
+
+message C_MOVE
+{
+	PosInfo info = 1;
+}

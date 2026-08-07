@@ -53,7 +53,7 @@ void Monster::Update()
 
 void Monster::UpdateIdle()
 {
-	const uint64 tick = GetTickCount64();
+	const uint64 tick = ::GetTickCount64();
 
 	auto target = GetPlayer();
 	auto room = GetRoom();
@@ -114,7 +114,7 @@ void Monster::UpdateCasting()
 
 void Monster::UpdateMoving()
 {
-	const uint64 tick = GetTickCount64();
+	const uint64 tick = ::GetTickCount64();
 	
 	PlayerRef target = GetPlayer();
 	if (target == nullptr || target->IsDead() || target->GetRoom() != GetRoom())

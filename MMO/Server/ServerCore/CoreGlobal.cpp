@@ -1,7 +1,5 @@
 #include "pch.h"
 #include "CoreGlobal.h"
-#include "pch.h"
-#include "CoreGlobal.h"
 #include "ThreadManager.h"
 #include "MemoryManager.h"
 #include "SocketUtils.h"
@@ -16,6 +14,8 @@ SendBufferManager* GSendBufferManager = nullptr;
 GlobalQueue* GGlobalQueue = nullptr;
 GlobalQueue* GGlobalSendQueue = nullptr;
 JobTimer* GJobTimer = nullptr;
+std::atomic<uint32> GIOPendingCounts = 0;
+uint64 GServerStartTick = 0;
 
 class CoreGlobal
 {

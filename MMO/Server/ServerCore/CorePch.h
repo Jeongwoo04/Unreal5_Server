@@ -33,4 +33,5 @@ using namespace std;
 #include "SafeLog.h"
 #include "Time.h"
 
-//#define USE_OPTIMIZED_SENDBUFFER_CHUNK
+#define USE_OPTIMIZED_SENDBUFFER_CHUNK
+#define BENCHMARK

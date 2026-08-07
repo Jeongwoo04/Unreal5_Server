@@ -2,29 +2,6 @@
 #include "JobQueue.h"
 #include "GlobalQueue.h"
 
-struct Time
-{
-public:
-	static int64 GetTick()
-	{
-		LARGE_INTEGER li;
-		QueryPerformanceCounter(&li);
-		return li.QuadPart;
-	}
-
-	static double ToMilliseconds(int64 tick)
-	{
-		static int64 frequency = []()
-			{
-				LARGE_INTEGER li;
-				QueryPerformanceFrequency(&li);
-				return li.QuadPart;
-			}();
-
-			return (tick * 1000.0) / frequency;
-	}
-};
-
 /*--------------
 	JobQueue
 ---------------*/
@@ -145,6 +122,8 @@ void JobQueue::Execute()
 		_jobs.PopAll(OUT jobs);
 
 		const int32 jobCount = static_cast<int32>(jobs.size());
+#ifdef BENCHMARK
+
 		LExecuteJobCount += jobCount;
 		LExecuteJobQueues++;
 
@@ -154,6 +133,14 @@ void JobQueue::Execute()
 		auto end = Time::GetTick();
 
 		LWorkerActiveTime += (end - start);
+
+#else
+
+		for (int32 i = 0; i < jobCount; i++)
+			jobs[i]->Execute();
+
+#endif
+
 
 		// 남은 일감이 0개라면 종료
 		if (_jobCount.fetch_sub(jobCount) == jobCount)
@@ -166,6 +153,11 @@ void JobQueue::Execute()
 		const uint64 now = ::GetTickCount64();
 		if (now >= LEndTickCount)
 		{
+
+#ifdef BENCHMARK
+			LTimeSliceExceeded++;
+#endif
+
 			LCurrentJobQueue = nullptr;
 			GGlobalQueue->Push(shared_from_this());
 
@@ -184,11 +176,25 @@ void JobQueue::ExecuteSendJob()
 		_jobs.PopAll(OUT jobs);
 
 		const int32 jobCount = static_cast<int32>(jobs.size());
+
+#ifdef BENCHMARK
+
 		LExecuteJobCount += jobCount;
 		LExecuteJobQueues++;
 
+		auto start = Time::GetTick();
 		for (int32 i = 0; i < jobCount; i++)
 			jobs[i]->Execute();
+		auto end = Time::GetTick();
+
+		LWorkerActiveTime += (end - start);
+
+#else
+
+		for (int32 i = 0; i < jobCount; i++)
+			jobs[i]->Execute();
+
+#endif
 
 		// 남은 일감이 0개라면 종료
 		if (_jobCount.fetch_sub(jobCount) == jobCount)
@@ -201,6 +207,11 @@ void JobQueue::ExecuteSendJob()
 		const uint64 now = ::GetTickCount64();
 		if (now >= LEndTickCount)
 		{
+
+#ifdef BENCHMARK
+			LTimeSliceExceeded++;
+#endif
+
 			LCurrentJobQueue = nullptr;
 			GGlobalSendQueue->Push(shared_from_this());
 

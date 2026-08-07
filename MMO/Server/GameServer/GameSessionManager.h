@@ -11,6 +11,8 @@ public:
 	void Remove(GameSessionRef session);
 	void Broadcast(SendBufferRef sendBuffer);
 
+	int32 GetSessionCount() { return _sessions.size(); }
+
 private:
 	USE_LOCK;
 	set<GameSessionRef> _sessions;

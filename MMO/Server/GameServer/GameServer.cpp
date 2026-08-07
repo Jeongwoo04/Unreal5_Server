@@ -5,7 +5,6 @@
 #include "Session.h"
 #include "GameSession.h"
 #include "GameSessionManager.h"
-//#include "ClientPacketHandler.h"
 #include <tchar.h>
 #include "Job.h"
 #include "Room.h"
@@ -14,17 +13,27 @@
 #include "ConfigManager.h"
 #include "CommandManager.h"
 
-#include "Monster.h"
-
-enum
-{
-	WORKER_TICK = 64
-};
+uint64 WORKER_TICK;
 
 void DoIOWorker(ServerServiceRef& service)
 {
 	while (true)
 	{
+#ifdef BENCHMARK
+		if (GBenchMarkManager->GetProcessState() == ProcessState::WAIT_WORKER_FLUSH && GBenchMarkManager->GetBenchRound() == LBenchRound)
+		{
+			GBenchMarkManager->AddIOData("kernelDelivery", std::move(LKernelDelivery));
+			GBenchMarkManager->AddIOData("totalDelay", std::move(LTotalDelay));
+
+			LKernelDelivery.clear();
+			LKernelDelivery.reserve(10000);
+			LTotalDelay.clear();
+			LTotalDelay.reserve(10000);
+
+			LBenchRound++;
+		}
+#endif
+
 		// 네트워크 입출력 처리 -> 인게임 로직까지 (패킷 핸들러에 의해)
 		service->GetIocpCore()->Dispatch(10);
 	}
@@ -35,16 +44,22 @@ void DoGameWorker()
 {
 	while (true)
 	{
+#ifdef BENCHMARK
+		Time::LoopFrameTick();
+
 		if (GBenchMarkManager->GetProcessState() == ProcessState::WAIT_WORKER_FLUSH && GBenchMarkManager->GetBenchRound() == LBenchRound)
 		{
-			GBenchMarkManager->AddWorkerData(LBenchRound, LThreadId, { LExecuteJobCount , LExecuteJobQueues , LWorkerActiveTime , LTimeSliceExceeded });
+			GBenchMarkManager->AddWorkerData(LBenchRound, LThreadId, { WorkerType::LOGIC , LExecuteJobCount , LExecuteJobQueues , LWorkerActiveTime , LTimeSliceExceeded });
 
 			LBenchRound++;
 			LExecuteJobCount = 0;
 			LExecuteJobQueues = 0;
 			LWorkerActiveTime = 0;
 			LTimeSliceExceeded = 0;
+			//LImmediateEmpty = 0;
+			//LDeferEmpty = 0;
 		}
+#endif
 
 		LEndTickCount = ::GetTickCount64() + WORKER_TICK;
 
@@ -60,6 +75,23 @@ void DoSendWorker()
 {
 	while (true)
 	{
+#ifdef BENCHMARK
+		if (GBenchMarkManager->GetProcessState() == ProcessState::WAIT_WORKER_FLUSH && GBenchMarkManager->GetBenchRound() == LBenchRound)
+		{
+			GBenchMarkManager->AddWorkerData(LBenchRound, LThreadId, { WorkerType::SEND , LExecuteJobCount , LExecuteJobQueues , LWorkerActiveTime , LTimeSliceExceeded });
+			GBenchMarkManager->AddIOData("QueueingDelay", std::move(LQueueingDelay));
+
+			LQueueingDelay.clear();
+			LQueueingDelay.reserve(10000);
+
+			LBenchRound++;
+			LExecuteJobCount = 0;
+			LExecuteJobQueues = 0;
+			LWorkerActiveTime = 0;
+			LTimeSliceExceeded = 0;
+		}
+#endif
+
 		LEndTickCount = ::GetTickCount64() + WORKER_TICK;
 
 		// 글로벌 큐
@@ -69,17 +101,14 @@ void DoSendWorker()
 
 void BenchMarksWriter()
 {
+	GBenchMarkManager->_roundTime.startTick = ::GetTickCount64();
+
 	while (true)
 	{
 		switch (GBenchMarkManager->GetProcessState())
 		{
 		case ProcessState::COLLECT_ROOM:
 		{
-			if (GBenchMarkManager->_roundTime.startTick == 0)
-			{
-				GBenchMarkManager->_roundTime.startTick = GetTickCount64();
-			}
-
 			if (GBenchMarkManager->CheckRoundRoom())
 			{
 				GBenchMarkManager->SetProcessState(ProcessState::WAIT_WORKER_FLUSH);
@@ -92,16 +121,24 @@ void BenchMarksWriter()
 			if (GBenchMarkManager->CheckRoundWorker())
 			{
 				GBenchMarkManager->_roundTime.endTick = ::GetTickCount64();
-				GBenchMarkManager->SetProcessState(ProcessState::CALCULATE);
+				GBenchMarkManager->SetProcessState(ProcessState::ABSTRACT_DATA);
 			}
+			break;
+		}
+
+		case ProcessState::ABSTRACT_DATA:
+		{
+			GBenchMarkManager->AbstractData();
+
+			GBenchMarkManager->_roundTime.startTick = ::GetTickCount64();
+			GBenchMarkManager->_roundTime.endTick = 0;
 			break;
 		}
 
 		case ProcessState::CALCULATE:
 		{
+			cout << "CALCULATE\n";
 			GBenchMarkManager->CalculateData();
-			GBenchMarkManager->_roundTime.startTick = 0;
-			GBenchMarkManager->_roundTime.endTick = 0;
 			GBenchMarkManager->WriteCSV();
 			GBenchMarkManager->SetProcessState(ProcessState::COLLECT_ROOM);
 			break;
@@ -112,35 +149,36 @@ void BenchMarksWriter()
 	}
 }
 
-#include <psapi.h>
-
-
 int main()
 {
+	GServerStartTick = ::GetTickCount64();
 	ServerPacketHandler::Init();
 
-	ConfigManager::Instance().LoadConfig("../Data/config.json");
-	DataManager::Instance().LoadData("../Data");
+	//ConfigManager::Instance().LoadConfig("../Data/config.json");
+	//DataManager::Instance().LoadData("../Data");
 
-	//ConfigManager::Instance().LoadConfig("../../Data/config.json");
-	//DataManager::Instance().LoadData("../../Data");
+	// 데이터 및 설정 파일 읽어오기
+	ConfigManager::Instance().LoadConfig("../../Config");
+	DataManager::Instance().LoadData("../../Data");
 
-	RoomManager::Instance().Init(250, 1);
+	const Config& config = ConfigManager::Instance().GetConfig();
 	
+	// Room 생성 및 시작
+	RoomManager::Instance().Start(config._roomConfig);
+	
+	// 서버 서비스 시작
 	ServerServiceRef service = make_shared<ServerService>(
-//#ifdef _DEBUG
-		//NetAddress(L"0.0.0.0", 7777),
-		NetAddress(L"127.0.0.1", 7777),
-//#else
-//		NetAddress(L"192.168.0.10", 7777),
-//#endif
+		NetAddress(config._serverConfig.IP, config._serverConfig.Port),
 		make_shared<IocpCore>(),
 		[=]() { return make_shared<GameSession>(); },
-		100);
+		config._serverConfig.MaxSession);
 
 	ASSERT_CRASH(service->Start());
-		
-	for (int32 i = 0; i < 2; i++)
+
+	WORKER_TICK = config._serverConfig.WorkerTick;
+
+	// 스레드 풀에 워커 생성 및 시작
+	for (int32 i = 0; i < config._threadConfig.IO; i++)
 	{
 		GThreadManager->Launch("IOWorker#" + to_string(i), [&service]()
 			{
@@ -148,7 +186,7 @@ int main()
 			});
 	}
 
-	for (int32 i = 0; i < 2; i++)
+	for (int32 i = 0; i < config._threadConfig.LOGIC; i++)
 	{
 		GThreadManager->Launch("GameWorker#" + to_string(i), []()
 			{
@@ -156,7 +194,7 @@ int main()
 			});
 	}
 
-	for (int32 i = 0; i < 2; i++)
+	for (int32 i = 0; i < config._threadConfig.SEND; i++)
 	{
 		GThreadManager->Launch("SendWorker#" + to_string(i), []()
 			{
@@ -164,15 +202,20 @@ int main()
 			});
 	}
 
+#ifdef BENCHMARK
 	GThreadManager->Launch("BenchMarkWorker#", []()
 		{
 			BenchMarksWriter();
 		});
+#endif
 
-	//GThreadManager->Launch("MemoryMonitoring#", []()
-	//	{
-	//		DoMonitoringWorker();
-	//	});
+	int32 _runTime = 0;
+	while (true)
+	{
+		cout << "Server Runtime  : " << _runTime++ << endl;
+
+		this_thread::sleep_for(1s);
+	}
 
 	// Main Thread
 	//DoGameWorker();

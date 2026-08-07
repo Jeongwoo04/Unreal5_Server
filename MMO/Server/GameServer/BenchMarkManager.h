@@ -3,31 +3,45 @@
 
 #include <bitset>
 
-struct WorkerStats
-{
-    uint64 JobCounts;
-    uint64 ExecuteQueueCounts;
-    uint64 ActiveTime;
-    uint64 TimeSliceExceeded;
-    
-    double ActiveTimeMs;
-    double ActiveRatio;
-};
-
-struct RoundTime
-{
-    uint64 startTick = 0;
-    uint64 endTick = 0;
-};
-
 enum ProcessState
 {
     COLLECT_ROOM,
     WAIT_WORKER_FLUSH,
+    ABSTRACT_DATA,
     CALCULATE
 };
 
+enum WorkerType
+{
+    IO,
+    LOGIC,
+    SEND
+};
+
+struct WorkerStats
+{
+    WorkerType type;
+
+    uint64 JobCounts;
+    uint64 ExecuteQueueCounts;
+    uint64 ActiveTime;
+    uint64 TimeSliceExceeded;
+
+    //uint64 ImmediateEmpty;
+    //uint64 DeferEmpty;
+
+    double ActiveTimeMs;
+    double ActiveRatio;
+};
+
+struct MemoryResult
+{
+    double PhysicalMB = 0.0;
+    double VirtualMB = 0.0;
+};
+
 static constexpr int32 LOGIC_WORKER_COUNT = 2;
+static constexpr int32 SEND_WORKER_COUNT = 2;
 
 struct RoundData
 {
@@ -37,11 +51,15 @@ struct RoundData
 
 struct WorkerRoundData
 {
-    array<WorkerStats, 12> workers;
-    bitset<12> received;
+    vector<WorkerStats> workers;
 };
 
 struct TotalData
+{
+    unordered_map<string, vector<double>> samples;
+};
+
+struct IOData
 {
     unordered_map<string, vector<double>> samples;
 };
@@ -71,14 +89,46 @@ struct RoundBenchResult
     vector<BenchState> totalStates;
 };
 
+struct RoundTime
+{
+    uint64 startTick = 0;
+    uint64 endTick = 0;
+};
+
+struct RoundSnapShot
+{
+    RoundData roundData;
+    WorkerRoundData workerRoundData;
+    TotalData totalData;
+    IOData ioData;
+
+    uint64 GlobalIOPendingCounts;
+    RoundTime roundTime;
+};
+
+struct RoundBench
+{
+    int32 Round = 0;
+    uint32 globalIoPendingCounts = 0;
+
+    vector<RoomBenchResult> rooms;
+    vector<BenchState> totalStates;
+
+    vector<WorkerStats> Workers;
+
+    MemoryResult Memory = {};
+};
+
 class BenchMarkManager
 {
 public:
     void AddData(int32 roundCount, int32 roomId, unordered_map<string, vector<double>>&& data);
     void AddWorkerData(int32 roundCount, int32 workerId, WorkerStats stats);
+    void AddIOData(const string& name, vector<double>&& data);
     bool CheckRoundRoom();
     bool CheckRoundWorker();
     vector<BenchState> CalculateStates(unordered_map<string, vector<double>>& records);
+    void AbstractData();
     void CalculateData();
     void WriteCSV();
 
@@ -93,14 +143,15 @@ public:
     ProcessState _processState = ProcessState::COLLECT_ROOM;
 
     unordered_map<int32, RoundData> _roundData;
-    unordered_map<int32, TotalData> _roundTotalData;
-
     unordered_map<int32, WorkerRoundData> _workerRoundData;
 
-    RoundBenchResult _result;
-    RoundTime   _roundTime;
+    IOData _ioData = {};
+    RoundSnapShot _snapshot;
+    RoundBench _result;
+
+    RoundTime _roundTime;
     int32 _roundCount = 1;
-    const string& fileName = "Benchmark_MultiRoom.csv";
+    const string& fileName = "SendQueue_Test.csv";
 };
 
 extern BenchMarkManager* GBenchMarkManager;

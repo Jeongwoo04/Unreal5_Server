@@ -4,6 +4,39 @@
 #include "MPSCQueue.h"
 #include "JobTimer.h"
 
+struct Time
+{
+public:
+	static uint64 GetTick()
+	{
+		LARGE_INTEGER li;
+		QueryPerformanceCounter(&li);
+		return li.QuadPart;
+	}
+
+	static void LoopFrameTick()
+	{
+		LCachedTick = GetTick();
+	}
+
+	static uint64 GetCachedTick()
+	{
+		return LCachedTick;
+	}
+
+	static double ToMilliseconds(int64 tick)
+	{
+		static uint64 frequency = []()
+			{
+				LARGE_INTEGER li;
+				QueryPerformanceFrequency(&li);
+				return li.QuadPart;
+			}();
+
+			return (tick * 1000.0) / frequency;
+	}
+};
+
 /*--------------
 	JobQueue
 ---------------*/

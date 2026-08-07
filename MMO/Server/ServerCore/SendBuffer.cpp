@@ -20,6 +20,7 @@ void SendBuffer::Close(uint32 writeSize)
 	ASSERT_CRASH(_allocSize >= writeSize);
 	_writeSize = writeSize;
 	_owner->Close(writeSize);
+	SetReserveTime(Time::GetTick());
 }
 
 SendBufferChunk::SendBufferChunk()
@@ -138,5 +139,6 @@ void SendBuffer::CopyData(void* data, int32 len)
 void SendBuffer::Close(uint32 writeSize)
 {
 	_writeSize = writeSize;
+	SetReserveTime(Time::GetTick());
 }
 #endif

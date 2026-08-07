@@ -10,7 +10,6 @@ namespace DummyClient
 {
     class ServerSession : PacketSession
     {
-
 		public void Send(IMessage packet)
 		{
 			string msgName = ("PKT_" + packet.Descriptor.Name).Replace("_", "");
@@ -20,7 +19,9 @@ namespace DummyClient
 				MsgId msgId = (MsgId)result;
 
 				ushort size = (ushort)packet.CalculateSize();
-				byte[] sendBuffer = new byte[size + 4];
+				//byte[] sendBuffer = new byte[size + 4];
+				//TEMP
+				byte[] sendBuffer = _pool.Rent(size + 4);
 
 				Array.Copy(BitConverter.GetBytes((ushort)(size + 4)), 0, sendBuffer, 0, sizeof(ushort));
 				Array.Copy(BitConverter.GetBytes((ushort)msgId), 0, sendBuffer, 2, sizeof(ushort));
@@ -36,7 +37,7 @@ namespace DummyClient
 		public ObjectInfo MyPlayer { get; set; } = new ObjectInfo();
         public override void OnConnected(EndPoint endPoint)
         {
-            Console.WriteLine($"OnConnected : {endPoint}");
+			Console.WriteLine($"OnConnected : {endPoint}");
 
 			C_ENTER_GAME enterGamePkt = new C_ENTER_GAME();
 			enterGamePkt.PlayerIndex = 0;
@@ -46,8 +47,8 @@ namespace DummyClient
 
         public override void OnDisconnected(EndPoint endPoint)
         {
-            Console.WriteLine($"OnDisconnected : {endPoint}");
-        }
+			Console.WriteLine($"OnDisconnected : {endPoint}");
+		}
 
         public override void OnRecvPacket(ArraySegment<byte> buffer)
         {

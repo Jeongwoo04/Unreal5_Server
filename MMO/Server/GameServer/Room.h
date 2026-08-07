@@ -20,7 +20,7 @@ struct SpawnTable;
 
 enum class Type
 {
-	SPAWN, MOVE, HIT, DIE, DESPAWN,
+	ENTER, SPAWN, MOVE, HIT, DIE, DESPAWN,
 	CAST_START, CAST_CANCEL,
 	CAST_SUCCESS, SKILL_ACTION
 };
@@ -69,7 +69,7 @@ struct BroadcastGroup
 class Room : public JobQueue
 {
 public:
-	Room(string name);
+	Room(uint64 roomTick, string name);
 	~Room();
 
 	void SetRoomId(int32 roomId) { _roomId = roomId; }
@@ -122,6 +122,7 @@ private:
 	bool RemoveObject(ObjectRef object, uint64 objectId);
 
 public:
+	void BroadcastTargets(SendBufferRef sendBuffer, vector<PlayerRef>& snapShot);
 	void Broadcast(SendBufferRef sendBuffer, uint64 exceptId = 0);
 	void BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId = 0);
 	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId = 0);
@@ -138,7 +139,12 @@ public:
 	void FlushImmediateBroadcast();
 	void FlushDeferBroadcast();
 
-	void NotifySpawn(ObjectRef object, bool success);
+//#ifdef SPAWN_REBUILD
+	void FlushEnterPkt();
+	void RegisterSpawn(ObjectRef object, bool success);
+//#else
+	//void NotifySpawn(ObjectRef object, bool success);
+//#endif
 
 public:
 	void AddRemoveList(ObjectRef object);
@@ -168,6 +174,12 @@ public:
 	vector<FlushQueue> _immediateFlushQueue; // C_Packet
 	vector<FlushQueue> _deferFlushQueue; // Room Object Update
 	SendQueueRef _sendQueue;
+
+	bool _isEnterPlayer = false;
+	bool _isLeavePlayer = false;
+
+	vector<PlayerRef> _enterSnapShot;
+	vector<PlayerRef> _nativeSnapShot;
 	//vector<BroadcastGroup> _broadcastQueue;
 
 private:
@@ -178,11 +190,12 @@ private:
 
 public:
 	BenchmarkStat _bench;
-	uint64 _tickCount = 0;
+	uint64 _roomTick;
+	uint64 _nextTick = 0;
+	uint64 _warmUp = 0;
 
 	//TEMP
 public:
-	uint64 _serverTick;
 	RoomDiagnostics _diag;
 
 	int32 _castingCount = 0;

@@ -3,11 +3,14 @@
 #include "GameSession.h"
 
 GameSessionManager GSessionManager;
+extern atomic<int32> AcceptCount = 0;
+extern int32 DisconnectCount = 0;
 
 void GameSessionManager::Add(GameSessionRef session)
 {
 	WRITE_LOCK;
 	_sessions.insert(session);
+	AcceptCount++;
 }
 
 void GameSessionManager::Remove(GameSessionRef session)

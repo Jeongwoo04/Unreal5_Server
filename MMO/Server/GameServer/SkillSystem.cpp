@@ -12,8 +12,10 @@
 void SkillSystem::Init()
 {
 	skillDict = &DataManager::Instance().SkillDict;
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
 	_skillPools = make_shared<ChunkList>();
 	_skillPools->Init<SkillInstance>();
+#endif
 }
 
 void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& targetPos, int32 castId, uint64 clientSend)
@@ -22,11 +24,15 @@ void SkillSystem::ExecuteSkill(ObjectRef caster, int32 skillId, const Vector3& t
 	if (it == skillDict->end())
 		return;
 
-	uint64 now = GetTickCount64();
+	uint64 now = ::GetTickCount64();
 
 	const Skill& skill = it->second;
-
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
 	SkillInstanceRef instance = _skillPools->AllocShared<SkillInstance>();
+#else
+	SkillInstanceRef instance = make_shared<SkillInstance>();
+#endif
+	
 	instance->caster = caster;
 	instance->skill = &skill;
 	instance->targetPos = targetPos;
@@ -96,7 +102,7 @@ void SkillSystem::CancelCasting(ObjectRef caster, int32 castId)
 void SkillSystem::Update()
 {
 #ifdef USE_OPTIMIZED_MEMORY_POOLING
-	uint64 now = GetTickCount64();
+	uint64 now = ::GetTickCount64();
 	
 	for (int32 i = 0; i < _activeSkills.size(); i++)
 	{
@@ -166,7 +172,7 @@ void SkillSystem::Update()
 
 	DeferRemoveInstance();
 #else
-	uint64 now = GetTickCount64();
+	uint64 now = ::GetTickCount64();
 
 	for (auto it = _activeSkills.begin(); it != _activeSkills.end(); )
 	{

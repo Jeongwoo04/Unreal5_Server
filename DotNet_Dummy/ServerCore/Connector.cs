@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ServerCore
 {
@@ -10,9 +11,11 @@ namespace ServerCore
 	{
 		Func<Session> _sessionFactory;
 
-		public void Connect(IPEndPoint endPoint, Func<Session> sessionFactory, int count = 1)
+		public async void Connect(IPEndPoint endPoint, Func<Session> sessionFactory, int count = 1)
 		{
-			for (int i = 0; i < count; i++)
+            const int BatchSize = 100;
+
+            for (int i = 0; i < count; i++)
 			{
 				// 휴대폰 설정
 				Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -24,6 +27,9 @@ namespace ServerCore
 				args.UserToken = socket;
 
 				RegisterConnect(args);
+
+				if (i % BatchSize == 0 )
+					await Task.Delay(100);
 			}
 		}
 
@@ -42,7 +48,9 @@ namespace ServerCore
 		{
 			if (args.SocketError == SocketError.Success)
 			{
-				Session session = _sessionFactory.Invoke();
+                Console.WriteLine($"CONNECT SUCCESS");
+
+                Session session = _sessionFactory.Invoke();
 				session.Start(args.ConnectSocket);
 				session.OnConnected(args.RemoteEndPoint);
 			}

@@ -179,7 +179,16 @@ bool Handle_S_DEFER_FLUSH(PacketSessionRef& session, Protocol::S_DEFER_FLUSH& pk
 	if (auto* GameInstance = Cast<US1GameInstance>(GWorld->GetGameInstance()))
 	{
 		if (pkt.has_spawn_pkt())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Spawn Count = %d"),
+				pkt.spawn_pkt().objects_size());
+
+			UE_LOG(LogTemp, Warning,
+				TEXT("Packet ByteSize=%d"),
+				pkt.ByteSizeLong());
+
 			GameInstance->HandleSpawn(pkt.spawn_pkt());
+		}
 
 		if (pkt.has_move_pkt())
 			GameInstance->HandleMove(pkt.move_pkt());

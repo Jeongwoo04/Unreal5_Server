@@ -6,22 +6,36 @@ SendQueue::SendQueue(string name) : JobQueue(name)
 {
 }
 
-void SendQueue::SendJob(SendBufferRef sendBuffer, vector<PlayerRef> snapshot, double enqueueTime)
+void SendQueue::SendJob(SendBufferRef sendBuffer, vector<PlayerRef> snapshot, double enqueueTime, bool justEnqueue)
 {
-    double executeTime = GetTimeMs();
-    double delayMs = static_cast<double>(executeTime - enqueueTime);
+    //double executeTime = GetTimeMs();
+    //double delayMs = static_cast<double>(executeTime - enqueueTime);
 
     auto room = GetRoom();
     if (room == nullptr)
         return;
 
-    room->_diag.AddSendDelay(delayMs);
-    room->_diag.SetSendWorkerInfo(_queueName + " | Thread: " + LThreadName);
-    for (auto& p : snapshot)
+    //room->_diag.AddSendDelay(delayMs);
+    //room->_diag.SetSendWorkerInfo(_queueName + " | Thread: " + LThreadName);
+
+    if (justEnqueue == true)
     {
-        if (p == nullptr)
-            continue;
-        if (auto session = p->GetSession())
-            session->Send(sendBuffer);
+        for (auto& p : snapshot)
+        {
+            if (p == nullptr)
+                continue;
+            if (auto session = p->GetSession())
+                session->Send(sendBuffer, true);
+        }
+    }
+    else
+    {
+        for (auto& p : snapshot)
+        {
+            if (p == nullptr)
+                continue;
+            if (auto session = p->GetSession())
+                session->Send(sendBuffer);
+        }
     }
 }

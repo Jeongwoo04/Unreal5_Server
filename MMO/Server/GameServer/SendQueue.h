@@ -8,7 +8,7 @@ class SendQueue : public JobQueue
 public:
     SendQueue(string name);
 
-    void SendJob(SendBufferRef sendBuffer, vector<PlayerRef> snapshot, double enqueueTime);
+    void SendJob(SendBufferRef sendBuffer, vector<PlayerRef> snapshot, double enqueueTime = 0, bool justEnqueue = false);
 
     void SetRoom(RoomRef room) { _room = room; }
     RoomRef GetRoom() { return _room.lock(); }

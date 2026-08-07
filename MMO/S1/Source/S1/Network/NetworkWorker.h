@@ -43,13 +43,14 @@ public:
 	
 private:
 	bool ReceivePacket(TArray<uint8>& OutPacket);
-	bool ReceiveDesiredBytes(uint8* Results, int32 Size);
+	//bool ReceiveDesiredBytes(uint8* Results, int32 Size);
 
 protected:
 	FRunnableThread* Thread = nullptr;
 	bool Running = true;
 	FSocket* Socket;
 	TWeakPtr<class PacketSession> SessionRef;
+	TArray<uint8> RecvBuffer;
 };
 
 

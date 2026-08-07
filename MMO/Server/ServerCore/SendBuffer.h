@@ -1,5 +1,6 @@
 #pragma once
-//#define USE_OPTIMIZED_SENDBUFFER_CHUNK
+#include "JobQueue.h"
+#define USE_OPTIMIZED_SENDBUFFER_CHUNK
 /*----------------
 	SendBuffer
 -----------------*/
@@ -17,10 +18,14 @@ public:
 	int32 WriteSize() { return _writeSize; }
 	void Close(uint32 writeSize);
 
+	void SetReserveTime(uint64 tick) { _reserveTime = tick; }
+	uint64 GetReserveTime() { return _reserveTime; }
+
 private:
 	BYTE* _buffer;
 	uint32 _allocSize = 0;
 	uint32 _writeSize = 0;
+	uint64 _reserveTime = 0;
 	
 	// Async IO 완료 전 Chunk 메모리 반납이 되지 않도록 참조.
 	SendBufferChunkRef _owner;
@@ -80,11 +85,15 @@ public:
 	int32 WriteSize() { return _writeSize; }
 	int32 Capacity() { return static_cast<int32>(_buffer.size()); }
 
+	void SetReserveTime(uint64 tick) { _reserveTime = tick; }
+	uint64 GetReserveTime() { return _reserveTime; }
+
 	void CopyData(void* data, int32 len);
 	void Close(uint32 writeSize);
 
 private:
 	vector<BYTE>	_buffer;
 	int32			_writeSize = 0;
+	uint64			_reserveTime = 0;
 };
 #endif

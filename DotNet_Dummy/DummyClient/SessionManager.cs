@@ -16,8 +16,8 @@ namespace DummyClient
 
         public void SendForEach()
         {
-            lock (_lock)
-            {
+            //lock (_lock)
+            //{
                 foreach (ServerSession session in _sessions)
                 {
                     if (session.MyPlayer.PosInfo == null) continue ;
@@ -38,7 +38,7 @@ namespace DummyClient
 
 					session.Send(movePkt);
                 }
-            }
+            //}
         }
 
         public ServerSession Generate()

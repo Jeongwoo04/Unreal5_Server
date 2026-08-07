@@ -3,7 +3,7 @@
     {
       "mapId": 1,
       "mapName": "Map_001",
-      "filePath": "../Common/CollisionMap/Map_001.txt",
+      "filePath": "../../Common/CollisionMap/Map_001.txt",
       "spawns": [
         {
           "spawnId": 0,

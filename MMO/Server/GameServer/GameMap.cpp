@@ -8,7 +8,10 @@ void GameMap::LoadGameMap(string path)
 	// Collision file data load
 	ifstream inFile(path);
 	if (!inFile.is_open())
+	{
+		cout << "Can't Load Game Map\n";
 		return;
+	}
 
 	inFile >> _minX >> _maxX >> _minY >> _maxY;
 
@@ -43,7 +46,34 @@ vector<Vector2Int> GameMap::FindPath(const Vector2Int& startCellPos, const Vecto
 	Pos pos = Cell2Pos(startCellPos);
 	Pos dest = Cell2Pos(destCellPos);
 
+	bool isStartInvalid = (pos._y < 0 || pos._y >= _sizeY || pos._x < 0 || pos._x >= _sizeX);
+	bool isDestInvalid = (dest._y < 0 || dest._y >= _sizeY || dest._x < 0 || dest._x >= _sizeX);
+
+	if (isStartInvalid || isDestInvalid)
+	{
+		/*
+		cout << "==================================================\n";
+		cout << "[Invalid Map Access Detected!]\n";
+		cout << "  - Map Configuration : MaxY = " << _maxY << ", MinX = " << _minX
+			<< " (Size: " << _sizeY << "x" << _sizeX << ")\n";
+
+		if (isStartInvalid) {
+			cout << "  -  START POS ERROR:\n";
+			cout << "    Input Packet Cell : (" << startCellPos._y << ", " << startCellPos._x << ")\n";
+			cout << "    Converted Index   : (" << pos._y << ", " << pos._x << ")\n";
+		}
+		if (isDestInvalid) {
+			cout << "  - DEST POS ERROR:\n";
+			cout << "    Input Packet Cell : (" << destCellPos._y << ", " << destCellPos._x << ")\n";
+			cout << "    Converted Index   : (" << dest._y << ", " << dest._x << ")\n";
+		}
+		cout << "==================================================\n";
+		*/
+		return vector<Vector2Int>(); // 안전하게 빈 경로 반환하여 크래시 방지
+	}
+
 	int32 h = 10 * (abs(dest._y - pos._y) + abs(dest._x - pos._x));
+
 	open[pos._y][pos._x] = h;
 	pq.push({ h, 0, pos._y, pos._x });
 	parent[pos._y][pos._x] = pos;

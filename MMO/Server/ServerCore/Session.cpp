@@ -17,7 +17,7 @@ Session::~Session()
 	SocketUtils::Close(_socket);
 }
 
-void Session::Send(SendBufferRef sendBuffer)
+void Session::Send(SendBufferRef sendBuffer, bool justEnqueue)
 {
 	if (IsConnected() == false)
 		return;
@@ -29,6 +29,8 @@ void Session::Send(SendBufferRef sendBuffer)
 		WRITE_LOCK;
 
 		_sendQueue.push(sendBuffer);
+		if (justEnqueue == true)
+			return;
 
 		if (_sendRegistered.exchange(true) == false)
 			registerSend = true;
@@ -181,18 +183,58 @@ void Session::RegisterSend()
 	// Scatter-Gather (흩어져 있는 데이터들을 모아서 한 방에 보낸다)
 	vector<WSABUF> wsaBufs;
 	wsaBufs.reserve(_sendEvent.sendBuffers.size());
+
+#ifdef BENCHMARK
+
+	uint64 now = Time::GetTick();
+	_sendEvent.kernelStartTime = now;
+
+#endif
+
 	for (SendBufferRef sendBuffer : _sendEvent.sendBuffers)
 	{
 		WSABUF wsaBuf;
 		wsaBuf.buf = reinterpret_cast<char*>(sendBuffer->Buffer());
 		wsaBuf.len = static_cast<LONG>(sendBuffer->WriteSize());
 		wsaBufs.push_back(wsaBuf);
+
+#ifdef BENCHMARK
+
+		LQueueingDelay.push_back(Time::ToMilliseconds(now - sendBuffer->GetReserveTime()));
 	}
 
 	DWORD numOfBytes = 0;
-	if (SOCKET_ERROR == ::WSASend(_socket, wsaBufs.data(), static_cast<DWORD>(wsaBufs.size()), OUT &numOfBytes, 0, &_sendEvent, nullptr))
+	if (SOCKET_ERROR == ::WSASend(_socket, wsaBufs.data(), static_cast<DWORD>(wsaBufs.size()), OUT & numOfBytes, 0, &_sendEvent, nullptr))
 	{
 		int32 errorCode = ::WSAGetLastError();
+
+		if (errorCode == WSA_IO_PENDING)
+		{
+			GIOPendingCounts.fetch_add(1);
+		}
+		else
+		{
+			HandleError(errorCode);
+			GIOPendingCounts.fetch_sub(1);
+			_sendEvent.owner = nullptr; // RELEASE_REF
+			_sendEvent.sendBuffers.clear(); // RELEASE_REF
+			_sendRegistered.store(false);
+		}
+	}
+	else
+	{
+		GIOPendingCounts.fetch_add(1);
+	}
+
+}
+#else
+	}
+
+	DWORD numOfBytes = 0;
+	if (SOCKET_ERROR == ::WSASend(_socket, wsaBufs.data(), static_cast<DWORD>(wsaBufs.size()), OUT & numOfBytes, 0, &_sendEvent, nullptr))
+	{
+		int32 errorCode = ::WSAGetLastError();
+
 		if (errorCode != WSA_IO_PENDING)
 		{
 			HandleError(errorCode);
@@ -202,6 +244,8 @@ void Session::RegisterSend()
 		}
 	}
 }
+
+#endif
 
 void Session::ProcessConnect()
 {
@@ -260,6 +304,18 @@ void Session::ProcessRecv(int32 numOfBytes)
 
 void Session::ProcessSend(int32 numOfBytes)
 {
+#ifdef BENCHMARK
+
+	uint64 ioCompleteTime = Time::GetTick();
+	GIOPendingCounts.fetch_sub(1);
+
+	LKernelDelivery.push_back(Time::ToMilliseconds(ioCompleteTime - _sendEvent.kernelStartTime));
+
+	for (const SendBufferRef& sendBuffer : _sendEvent.sendBuffers)
+		LTotalDelay.push_back(Time::ToMilliseconds(ioCompleteTime - sendBuffer->GetReserveTime()));
+
+#endif
+
 	_sendEvent.owner = nullptr; // RELEASE_REF
 	_sendEvent.sendBuffers.clear(); // RELEASE_REF
 

@@ -72,7 +72,9 @@ private:
 private:
 	weak_ptr<Room> _room;
 	const unordered_map<int32, Skill>* skillDict = nullptr;
+#ifdef USE_OPTIMIZED_MEMORY_POOLING
 	ChunkListRef _skillPools;
+#endif
 	vector<SkillInstanceRef> _activeSkills;
 	vector<int32> _removePendings;
 

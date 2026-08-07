@@ -79,6 +79,7 @@ class SendEvent : public IocpEvent
 {
 public:
 	SendEvent() : IocpEvent(EventType::Send) { }
-	 
-	vector<SendBufferRef> sendBuffers;
+
+	vector<SendBufferRef>	sendBuffers;
+	uint64					kernelStartTime;
 };

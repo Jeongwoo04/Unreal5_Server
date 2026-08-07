@@ -13,6 +13,8 @@ void GameSession::OnConnected()
 
 void GameSession::OnDisconnected()
 {
+	cout << "OnDisconnected\n";
+
 	auto player = _player;
 	if (player)
 		player->GetRoom()->DoAsync(&Room::LeaveGame, static_pointer_cast<GameSession>(shared_from_this()));

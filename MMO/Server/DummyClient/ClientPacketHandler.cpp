@@ -152,32 +152,32 @@ bool Handle_S_HEARTBEAT(PacketSessionRef& session, Protocol::S_HEARTBEAT& pkt)
 
 bool Handle_S_IMMEDIATE_FLUSH(PacketSessionRef& session, Protocol::S_IMMEDIATE_FLUSH& pkt)
 {
-	Protocol::S_MOVE move = pkt.move_pkt();
-	Protocol::S_SKILL skill = pkt.skill_pkt();
+	//Protocol::S_MOVE move = pkt.move_pkt();
+	//Protocol::S_SKILL skill = pkt.skill_pkt();
 
-	auto movecount = move.info_size();
-	auto skillcount = skill.event_size();
+	//auto movecount = move.info_size();
+	//auto skillcount = skill.event_size();
 
-	Handle_S_MOVE(session, move);
-	Handle_S_SKILL(session, skill);
+	//Handle_S_MOVE(session, move);
+	//Handle_S_SKILL(session, skill);
 
 	return true;
 }
 
 bool Handle_S_DEFER_FLUSH(PacketSessionRef& session, Protocol::S_DEFER_FLUSH& pkt)
 {
-	Protocol::S_MOVE move = pkt.move_pkt();
-	Protocol::S_SKILL skill = pkt.skill_pkt();
-	Protocol::S_SPAWN spawn = pkt.spawn_pkt();
-	Protocol::S_DESPAWN despawn = pkt.despawn_pkt();
-	Protocol::S_HIT hit = pkt.hit_pkt();
-	Protocol::S_DIE die = pkt.die_pkt();
+	//Protocol::S_MOVE move = pkt.move_pkt();
+	//Protocol::S_SKILL skill = pkt.skill_pkt();
+	//Protocol::S_SPAWN spawn = pkt.spawn_pkt();
+	//Protocol::S_DESPAWN despawn = pkt.despawn_pkt();
+	//Protocol::S_HIT hit = pkt.hit_pkt();
+	//Protocol::S_DIE die = pkt.die_pkt();
 
-	auto movecount = move.info_size();
-	auto skillcount = skill.event_size();
+	//auto movecount = move.info_size();
+	//auto skillcount = skill.event_size();
 
-	Handle_S_MOVE(session, move);
-	Handle_S_SKILL(session, skill);
+	//Handle_S_MOVE(session, move);
+	//Handle_S_SKILL(session, skill);
 	//Handle_S_SKILL(session, skill);
 	//Handle_S_SKILL(session, skill);
 	//Handle_S_SKILL(session, skill);

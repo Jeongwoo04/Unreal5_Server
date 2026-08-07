@@ -1,11 +1,15 @@
 # Visual Studio 2015 user specific files
+
 .vs/
 
 ##############################
+
 # Unreal Engine
+
 ##############################
 
 # 빌드 산출물
+
 Binaries/
 Build/
 Intermediate/
@@ -13,6 +17,7 @@ Saved/
 DerivedDataCache/
 
 # 프로젝트 자동 생성 파일
+
 *.xcodeproj
 *.xcworkspace
 *.sln
@@ -26,73 +31,106 @@ DerivedDataCache/
 .vsconfig
 
 # Editor 캐시 및 로그
+
 *.log
 *_BuiltData.uasset
 
 # Plugin 산출물
-Plugins/**/Binaries/
-Plugins/**/Intermediate/
+
+Plugins/**/Binaries/**
+**Plugins/**/Intermediate/
 
 # SourceArt (원본 이미지)
+
 SourceArt/**/*.png
-SourceArt/**/*.tga
+**SourceArt/**/*.tga
 
 # Build 폴더 내 예외 (PakBlacklist 등)
-!Build/*/
-Build/*/**
+
+!Build/*/*
+*Build/*/**
 !Build/*/PakBlacklist*.txt
 !Build/**/*.ico
 
 ##############################
+
 # Visual Studio
+
 ##############################
 
 # 사용자 설정 및 캐시
+
 *.user
 *.userosscache
 *.suo
 
 # 디버그 심볼 파일
+
 *.pdb
 
 ##############################
+
 # 운영체제 / 기타
+
 ##############################
 
 # macOS / Windows
+
 .DS_Store
+._*
+__MACOSX/
 Thumbs.db
 
 ##############################
+
 # C++ 컴파일 결과물
+
 ##############################
 
 # Object files
+
 *.obj
 *.o
 *.lo
 *.slo
 
 # Precompiled headers
+
 *.gch
 *.pch
 
 # Static libraries
+
 *.lib
 *.a
 *.la
 *.lai
 
 # Dynamic libraries
+
 *.dll
 *.so
 *.dylib
 
 # Executables
+
 *.exe
 *.out
 *.app
 *.ipa
 
 # Fortran module files
+
 *.mod
+
+##############################
+
+# 개인 문서
+
+##############################
+
+*.pptx
+*.ppt
+*.csv
+*.md
+*.pdf

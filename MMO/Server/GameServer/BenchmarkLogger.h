@@ -10,13 +10,7 @@ class BenchmarkStat
 public:
 	BenchmarkStat()
 	{
-		_programStartTime = GetTimeMs();
-		_warmupMs = 30000.0; // 기본 30초 (원하면 SetWarmupTime으로 변경 가능)
-	}
 
-	void SetWarmupTime(double seconds)
-	{
-		_warmupMs = seconds * 1000.0;
 	}
 
 	void Begin(const std::string& name)
@@ -46,8 +40,13 @@ public:
 		_records[name].push_back(duration);
 		_startTimes.erase(it);
 	}
+	
+	void AddData(const std::string& name, int32 count)
+	{
+		_records[name].push_back(count);
+	}
 
-	void SendData(int32 roomId, const string& benchWhat, const std::string& filename = "Benchmark_MemoryPooling.csv")
+	void SendData(int32 roomId)
 	{
 		if (_records["Room"].size() < 100)
 			return ;
@@ -66,8 +65,6 @@ private:
 	}
 
 	int32 _roundCount = 1;
-	double _programStartTime;
-	double _warmupMs = 30000.0;
 	std::unordered_map<std::string, double> _startTimes;
 	std::unordered_map<std::string, std::vector<double>> _records;
 };

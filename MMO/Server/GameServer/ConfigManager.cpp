@@ -3,26 +3,35 @@
 #include <fstream>
 #include <iostream>
 
-ServerConfig ConfigManager::_config;
-
-bool ConfigManager::LoadConfig(const string& filePath)
+bool ConfigManager::LoadConfig(const string& basePath)
 {
-	std::ifstream input(filePath);
-	if (!input.is_open())
-	{
-		std::cerr << "Failed to open config file: " << filePath << std::endl;
+	std::ifstream file(basePath + "/Config.json");
+	if (!file.is_open())
 		return false;
-	}
-
+	
 	json j;
-	input >> j;
+	file >> j;
 
-	_config.dataPath = j.value("dataPath", "");
+	const auto& server = j["Server"];
+
+	_config._serverConfig.Port = server.value("Port", 0);
+	_config._serverConfig.IP = Utf8ToWString(server.value("IP", ""));
+	_config._serverConfig.MaxSession = server.value("MaxSession", 0);
+	_config._serverConfig.ServerTick = server.value("ServerTick", 0);
+	_config._serverConfig.WorkerTick = server.value("WorkerTick", 0);
+
+	const auto& thread = j["Thread"];
+
+	_config._threadConfig.IO = thread.value("IO", 0);
+	_config._threadConfig.LOGIC = thread.value("LOGIC", 0);
+	_config._threadConfig.SEND = thread.value("SEND", 0);
+
+	const auto& room = j["Room"];
+
+	_config._roomConfig.MaxRoom = room.value("MaxRoom", 0);
+	_config._roomConfig.MaxPlayer = room.value("MaxPlayer", 0);
+	_config._roomConfig.MapID = room.value("MapID", 0);
+	_config._roomConfig.RoomTick = room.value("RoomTick", 0);
 
 	return true;
-}
-
-const ServerConfig& ConfigManager::GetConfig()
-{
-	return _config;
 }

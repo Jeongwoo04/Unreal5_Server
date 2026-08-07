@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package Protocol;
+option csharp_namespace = "Google.Protobuf.Protocol";
+
+enum MsgId {
+  MSG_ID_NONE = 0;
+
+  PKT_C_ENTER_GAME = 1002;
+  PKT_S_ENTER_GAME = 1003;
+  PKT_C_MOVE = 1008;
+}
+
+enum ObjectType
+{
+	OBJECT_TYPE_NONE = 0;
+	OBJECT_TYPE_CREATURE = 1;
+	OBJECT_TYPE_PROJECTILE = 2;
+	OBJECT_TYPE_ENV = 3;
+}
+
+enum CreatureType
+{
+	CREATURE_TYPE_NONE = 0;
+	CREATURE_TYPE_PLAYER = 1;
+	CREATURE_TYPE_MONSTER = 2;
+	CREATURE_TYPE_NPC = 3;
+}
+
+enum EnvType
+{
+	ENV_TYPE_NONE = 0;
+	ENV_TYPE_FIELD = 1;
+}
+
+enum PlayerType
+{
+	PLAYER_TYPE_NONE = 0;
+	PLAYER_TYPE_KNIGHT = 1;
+	PLAYER_TYPE_MAGE = 2;
+	PLAYER_TYPE_ARCHER = 3;
+}
+
+enum StateMachine
+{
+	STATE_MACHINE_NONE = 0;
+	STATE_MACHINE_IDLE = 1;
+	STATE_MACHINE_PATROL = 2;
+	STATE_MACHINE_MOVING = 3;
+	STATE_MACHINE_CASTING = 4;
+	STATE_MACHINE_SKILL = 5;
+	STATE_MACHINE_DEAD = 6;
+}
+
+enum SkillType
+{
+	SKILL_NONE = 0;
+	SKILL_AUTO = 1;
+	SKILL_PROJECTILE = 2;
+	SKILL_AOE_DOT = 3;
+}
+
+enum CastState
+{
+	CAST_START = 0;
+	CAST_CANCEL = 1;
+	CAST_SUCCESS = 2;
+	ACTION = 3;
+}
