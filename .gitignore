@@ -99,6 +99,7 @@ Thumbs.db
 # Static libraries
 
 *.lib
+!MMO/Server/Libraries/Libs/Protobuf/**/*.lib
 *.a
 *.la
 *.lai
