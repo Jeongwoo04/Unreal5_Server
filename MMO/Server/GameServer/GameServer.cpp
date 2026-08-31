@@ -12,8 +12,208 @@
 #include "DataManager.h"
 #include "ConfigManager.h"
 #include "CommandManager.h"
+#include "ConsoleUtils.h"
 
 uint64 WORKER_TICK;
+
+//void DoRenderingWorker()
+//{
+//	HANDLE hScreens[2];
+//	hScreens[0] = GetStdHandle(STD_OUTPUT_HANDLE);
+//
+//	hScreens[1] = CreateConsoleScreenBuffer(
+//		GENERIC_READ | GENERIC_WRITE,
+//		FILE_SHARE_READ | FILE_SHARE_WRITE,
+//		NULL,
+//		CONSOLE_TEXTMODE_BUFFER,
+//		NULL
+//	);
+//
+//	if (hScreens[1] == INVALID_HANDLE_VALUE)
+//	{
+//		std::cerr << "콘솔 버퍼 생성 실패!" << std::endl;
+//		return;
+//	}
+//
+//	// 커서 깜빡임 숨기기 (선택사항이지만 꺼두는 게 훨씬 깔끔합니다)
+//	CONSOLE_CURSOR_INFO cursorInfo;
+//	GetConsoleCursorInfo(hScreens[0], &cursorInfo);
+//	cursorInfo.bVisible = FALSE;
+//	SetConsoleCursorInfo(hScreens[0], &cursorInfo);
+//	SetConsoleCursorInfo(hScreens[1], &cursorInfo);
+//
+//	int currentBufferIndex = 0;
+//
+//	while (true)
+//	{
+//		RoomLog roomLog = GRoomLog;
+//		RoundLog roundLog = GRoundLog;
+//
+//		// 2. 이번에 그려야 할 '안 보이는 쪽 버퍼(Back Buffer)' 선택
+//		int backBufferIndex = 1 - currentBufferIndex;
+//		HANDLE hTargetBuffer = hScreens[backBufferIndex];
+//
+//		// 3. 백 버퍼의 커서를 맨 위(0, 0)로 이동
+//		COORD homeCoords = { 0, 0 };
+//		SetConsoleCursorPosition(hTargetBuffer, homeCoords);
+//
+//		// 4. 출력을 쏠 때 printf는 기본 stdout(0번)으로 가므로, 
+//		//    백 버퍼에 정확히 쓰려면 SetStdHandle로 표준 출력을 잠시 바꿔치기합니다.
+//		SetStdHandle(STD_OUTPUT_HANDLE, hTargetBuffer);
+//
+//		// --- 여기서부터 출력 로직 ---
+//		printf("[ROOM]\n");
+//		printf("Tick Cost: %.2f ms\n", roomLog.tickCost);
+//		printf("Tick Interval: %.0f ms\n\n", roomLog.tickInterval);
+//
+//		printf("[OBJECT]\n");
+//		printf("Player] Chunk Count : %d, Player Count : %d\n", roomLog.players.first, roomLog.players.second);
+//		printf("Monster] Chunk Count : %d, Monster Count : %d\n", roomLog.monsters.first, roomLog.monsters.second);
+//		printf("Projectile] Chunk Count : %d, Projectile Count : %d\n", roomLog.projectiles.first, roomLog.projectiles.second);
+//		printf("Fields] Chunk Count : %d, Field Count %d\n\n", roomLog.fields.first, roomLog.fields.second);
+//
+//		printf("[NETWORK]\n");
+//		printf("ImmediateFlushPktBytes: %d\n", roomLog.immediateBytes);
+//		printf("DeferFlushPktBytes: %d\n\n", roomLog.deferBytes);
+//
+//		if (roundLog.round > 0)
+//		{
+//			printf("[ROUND BENCH] : %d Round\n\n", roundLog.round);
+//
+//			printf("[TOTAL ROOM]\n");
+//			printf("Tick Cost: %.4f\n", roundLog.totalRoom.at("Room"));
+//			printf("Tick Interval: %.4f\n", roundLog.totalRoom.at("TickInterval"));
+//			printf("Update Cost: %.4f\n\n", roundLog.totalRoom.at("Update"));
+//
+//			printf("[ROOM SEND JOB]\n");
+//			printf("Total Delay: %.4f\n", roundLog.totalRoom.at("totalDelay"));
+//			printf("Queueing Delay: %.4f\n", roundLog.totalRoom.at("QueueingDelay"));
+//			printf("Kernel Delivery: %.4f\n\n", roundLog.totalRoom.at("kernelDelivery"));
+//
+//			printf("[GLOBAL IO PENDING]\n");
+//			printf("Pending Counts : %d\n\n", roundLog.IOPending);
+//
+//			printf("[LOGIC WORKER]\n");
+//			int workerNum = 0;
+//			for (const auto& it : roundLog.workers)
+//			{
+//				if (it.type != WorkerType::LOGIC)
+//					continue;
+//
+//				printf("Worker # %d | Job Counts %lld | ActiveTime %.2f | Utilization %.2f %%\n", workerNum, it.JobCounts, it.ActiveTimeMs, it.ActiveRatio);
+//				workerNum++;
+//			}
+//
+//			printf("[SEND WORKER]\n");
+//			workerNum = 0;
+//			for (const auto& it : roundLog.workers)
+//			{
+//				if (it.type != WorkerType::SEND)
+//					continue;
+//
+//				printf("Worker # %d | Job Counts %lld | ActiveTime %.2f | Utilization %.2f %%\n", workerNum, it.JobCounts, it.ActiveTimeMs, it.ActiveRatio);
+//				workerNum++;
+//			}
+//		}
+//		// --- 출력 끝 ---
+//
+//		// 5. 다 그렸으면 화면 버퍼를 싹 바꿔치기 (이 순간 화면이 통째로 교체됨 -> 깜빡임 0)
+//		SetConsoleActiveScreenBuffer(hTargetBuffer);
+//		currentBufferIndex = backBufferIndex;
+//
+//		// CPU 100% 점유 방지 및 갱신 주기 조절
+//		Sleep(50);
+//	}
+//
+//	// 종료 시 생성했던 두 번째 버퍼 핸들 정리
+//	CloseHandle(hScreens[1]);
+//
+//	//while (true)
+//	//{
+//	//	RoomLog roomLog = GRoomLog;
+//	//	RoundLog roundLog = GRoundLog;
+//
+//	//	// Clear console
+//	//	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+//	//	if (hConsole == INVALID_HANDLE_VALUE)
+//	//		return;
+//
+//	//	COORD homeCoords = { 0, 0 };
+//	//	SetConsoleCursorPosition(hConsole, homeCoords);
+//
+//	//	//CONSOLE_SCREEN_BUFFER_INFO csbi;
+//	//	//DWORD count;
+//	//	//DWORD cellCount;
+//	//	//COORD homeCoords = { 0, 0 };
+//
+//	//	//if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
+//	//	//	return;
+//
+//	//	//cellCount = csbi.dwSize.X * csbi.dwSize.Y;
+//
+//	//	//// 화면 지우기
+//	//	//FillConsoleOutputCharacter(hConsole, ' ', cellCount, homeCoords, &count);
+//	//	//FillConsoleOutputAttribute(hConsole, csbi.wAttributes, cellCount, homeCoords, &count);
+//
+//	//	//// 커서 좌상단으로 이동
+//	//	//SetConsoleCursorPosition(hConsole, homeCoords);
+//
+//	//	printf("[ROOM]\n");
+//	//	printf("Tick Cost: %.2f ms\n", roomLog.tickCost);
+//	//	printf("Tick Interval: %.0f ms\n\n", roomLog.tickInterval);
+//
+//	//	printf("[OBJECT]\n");
+//	//	printf("Player] Chunk Count : %d, Player Count : %d\n", roomLog.players.first, roomLog.players.second);
+//	//	printf("Monster] Chunk Count : %d, Monster Count : %d\n", roomLog.monsters.first, roomLog.monsters.second);
+//	//	printf("Projectile] Chunk Count : %d, Projectile Count : %d\n", roomLog.projectiles.first, roomLog.projectiles.second);
+//	//	printf("Fields] Chunk Count : %d, Field Count %d\n\n", roomLog.fields.first, roomLog.fields.second);
+//
+//	//	printf("[NETWORK]\n");
+//	//	printf("ImmediateFlushPktBytes: %d\n", roomLog.immediateBytes);
+//	//	printf("DeferFlushPktBytes: %d\n\n", roomLog.deferBytes);
+//
+//	//	if (roundLog.round > 0)
+//	//	{
+//	//		printf("[ROUND BENCH] : %d Round\n\n", roundLog.round);
+//
+//	//		printf("[TOTAL ROOM]\n");
+//	//		printf("Tick Cost: %.4f\n", roundLog.totalRoom.find("Room")->second);
+//	//		printf("Tick Interval: %.4f\n", roundLog.totalRoom.find("TickInterval")->second);
+//	//		printf("Update Cost: %.4f\n\n", roundLog.totalRoom.find("Update")->second);
+//
+//	//		printf("[ROOM SEND JOB]\n");
+//	//		printf("Total Delay: %.4f\n", roundLog.totalRoom.find("totalDelay")->second);
+//	//		printf("Queueing Delay: %.4f\n", roundLog.totalRoom.find("QueueingDelay")->second);
+//	//		printf("Kernel Delivery: %.4f\n\n", roundLog.totalRoom.find("kernelDelivery")->second);
+//
+//	//		printf("[GLOBAL IO PENDING]\n");
+//	//		printf("Pending Counts : %d\n\n", roundLog.IOPending);
+//
+//	//		printf("[LOGIC WORKER]\n");
+//	//		int workerNum = 0;
+//	//		for (const auto& it : roundLog.workers)
+//	//		{
+//	//			if (it.type != WorkerType::LOGIC)
+//	//				continue;
+//
+//	//			printf("Worker # %d | Job Counts %lld | ActiveTime %.2f | Utilization %.2f %%\n", workerNum, it.JobCounts, it.ActiveTimeMs, it.ActiveRatio);
+//	//			workerNum++;
+//	//		}
+//	//		
+//
+//	//		printf("[SEND WORKER]\n");
+//	//		workerNum = 0;
+//	//		for (const auto& it : roundLog.workers)
+//	//		{
+//	//			if (it.type != WorkerType::SEND)
+//	//				continue;
+//
+//	//			printf("Worker # %d | Job Counts %lld | ActiveTime %.2f | Utilization %.2f %%\n", workerNum, it.JobCounts, it.ActiveTimeMs, it.ActiveRatio);
+//	//			workerNum++;
+//	//		}
+//	//	}
+//	//}
+//}
 
 void DoIOWorker(ServerServiceRef& service)
 {
@@ -154,9 +354,6 @@ int main()
 	GServerStartTick = ::GetTickCount64();
 	ServerPacketHandler::Init();
 
-	//ConfigManager::Instance().LoadConfig("../Data/config.json");
-	//DataManager::Instance().LoadData("../Data");
-
 	// 데이터 및 설정 파일 읽어오기
 	ConfigManager::Instance().LoadConfig("../../Config");
 	DataManager::Instance().LoadData("../../Data");
@@ -208,17 +405,18 @@ int main()
 			BenchMarksWriter();
 		});
 #endif
-
-	int32 _runTime = 0;
-	while (true)
+	
 	{
-		cout << "Server Runtime  : " << _runTime++ << endl;
+		std::unique_lock<std::mutex> lock(GMonitoringMutex);
 
-		this_thread::sleep_for(1s);
+		GMonitoringCV.wait(lock, []()
+			{
+				return GMonitoringRoomID.load(std::memory_order_acquire) >= 0;
+			});
 	}
 
-	// Main Thread
-	//DoGameWorker();
+	this_thread::sleep_for(1s);
+	DoRenderingWorker();
 
 	GThreadManager->Join();
 }

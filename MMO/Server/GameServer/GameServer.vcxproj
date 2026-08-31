@@ -161,6 +161,7 @@
     <ClCompile Include="CombatSystem.cpp" />
     <ClCompile Include="CommandManager.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
+    <ClCompile Include="ConsoleUtils.cpp" />
     <ClCompile Include="Creature.cpp" />
     <ClCompile Include="Data.Contents.cpp" />
     <ClCompile Include="DataManager.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="CombatSystem.h" />
     <ClInclude Include="CommandManager.h" />
     <ClInclude Include="ConfigManager.h" />
+    <ClInclude Include="ConsoleUtils.h" />
     <ClInclude Include="Creature.h" />
     <ClInclude Include="Data.Contents.h" />
     <ClInclude Include="DataManager.h" />

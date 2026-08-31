@@ -14,9 +14,10 @@ public:
 	void Start(RoomConfig roomConfig);
 
 	void Init(int32 count, int32 mapId, uint64 roomTick);
-	//RoomRef Add(int32 count, int32 mapId);
 	//bool Remove(int32 roomId);
-	//RoomRef Find(int32 roomId);
+
+	// TEMP
+	RoomRef GetRoom(int32 roomId);
 
 	RoomRef FindUsableRoom();
 	int32 GetSessionCount(int32 roomId);

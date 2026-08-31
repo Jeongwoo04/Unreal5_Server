@@ -19,6 +19,10 @@ bool Handle_S_LOGIN(PacketSessionRef& session, Protocol::S_LOGIN& pkt)
 
 	Protocol::C_ENTER_GAME EnterGamePkt;
 	EnterGamePkt.set_playerindex(0);
+
+	int32 randomRoomID = FMath::RandRange(0, 249);
+	EnterGamePkt.set_roomid(randomRoomID);
+
 	SEND_PACKET(EnterGamePkt);
 
 	return true;

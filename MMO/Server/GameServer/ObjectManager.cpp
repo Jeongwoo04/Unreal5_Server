@@ -159,17 +159,24 @@ void ObjectManager::Update()
 	_projectilePool->Update();
 	_fieldPool->Update();
 }
-void ObjectManager::CheckPools()
+vector<pair<int32, int32>> ObjectManager::CheckPools()
 {
+	vector<pair<int32, int32>> result;
 	pair<int32, int32> check;
 
 	check = _playerPool->CheckList();
-	cout << "Player] Chunk : " << check.first << ", Object : " << check.second<< endl;
+	result.push_back(check);
+	//cout << "Player] Chunk : " << check.first << ", Object : " << check.second<< endl;
 	check = _monsterPool->CheckList();
-	cout << "Monster] Chunk : " << check.first << ", Object : " << check.second << endl;
+	result.push_back(check);
+	//cout << "Monster] Chunk : " << check.first << ", Object : " << check.second << endl;
 	check = _projectilePool->CheckList();
-	cout << "Projectile] Chunk : " << check.first << ", Object : " << check.second << endl;
+	result.push_back(check);
+	//cout << "Projectile] Chunk : " << check.first << ", Object : " << check.second << endl;
 	check = _fieldPool->CheckList();
-	cout << "Field] Chunk : " << check.first << ", Object : " << check.second << endl;
+	result.push_back(check);
+	//cout << "Field] Chunk : " << check.first << ", Object : " << check.second << endl;
+
+	return result;
 }
 #endif

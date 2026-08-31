@@ -12,8 +12,7 @@ using namespace std::chrono;
 using namespace std::chrono_literals;
 
 Room::Room(uint64 roomTick, string name) : JobQueue(name), _roomTick(roomTick)
-{	
-	//_nextTick = GetTickCount64();
+{
 	_sendQueue = make_shared<SendQueue>("SendQueue_" + name);
 	_nextTick = GServerStartTick + _roomTick + (GetRoomId() % 100);
 
@@ -42,8 +41,6 @@ void Room::Init(int32 mapId)
 	_playerGrid = SpatialGrid<PlayerRef>(_gameMap, 20);
 	_monsterGrid = SpatialGrid<MonsterRef>(_gameMap, 50);
 
-	//InitBaseOffsets();
-
 	_skillSystem->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 	_sendQueue->SetRoom(static_pointer_cast<Room>(shared_from_this()));
 
@@ -51,29 +48,12 @@ void Room::Init(int32 mapId)
 
 	//UpdateTick();
 	DoTimer(_nextTick - GetTickCount64(), &Room::UpdateTick);
-
-	//StartHeartbeat();
 }
-
-//void Room::InitBaseOffsets()
-//{
-//	_baseOffsets.clear();
-//	for (int32 y = -BROADCAST_RANGE; y <= BROADCAST_RANGE; ++y)
-//	{
-//		for (int32 x = -BROADCAST_RANGE; x <= BROADCAST_RANGE; ++x)
-//		{
-//			if (x * x + y * y <= BROADCAST_RANGE * BROADCAST_RANGE)
-//			{
-//				_baseOffsets.push_back(Vector2Int(x, y));
-//			}
-//		}
-//	}
-//}
 
 void Room::UpdateTick()
 {
-	//if (_roomId == 0)
-	//	_diag.BeginTick();
+	if (MonitoringRoom)
+		_diag.BeginTick();
 
 #ifdef BENCHMARK
 
@@ -86,19 +66,12 @@ void Room::UpdateTick()
 
 	uint64 now = ::GetTickCount64();
 
-	//DoTimer(_serverTick, &Room::UpdateTick);
-
 	while (_nextTick <= now)
 		_nextTick += _roomTick;
 
-	//Tick-Drift
+	// Tick-Drift 방지 (Jitter 존재 확인 필요)
 	DoTimer(_nextTick - now, &Room::UpdateTick);
 
-	//if (_roomId == 0)
-	//{
-	//	_diag.SetObjectCounts(_players.size(), _monsters.size(), _projectiles.size(), _fields.size());
-	//	_diag.SetRoomWorkerInfo(_queueName + " | Thread: " + LThreadName);
-	//}
 
 #ifdef BENCHMARK
 
@@ -138,11 +111,9 @@ void Room::UpdateTick()
 
 	ClearRemoveList();
 
-#ifdef SPAWN_REBUILD
 	_bench.Begin("EnterFlush");
 	FlushEnterPkt();
 	_bench.End("EnterFlush");
-#endif
 
 	_bench.Begin("D-Flush");
 	FlushDeferBroadcast();
@@ -161,11 +132,11 @@ void Room::UpdateTick()
 
 #endif
 
-	//if (_roomId == 0)
-	//{
-	//	_diag.EndTick();
-	//	_diag.Render();
-	//}
+	if (MonitoringRoom)
+	{
+		_diag.EndTick();
+		_diag.SendRoomData(_objectManager->CheckPools(), _roomId);
+	}
 }
 
 void Room::UpdateMonster()
@@ -189,24 +160,6 @@ void Room::UpdateField()
 void Room::UpdateSkillSystem()
 {
 	_skillSystem->Update();
-}
-
-void Room::StartHeartbeat()
-{
-	constexpr uint64 Tick = 10000;
-	DoTimer(Tick, &Room::CheckHeartbeat);
-}
-
-void Room::CheckHeartbeat()
-{
-	//S_HEARTBEAT pkt;
-
-	//pkt.set_servertime(::GetTickCount64());
-	//auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	//Broadcast(sendBuffer);
-
-	//constexpr uint64 Tick = 10000;
-	//DoTimer(Tick, &Room::CheckHeartbeat);
 }
 
 // TEMP: Command Spawn ///////////////////////////////
@@ -244,10 +197,6 @@ void Room::GetList()
 	{
 		cout << "Monster ID: " << id << endl;
 	}	
-}
-
-void Room::RenderingStart()
-{
 }
 
 void Room::KillPlayer()
@@ -320,13 +269,8 @@ bool Room::EnterRoom(ObjectRef object)
 		return false;
 
 	bool success = AddObject(object);
-	//object->_interestCell = InterestCells(object->_gridPos);
-
-#ifdef SPAWN_REBUILD
+	
 	RegisterSpawn(object, success);
-#else
-	NotifySpawn(object, success);
-#endif
 
 	return success;
 }
@@ -374,7 +318,7 @@ bool Room::LeaveGame(GameSessionRef session)
 	return true;
 }
 
-bool Room::HandleEnterPlayer(GameSessionRef gameSession)
+bool Room::HandleEnterPlayer(GameSessionRef gameSession, bool monitoringRoom)
 {
 	PlayerRef player = static_pointer_cast<Player>(_objectManager->Spawn(10101, true, {0, 0, 0}));
 	if (player == nullptr)
@@ -384,6 +328,12 @@ bool Room::HandleEnterPlayer(GameSessionRef gameSession)
 	if (gameSession->_player == nullptr)
 		return false;
 	player->SetSession(gameSession);
+
+	if (monitoringRoom)
+	{
+		MonitoringRoom = true;
+		GMonitoringCV.notify_one();
+	}
 
 	return EnterRoom(player);
 }
@@ -395,7 +345,6 @@ bool Room::HandleLeavePlayer(GameSessionRef session)
 
 void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 {
-	_moveCount++;
 	const uint64 objectId = pkt.info().object_id();
 	if (_players.find(objectId) == _players.end())
 		return;
@@ -421,7 +370,6 @@ void Room::HandleMovePlayer(Protocol::C_MOVE pkt)
 
 	player->_posInfo.set_state(pkt.info().state());
 	player->MoveToNextPos(destPos);
-	//BroadcastMove(player->_posInfo);
 }
 
 void Room::HandleSkill(PlayerRef player, Protocol::C_SKILL pkt)
@@ -598,206 +546,13 @@ void Room::BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId)
 	BroadcastNearby(sendBuffer, Vector3(posInfo), exceptId);
 }
 
-/*
-InterestDiff Room::UpdateInterestCell(const Vector2Int& oldCenter, const Vector2Int& newCenter)
-{
-	Vector2Int delta = newCenter - oldCenter;
-	InterestDiff diff;
-
-	int32 range = BROADCAST_RANGE;
-
-	// delta가 너무 크면 풀 비교 (드물게 발생)
-	if (abs(delta._x) > 1 || abs(delta._y) > 1)
-	{
-		vector<Vector2Int> oldCells = InterestCells(oldCenter);
-		vector<Vector2Int> newCells = InterestCells(newCenter);
-
-		// DiffInterestCells를 호출
-		InterestDiff fullDiff = DiffInterestCells(oldCells, newCells, delta);
-
-		diff.despawns = std::move(fullDiff.despawns);
-		diff.spawns = std::move(fullDiff.spawns);
-		diff.moves = std::move(fullDiff.moves);
-
-		return diff;
-	}
-
-	// 전체 old 영역에서 despawn/spawn을 제외한 나머지는 move
-	// => move 영역 = oldInterest, newInterest 교집합
-
-	// 수평 이동
-	if (delta._x == 1)
-	{
-		// 오른쪽 이동 → 왼쪽줄 despawn, 오른쪽줄 spawn
-		for (int y = -range; y <= range; y++)
-		{
-			Vector2Int left = { oldCenter._x - range, oldCenter._y + y };
-			Vector2Int right = { newCenter._x + range, newCenter._y + y };
-
-			if (_playerGrid.IsValid(left))
-				diff.despawns.push_back(left);
-
-			if (_playerGrid.IsValid(right))
-				diff.spawns.push_back(right);
-		}
-
-		// 겹치는 영역 (중앙 블록)은 move 처리
-		for (int x = -range + 1; x <= range; x++)
-		{
-			for (int y = -range; y <= range; y++)
-			{
-				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
-
-				if (_playerGrid.IsValid(pos))
-					diff.moves.push_back(pos);
-			}
-		}
-	}
-	else if (delta._x == -1)
-	{
-		// 왼쪽 이동 → 오른쪽줄 despawn, 왼쪽줄 spawn
-		for (int y = -range; y <= range; y++)
-		{
-			Vector2Int right = { oldCenter._x + range, oldCenter._y + y };
-			Vector2Int left = { newCenter._x - range, newCenter._y + y };
-
-			if (_playerGrid.IsValid(right))
-				diff.despawns.push_back(right);
-
-			if (_playerGrid.IsValid(left))
-				diff.spawns.push_back(left);
-		}
-
-		for (int x = -range; x <= range - 1; x++)
-		{
-			for (int y = -range; y <= range; y++)
-			{
-				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
-
-				if (_playerGrid.IsValid(pos))
-					diff.moves.push_back(pos);
-			}
-		}
-	}
-
-	// 수직 이동
-	if (delta._y == 1)
-	{
-		// 위로 이동 → 아래줄 despawn, 위줄 spawn
-		for (int x = -range; x <= range; x++)
-		{
-			Vector2Int bottom = { oldCenter._x + x, oldCenter._y - range };
-			Vector2Int top = { newCenter._x + x, newCenter._y + range };
-
-			if (_playerGrid.IsValid(bottom))
-				diff.despawns.push_back(bottom);
-
-			if (_playerGrid.IsValid(top))
-				diff.spawns.push_back(top);
-		}
-
-		// move
-		for (int x = -range; x <= range; x++)
-		{
-			for (int y = -range + 1; y <= range; y++)
-			{
-				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
-
-				if (_playerGrid.IsValid(pos))
-					diff.moves.push_back(pos);
-			}
-		}
-	}
-	else if (delta._y == -1)
-	{
-		// 아래로 이동 → 위줄 despawn, 아래줄 spawn
-		for (int x = -range; x <= range; x++)
-		{
-			Vector2Int top = { oldCenter._x + x, oldCenter._y + range };
-			Vector2Int bottom = { newCenter._x + x, newCenter._y - range };
-
-			if (_playerGrid.IsValid(top))
-				diff.despawns.push_back(top);
-
-			if (_playerGrid.IsValid(bottom))
-				diff.spawns.push_back(bottom);
-		}
-
-		for (int x = -range; x <= range; x++)
-		{
-			for (int y = -range; y <= range - 1; y++)
-			{
-				Vector2Int pos = { newCenter._x + x, newCenter._y + y };
-
-				if (_playerGrid.IsValid(pos))
-					diff.moves.push_back(pos);
-			}
-		}
-	}
-
-	return diff;
-}
-
-vector<Vector2Int> Room::InterestCells(const Vector2Int& center) const
-{
-	vector<Vector2Int> res;
-	res.reserve(_baseOffsets.size());
-
-	for (auto& offset : _baseOffsets)
-	{
-		Vector2Int cell = center + offset;
-		if (_playerGrid.IsValid(cell))
-			res.push_back(cell);
-	}
-
-	return res;
-}
-
-InterestDiff Room::DiffInterestCells(const vector<Vector2Int>& oldCell, const vector<Vector2Int>& newCell, const Vector2Int& delta) const
-{
-	InterestDiff diff;
-
-	auto compare = [](const Vector2Int& a, const Vector2Int& b)
-		{
-			if (a._x != b._x)
-				return a._x < b._x;
-
-			return a._y < b._y;
-		};
-
-	vector<Vector2Int> sortOld = oldCell;
-	vector<Vector2Int> sortNew = newCell;
-
-	std::sort(sortOld.begin(), sortOld.end(), compare);
-	std::sort(sortNew.begin(), sortNew.end(), compare);
-
-	std::set_difference(sortOld.begin(), sortOld.end(),
-		sortNew.begin(), sortNew.end(),
-		std::back_inserter(diff.despawns), compare);
-
-	std::set_difference(sortNew.begin(), sortNew.end(),
-		sortOld.begin(), sortOld.end(),
-		std::back_inserter(diff.spawns), compare);
-
-	std::set_intersection(sortOld.begin(), sortOld.end(),
-		sortNew.begin(), sortNew.end(),
-		std::back_inserter(diff.moves), compare);
-
-	return diff;
-}
-*/
-
-#ifdef SPAWN_REBUILD
 void Room::FlushImmediateBroadcast()
 {
 	Protocol::S_IMMEDIATE_FLUSH immediateFlushPkt;
 
 	auto* skillPkt = immediateFlushPkt.mutable_skill_pkt();
 	auto* movePkt = immediateFlushPkt.mutable_move_pkt();
-
-	_bench.AddData("MovePktCount", _moveCount);
-	_moveCount = 0;
-	
+		
 	for (auto& obj : _immediateFlushQueue)
 	{
 		switch (obj.type)
@@ -824,7 +579,8 @@ void Room::FlushImmediateBroadcast()
 	//int32 count = _immediateFlushQueue.size();
 	int32 byteSize = immediateFlushPkt.ByteSizeLong();
 	//_diag.SetImmediateFlushInfo(count, byteSize);
-	_bench.AddData("ImmediatePktBiteSize", byteSize);
+	if (MonitoringRoom)
+		_diag.SetImmediateFlushInfo(byteSize);
 
 	if (IsEmptyImmediatePkt(immediateFlushPkt))
 		return;
@@ -1019,7 +775,8 @@ void Room::FlushDeferBroadcast()
 
 	int32 byteSize = existingPkt.ByteSizeLong();
 	//_diag.SetDeferFlushInfo(count, byteSize);
-	_bench.AddData("DeferPktBiteSize", byteSize);
+	if (MonitoringRoom)
+		_diag.SetDeferFlushInfo(byteSize);
 
 	//Broadcast(sendBuffer);
 }
@@ -1031,43 +788,6 @@ void Room::RegisterSpawn(ObjectRef object, bool success)
 	{
 		_enterSnapShot.push_back(static_pointer_cast<Player>(object));
 		_isEnterPlayer = true;
-
-		//PlayerRef player = static_pointer_cast<Player>(object);
-
-		//{
-		//	Protocol::S_ENTER_GAME enterGamePkt;
-		//	enterGamePkt.set_success(success);
-		//	enterGamePkt.mutable_object()->CopyFrom(object->_objectInfo);
-
-		//	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(enterGamePkt);
-		//	if (auto session = player->GetSession())
-		//		session->Send(sendBuffer);
-		//}
-
-		// Defer Flush에서 신입은 Interest or 전체 Spawn
-		//{
-		//	Protocol::S_SPAWN spawnPkt;
-
-		//	for (auto& playerIt : _players)
-		//	{
-		//		if (playerIt.first == object->_objectInfo.object_id())
-		//			continue;
-
-		//		*spawnPkt.add_objects() = playerIt.second->_objectInfo;
-		//	}
-		//	for (auto& monsterIt : _monsters)
-		//	{
-		//		*spawnPkt.add_objects() = monsterIt.second->_objectInfo;
-		//	}
-		//	for (auto& projectileIt : _projectiles)
-		//	{
-		//		*spawnPkt.add_objects() = projectileIt.second->_objectInfo;
-		//	}
-
-		//	SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
-		//	if (auto session = player->GetSession())
-		//		session->Send(sendBuffer);
-		//}
 	}
 
 	// 다른 플레이어에게 object 입장 알림 (player, monster, projectile 입장 시)
@@ -1103,14 +823,8 @@ bool Room::IsEmptyImmediatePkt(const Protocol::S_IMMEDIATE_FLUSH& pkt)
 		pkt.move_pkt().info_size() == 0);
 }
 
-//bool Room::IsEmptyEnterPkt(const Protocol::S_DEFER_FLUSH& pkt)
-//{
-//	return !pkt.has_enter_pkt();
-//}
-
 bool Room::IsEmptyDeferPkt(const Protocol::S_DEFER_FLUSH& pkt)
 {
-	//!pkt.has_enter_pkt() &&
 	return (pkt.spawn_pkt().objects_size() == 0 &&
 		pkt.move_pkt().info_size() == 0 &&
 		pkt.skill_pkt().event_size() == 0 && // 스킬 추가
@@ -1118,231 +832,3 @@ bool Room::IsEmptyDeferPkt(const Protocol::S_DEFER_FLUSH& pkt)
 		pkt.die_pkt().death_size() == 0 &&
 		pkt.despawn_pkt().object_ids_size() == 0);
 }
-#else
-void Room::FlushImmediateBroadcast()
-{
-	Protocol::S_IMMEDIATE_FLUSH pkt;
-
-	_diag.AddMoveCount(_moveCount);
-	_moveCount = 0;
-
-	for (auto& obj : _immediateFlushQueue)
-	{
-		switch (obj.type)
-		{
-		case Type::CAST_START:
-		case Type::CAST_CANCEL:
-		{
-			if (obj.eventInfo.has_value())
-			{
-				auto* skillPkt = pkt.mutable_skill_pkt();
-				*skillPkt->add_event() = obj.eventInfo.value();
-			}
-		} break;
-		case Type::MOVE:
-		{
-			if (obj.object->IsMoveBatch() && obj.object->_hasMove == true)
-			{
-				auto* movePkt = pkt.mutable_move_pkt();
-				*movePkt->add_info() = obj.object->_posInfo;
-			}
-			obj.object->FlushStateInit();
-		} break;
-
-		default:
-			_playerGrid.ApplyMove(static_pointer_cast<Player>(obj.object), WorldToGrid(obj.object->_lastFlushPos), obj.object->_gridPos);
-			break;
-		};
-	}
-	int32 count = _immediateFlushQueue.size();
-
-	_diag.SetImmediateFlushInfo(count, pkt.ByteSizeLong());
-	_immediateFlushQueue.clear();
-
-	if (IsEmptyImmediatePkt(pkt))
-		return;
-
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-	Broadcast(sendBuffer);
-}
-
-void Room::FlushDeferBroadcast()
-{
-	Protocol::S_DEFER_FLUSH pkt;
-	auto* spawnPkt = pkt.mutable_spawn_pkt();
-	auto* movePkt = pkt.mutable_move_pkt();
-	auto* skillPkt = pkt.mutable_skill_pkt();
-	auto* hitPkt = pkt.mutable_hit_pkt();
-	auto* diePkt = pkt.mutable_die_pkt();
-	auto* despawnPkt = pkt.mutable_despawn_pkt();
-	Protocol::HpChange hp;
-	Protocol::Death death;
-	int32 count = _deferFlushQueue.size();
-
-	for (auto& obj : _deferFlushQueue)
-	{
-		count++;
-		switch (obj.type)
-		{
-		case Type::SPAWN:
-		{
-			//auto* spawnPkt = pkt.mutable_spawn_pkt();
-			*spawnPkt->add_objects() = obj.object->_objectInfo;
-		} break;
-		case Type::MOVE:
-		{
-			if (obj.object->IsMoveBatch())
-			{
-				//auto* movePkt = pkt.mutable_move_pkt();
-				*movePkt->add_info() = obj.object->_posInfo;
-			}
-			obj.object->FlushStateInit();
-		} break;
-		case Type::CAST_START:
-		{
-			if (obj.eventInfo.has_value())
-			{
-				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
-				*skillPkt->add_event() = obj.eventInfo.value();
-			}
-		} break;
-		case Type::CAST_CANCEL:
-		{
-			if (obj.eventInfo.has_value())
-			{
-				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
-				*skillPkt->add_event() = obj.eventInfo.value();
-			}
-		} break;
-		case Type::CAST_SUCCESS:
-		{
-			if (obj.eventInfo.has_value())
-			{
-				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
-				*skillPkt->add_event() = obj.eventInfo.value();
-			}
-		} break;
-		case Type::SKILL_ACTION:
-		{
-			if (obj.eventInfo.has_value())
-			{
-				//*pkt.mutable_skill_pkt()->add_event() = obj.eventInfo.value();
-				*skillPkt->add_event() = obj.eventInfo.value();
-			}
-		} break;
-		case Type::HIT:
-		{
-			Protocol::HpChange hp;
-			//auto* hitPkt = pkt.mutable_hit_pkt();
-			hp.set_object_id(obj.object->GetId());
-			hp.set_hp(obj.object->_statInfo.hp());
-			*hitPkt->add_changes() = hp;
-		} break;
-		case Type::DIE:
-		{
-			Protocol::Death death;
-			//auto* diePkt = pkt.mutable_die_pkt();
-			death.set_object_id(obj.object->GetId());
-			death.set_attacker_id(obj.object->_attackerId);
-			*diePkt->add_death() = death;
-		} break;
-		case Type::DESPAWN:
-		{
-			//auto* despawnPkt = pkt.mutable_despawn_pkt();
-			despawnPkt->add_object_ids(obj.object->GetId());
-			obj.object->SetRoom(nullptr);
-		} break;
-		default:
-			break;
-		};
-	}
-
-	_deferFlushQueue.clear();
-
-	if (IsEmptyDeferPkt(pkt))
-		return;
-
-	_diag.SetDeferFlushInfo(count, pkt.ByteSizeLong());
-	auto sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-
-	Broadcast(sendBuffer);
-}
-
-void Room::NotifySpawn(ObjectRef object, bool success)
-{
-	// object가 player일 경우 본인에게 Enter 패킷 + 이미 존재하는 주변 object spawn
-	if (object->GetCreatureType() == CREATURE_TYPE_PLAYER)
-	{
-		PlayerRef player = static_pointer_cast<Player>(object);
-
-		{
-			Protocol::S_ENTER_GAME enterGamePkt;
-			enterGamePkt.set_success(success);
-			enterGamePkt.mutable_object()->CopyFrom(object->_objectInfo);
-
-			SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(enterGamePkt);
-			if (auto session = player->GetSession())
-				session->Send(sendBuffer);
-		}
-		{
-			Protocol::S_SPAWN spawnPkt;
-
-			for (auto& playerIt : _players)
-			{
-				if (playerIt.first == object->_objectInfo.object_id())
-					continue;
-
-				*spawnPkt.add_objects() = playerIt.second->_objectInfo;
-			}
-			for (auto& monsterIt : _monsters)
-			{
-				*spawnPkt.add_objects() = monsterIt.second->_objectInfo;
-			}
-			for (auto& projectileIt : _projectiles)
-			{
-				*spawnPkt.add_objects() = projectileIt.second->_objectInfo;
-			}
-
-			SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(spawnPkt);
-			if (auto session = player->GetSession())
-				session->Send(sendBuffer);
-		}
-	}
-
-	// 다른 플레이어에게 object 입장 알림 (player, monster, projectile 입장 시)
-	object->AddSpawnFlushQueue(object);
-}
-
-void Room::AddRemoveList(ObjectRef object)
-{
-	_removePending.push_back(object);
-}
-
-void Room::ClearRemoveList()
-{
-	for (auto& obj : _removePending)
-	{
-		LeaveRoom(obj);
-		obj->AddDespawnFlushQueue(obj);
-	}
-	_removePending.clear();
-}
-
-int32 Room::Index(const Vector2Int& pos) const
-{
-	int32 localX = pos._x - _gameMap->_minX;
-	int32 localY = pos._y - _gameMap->_minY;
-
-	return localY * _gameMap->_sizeX + localX;
-}
-
-bool Room::IsEmptyImmediatePkt(const Protocol::S_IMMEDIATE_FLUSH& pkt)
-{
-	return !pkt.has_move_pkt() && !pkt.has_skill_pkt();
-}
-
-bool Room::IsEmptyDeferPkt(const Protocol::S_DEFER_FLUSH& pkt)
-{
-	return !pkt.has_spawn_pkt() && pkt.has_move_pkt() && !pkt.has_hit_pkt() && !pkt.has_die_pkt() && !pkt.has_despawn_pkt();
-}
-#endif

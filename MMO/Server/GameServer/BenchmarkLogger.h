@@ -17,20 +17,12 @@ public:
 	{
 		double now = GetTimeMs();
 
-		// 워밍업 구간 스킵
-		//if (now - _programStartTime < _warmupMs)
-		//    return;
-
 		_startTimes[name] = now;
 	}
 
 	void End(const std::string& name)
 	{
 		double now = GetTimeMs();
-
-		// 워밍업 구간 스킵
-		//if (now - _programStartTime < _warmupMs)
-		//	return;
 
 		auto it = _startTimes.find(name);
 		if (it == _startTimes.end())

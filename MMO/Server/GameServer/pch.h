@@ -20,7 +20,6 @@
 #include "GameSession.h"
 #include "GameMap.h"
 #include "Room.h"
-#include "BenchMarkManager.h"
 
 using GameSessionRef = shared_ptr<class GameSession>;
 extern float ServerTickInterval;
@@ -31,5 +30,10 @@ extern float ServerTickInterval;
 
 #define USE_OPTIMIZED_MEMORY_POOLING
 #define USE_OPTIMIZED_SENDBUFFER_CHUNK
-#define SPAWN_REBUILD
-#define BENCHMARK
+//#define BENCHMARK
+
+extern RoomLog GRoomLog;
+extern RoundLog GRoundLog;
+extern atomic<int32> GMonitoringRoomID;
+extern std::mutex GMonitoringMutex;
+extern std::condition_variable GMonitoringCV;

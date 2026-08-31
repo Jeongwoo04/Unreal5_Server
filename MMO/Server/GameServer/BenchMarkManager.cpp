@@ -3,6 +3,7 @@
 #include <Psapi.h>
 #include <iomanip>
 #include "RoomManager.h"
+#include "RoomDiagnostics.h"
 #pragma comment(lib, "psapi.lib")
 
 BenchMarkManager* GBenchMarkManager = new BenchMarkManager();
@@ -50,12 +51,17 @@ bool BenchMarkManager::CheckRoundWorker()
 	if (iter == _workerRoundData.end())
 		return false;
 
-	return iter->second.workers.size() == 6;
+	const ThreadConfig& config = ConfigManager::Instance().GetConfig()._threadConfig;
+
+	return iter->second.workers.size() == (config.LOGIC + config.SEND);
 }
 
-vector<BenchState> BenchMarkManager::CalculateStates(unordered_map<string, vector<double>>& records)
+vector<BenchState> BenchMarkManager::CalculateStates(unordered_map<string, vector<double>>& records, bool isTotal)
 {
 	vector<BenchState> result;
+	
+	vector<string> GLog = { "Room","Update","TickInterval","totalDelay","QueueingDelay","kernelDelivery" };
+	unordered_map<string, double> temp;
 
 	for (auto& [name, samples] : records)
 	{
@@ -71,6 +77,10 @@ vector<BenchState> BenchMarkManager::CalculateStates(unordered_map<string, vecto
 		state.Name = name;
 		state.Samples = samples.size();
 		state.Avg = sum / samples.size();
+		if (isTotal == true && find(GLog.begin(), GLog.end(), name) != GLog.end())
+		{
+			temp[name] = state.Avg;
+		}
 		state.Min = samples.front();
 		state.Max = samples.back();
 
@@ -87,6 +97,12 @@ vector<BenchState> BenchMarkManager::CalculateStates(unordered_map<string, vecto
 		state.StdDev = sqrt(variance);
 
 		result.push_back(state);
+	}
+
+	if (isTotal)
+	{
+		WRITE_LOCK;
+		std::swap(GRoundLog.totalRoom, temp);
 	}
 
 	return result;
@@ -141,16 +157,19 @@ void BenchMarkManager::CalculateData()
 	{
 		RoomBenchResult roomResult;
 		roomResult.roomId = roomId;
-		roomResult.states = CalculateStates(_snapshot.roundData._roomData[roomId]);
+		roomResult.states = CalculateStates(_snapshot.roundData._roomData[roomId], false);
 
 		_result.rooms.push_back(std::move(roomResult));
 	}
 
-	_result.totalStates = CalculateStates(_snapshot.totalData.samples);
+	_result.totalStates = CalculateStates(_snapshot.totalData.samples, true);
 	_result.globalIoPendingCounts = _snapshot.GlobalIOPendingCounts;
+	GRoundLog.IOPending = _snapshot.GlobalIOPendingCounts;
 
 	WorkerRoundData& workerRound = _snapshot.workerRoundData;
 	
+	vector<WorkerStats> temp;
+
 	for (auto& w : workerRound.workers)
 	{
 		if (w.JobCounts == 0)
@@ -160,21 +179,30 @@ void BenchMarkManager::CalculateData()
 		double roundTimeMs = static_cast<double>(_snapshot.roundTime.endTick - _snapshot.roundTime.startTick);
 		w.ActiveRatio = (w.ActiveTimeMs / roundTimeMs) * 100.0;
 
+		temp.push_back(w);
 		_result.Workers.push_back(w);
 	}
 
-	//PROCESS_MEMORY_COUNTERS_EX pmc;
-	//// 현재 프로세스의 메모리 정보 가져오기
-	//if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
-	//{
-	//	// WorkingSetSize: 현재 실제 물리 메모리 점유량 (RAM)
-	//	// PrivateUsage: 이 프로세스에 할당된 가상 메모리 점유량 (Commit Charge)
-	//	size_t physicalMem = pmc.WorkingSetSize;
-	//	size_t virtualMem = pmc.PrivateUsage;
+	{
+		WRITE_LOCK
+		std::swap(GRoundLog.workers, temp);
+		GRoundLog.round = _roundCount++;
+	}
 
-	//	_result.Memory.PhysicalMB = (double)physicalMem / (1024 * 1024);
-	//	_result.Memory.VirtualMB = (double)virtualMem / (1024 * 1024);
-	//}
+	/* TEMP TypeChunk Utilization 측정 시 재확인
+	PROCESS_MEMORY_COUNTERS_EX pmc;
+	// 현재 프로세스의 메모리 정보 가져오기
+	if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+	{
+		// WorkingSetSize: 현재 실제 물리 메모리 점유량 (RAM)
+		// PrivateUsage: 이 프로세스에 할당된 가상 메모리 점유량 (Commit Charge)
+		size_t physicalMem = pmc.WorkingSetSize;
+		size_t virtualMem = pmc.PrivateUsage;
+
+		_result.Memory.PhysicalMB = (double)physicalMem / (1024 * 1024);
+		_result.Memory.VirtualMB = (double)virtualMem / (1024 * 1024);
+	}
+	*/
 }
 
 void BenchMarkManager::WriteCSV()
@@ -327,6 +355,4 @@ void BenchMarkManager::WriteCSV()
 	file.close();
 
 	cout << "Round " << _roundCount << " Clear\n";
-
-	++_roundCount;
 }

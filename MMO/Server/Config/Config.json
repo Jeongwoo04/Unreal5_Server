@@ -9,7 +9,7 @@
   "Thread": {
     "IO": 2,
     "LOGIC": 2,
-    "SEND": 4
+    "SEND": 3
   },
   "Room": {
     "MaxRoom": 250,

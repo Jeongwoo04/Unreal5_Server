@@ -3,6 +3,8 @@
 
 #include <bitset>
 
+struct RoomSnap;
+
 enum ProcessState
 {
     COLLECT_ROOM,
@@ -119,6 +121,27 @@ struct RoundBench
     MemoryResult Memory = {};
 };
 
+struct RoomLog
+{
+    int32 roomID;
+    double tickCost;
+    double tickInterval;
+    pair<int32, int32> players;
+    pair<int32, int32> monsters;
+    pair<int32, int32> projectiles;
+    pair<int32, int32> fields;
+    int32 ImmediatePktBiteSize;
+    int32 DeferPktBiteSize;
+};
+
+struct RoundLog
+{
+    int32 round;
+    unordered_map<string, double> totalRoom;
+    int32 IOPending;
+    vector<WorkerStats> workers;
+};
+
 class BenchMarkManager
 {
 public:
@@ -127,10 +150,12 @@ public:
     void AddIOData(const string& name, vector<double>&& data);
     bool CheckRoundRoom();
     bool CheckRoundWorker();
-    vector<BenchState> CalculateStates(unordered_map<string, vector<double>>& records);
+    vector<BenchState> CalculateStates(unordered_map<string, vector<double>>& records, bool isTotal);
     void AbstractData();
     void CalculateData();
     void WriteCSV();
+
+    void Rendering();
 
     ProcessState GetProcessState() { return _processState; }
     void SetProcessState(ProcessState state) { _processState = state; }
@@ -151,7 +176,7 @@ public:
 
     RoundTime _roundTime;
     int32 _roundCount = 1;
-    const string& fileName = "SendQueue_Test.csv";
+    const string& fileName = "Temp.csv";
 };
 
 extern BenchMarkManager* GBenchMarkManager;

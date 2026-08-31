@@ -24,7 +24,7 @@ public:
 	void Despawn(uint64 objId);
 #ifdef USE_OPTIMIZED_MEMORY_POOLING
 	void Update();
-	void CheckPools();
+	vector<pair<int32,int32>> CheckPools();
 #endif
 
 private:

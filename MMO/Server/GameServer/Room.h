@@ -32,40 +32,6 @@ struct FlushQueue
 	optional<Protocol::S_SKILL_EVENT> eventInfo;
 };
 
-/*
-struct InterestDiff
-{
-	vector<Vector2Int> spawns;
-	vector<Vector2Int> despawns;
-	vector<Vector2Int> moves;
-};
-
-struct BroadcastGroup
-{
-	vector<Protocol::ObjectInfo> _spawns;
-	vector<uint64> _despawns;
-	vector<Protocol::PosInfo> _moves;
-	vector<SendBufferRef> _batchBuffers;
-
-	void Clear()
-	{
-		//_spawns.clear();
-		//_despawns.clear();
-		_moves.clear();
-		_batchBuffers.clear();
-	}
-
-	bool IsEmpty()
-	{
-		return _spawns.empty() && _despawns.empty() && _moves.empty();
-	}
-
-	void AddSpawn(const Protocol::ObjectInfo& obj) { _spawns.push_back(obj); }
-	void AddDespawn(uint64 id) { _despawns.push_back(id); }
-	void AddMove(const Protocol::PosInfo& pos) { _moves.push_back(pos); }
-};
-*/
-
 class Room : public JobQueue
 {
 public:
@@ -78,7 +44,6 @@ public:
 	GameMapRef GetGameMap() { return _gameMap; }
 
 	void Init(int32 mapId);
-	//void InitBaseOffsets();
 
 	void UpdateTick();
 	void UpdateMonster();
@@ -86,17 +51,12 @@ public:
 	void UpdateField();
 	void UpdateSkillSystem();
 
-	void StartHeartbeat();
-	void CheckHeartbeat();
-
 	// TEMP: Command
 	void Spawn(int32 dataId, bool randPos, Vector3 pos, int32 count);
 	void Kill();
 	void KillAll();
 	void KillPlayer();
 	void GetList();
-	void RenderingStart();
-	void RenderingStop();
 	//
 
 	void SpawnInit();
@@ -109,7 +69,9 @@ public:
 	bool LeaveRoom(ObjectRef object);
 	bool LeaveGame(GameSessionRef session);
 
-	bool HandleEnterPlayer(GameSessionRef gameSession);
+	// TEMP Monitoring
+	bool HandleEnterPlayer(GameSessionRef gameSession, bool monitoringRoom = false);
+
 	bool HandleLeavePlayer(GameSessionRef session);
 	void HandleMovePlayer(Protocol::C_MOVE pkt);
 	void HandleSkill(PlayerRef player, Protocol::C_SKILL pkt);
@@ -127,24 +89,14 @@ public:
 	void BroadcastNearby(SendBufferRef sendBuffer, const Vector3& center, uint64 exceptId = 0);
 	void BroadcastMove(const Protocol::PosInfo& posInfo, uint64 exceptId = 0);
 
-	/*
-	InterestDiff UpdateInterestCell(const Vector2Int& oldCenter, const Vector2Int& newCenter);
-	vector<Vector2Int> InterestCells(const Vector2Int& center) const;
-	InterestDiff DiffInterestCells(const vector<Vector2Int>& oldCell, const vector<Vector2Int>& newCell, const Vector2Int& delta) const;
-	*/
-
 	bool IsEmptyImmediatePkt(const Protocol::S_IMMEDIATE_FLUSH& pkt);
 	bool IsEmptyDeferPkt(const Protocol::S_DEFER_FLUSH& pkt);
 
 	void FlushImmediateBroadcast();
 	void FlushDeferBroadcast();
 
-//#ifdef SPAWN_REBUILD
 	void FlushEnterPkt();
 	void RegisterSpawn(ObjectRef object, bool success);
-//#else
-	//void NotifySpawn(ObjectRef object, bool success);
-//#endif
 
 public:
 	void AddRemoveList(ObjectRef object);
@@ -158,7 +110,6 @@ public:
 	SpatialGrid<MonsterRef> _monsterGrid;
 
 	const int32 BROADCAST_RANGE = 20; // 카메라뷰 + 여유분
-	//vector<Vector2Int> _baseOffsets;
 
 public:
 	ObjectManagerRef _objectManager;
@@ -171,8 +122,8 @@ public:
 	unordered_map<uint64, FieldRef> _fields;
 
 public:
-	vector<FlushQueue> _immediateFlushQueue; // C_Packet
-	vector<FlushQueue> _deferFlushQueue; // Room Object Update
+	vector<FlushQueue> _immediateFlushQueue; // Just Enqueue
+	vector<FlushQueue> _deferFlushQueue; // Scatter-Gather
 	SendQueueRef _sendQueue;
 
 	bool _isEnterPlayer = false;
@@ -180,7 +131,6 @@ public:
 
 	vector<PlayerRef> _enterSnapShot;
 	vector<PlayerRef> _nativeSnapShot;
-	//vector<BroadcastGroup> _broadcastQueue;
 
 private:
 	vector<ObjectRef> _removePending;
@@ -198,9 +148,5 @@ public:
 public:
 	RoomDiagnostics _diag;
 
-	int32 _castingCount = 0;
-	int32 _successCount = 0;
-	int32 _actionCount = 0;
-
-	int32 _moveCount = 0;
+	bool MonitoringRoom = false;
 };

@@ -8,15 +8,9 @@ SendQueue::SendQueue(string name) : JobQueue(name)
 
 void SendQueue::SendJob(SendBufferRef sendBuffer, vector<PlayerRef> snapshot, double enqueueTime, bool justEnqueue)
 {
-    //double executeTime = GetTimeMs();
-    //double delayMs = static_cast<double>(executeTime - enqueueTime);
-
     auto room = GetRoom();
     if (room == nullptr)
         return;
-
-    //room->_diag.AddSendDelay(delayMs);
-    //room->_diag.SetSendWorkerInfo(_queueName + " | Thread: " + LThreadName);
 
     if (justEnqueue == true)
     {

@@ -36,17 +36,12 @@ bool RoomManager::Remove(int32 roomId)
 	WRITE_LOCK;
 	return _rooms.erase(roomId) > 0;
 }
-
-RoomRef RoomManager::Find(int32 roomId)
-{
-	WRITE_LOCK;
-	auto it = _rooms.find(roomId);
-	if (it != _rooms.end())
-		return it->second;
-
-	return nullptr;
-}
 */
+
+RoomRef RoomManager::GetRoom(int32 roomId)
+{
+	return _rooms[roomId];
+}
 
 RoomRef RoomManager::FindUsableRoom()
 {
@@ -58,18 +53,4 @@ RoomRef RoomManager::FindUsableRoom()
 	int32 targetIndex = index % _rooms.size();
 
 	return _rooms[targetIndex];
-
-	//return true;
 }
-
-// 현재 Add -> Init -> Timer로 진행중.
-//void RoomManager::UpdateReserveAllRooms()
-//{
-	//for (auto& it : _rooms)
-	//{
-	//	RoomRef room = it.second;
-	//	if (room == nullptr)
-	//		return;
-	//	room->DoAsync(&Room::UpdateTick);
-	//}
-//}

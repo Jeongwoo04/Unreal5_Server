@@ -555,6 +555,7 @@ class C_ENTER_GAME final :
 
   enum : int {
     kPlayerIndexFieldNumber = 1,
+    kRoomIDFieldNumber = 2,
   };
   // uint64 playerIndex = 1;
   void clear_playerindex();
@@ -565,6 +566,19 @@ class C_ENTER_GAME final :
   void _internal_set_playerindex(uint64_t value);
   public:
 
+  // optional int32 roomID = 2;
+  bool has_roomid() const;
+  private:
+  bool _internal_has_roomid() const;
+  public:
+  void clear_roomid();
+  int32_t roomid() const;
+  void set_roomid(int32_t value);
+  private:
+  int32_t _internal_roomid() const;
+  void _internal_set_roomid(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:Protocol.C_ENTER_GAME)
  private:
   class _Internal;
@@ -573,8 +587,10 @@ class C_ENTER_GAME final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
-    uint64_t playerindex_;
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    uint64_t playerindex_;
+    int32_t roomid_;
   };
   union { Impl_ _impl_; };
   friend struct ::TableStruct_Protocol_2eproto;
@@ -4179,6 +4195,34 @@ inline void C_ENTER_GAME::_internal_set_playerindex(uint64_t value) {
 inline void C_ENTER_GAME::set_playerindex(uint64_t value) {
   _internal_set_playerindex(value);
   // @@protoc_insertion_point(field_set:Protocol.C_ENTER_GAME.playerIndex)
+}
+
+// optional int32 roomID = 2;
+inline bool C_ENTER_GAME::_internal_has_roomid() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool C_ENTER_GAME::has_roomid() const {
+  return _internal_has_roomid();
+}
+inline void C_ENTER_GAME::clear_roomid() {
+  _impl_.roomid_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline int32_t C_ENTER_GAME::_internal_roomid() const {
+  return _impl_.roomid_;
+}
+inline int32_t C_ENTER_GAME::roomid() const {
+  // @@protoc_insertion_point(field_get:Protocol.C_ENTER_GAME.roomID)
+  return _internal_roomid();
+}
+inline void C_ENTER_GAME::_internal_set_roomid(int32_t value) {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.roomid_ = value;
+}
+inline void C_ENTER_GAME::set_roomid(int32_t value) {
+  _internal_set_roomid(value);
+  // @@protoc_insertion_point(field_set:Protocol.C_ENTER_GAME.roomID)
 }
 
 // -------------------------------------------------------------------
