@@ -1,9 +1,0 @@
-/Users/jeson/Downloads/DummyClient/ServerCore/bin/Release/netcoreapp3.1/ServerCore.deps.json
-/Users/jeson/Downloads/DummyClient/ServerCore/bin/Release/netcoreapp3.1/ServerCore.dll
-/Users/jeson/Downloads/DummyClient/ServerCore/bin/Release/netcoreapp3.1/ServerCore.pdb
-/Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.GeneratedMSBuildEditorConfig.editorconfig
-/Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.AssemblyInfoInputs.cache
-/Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.AssemblyInfo.cs
-/Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.csproj.CoreCompileInputs.cache
-/Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.dll
-/Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.pdb

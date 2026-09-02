@@ -8,6 +8,28 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Packet\**" />
+    <Compile Remove="protoc-21.12-osx-aarch_64\**" />
+    <Compile Remove="ServerCore\**" />
+    <EmbeddedResource Remove="Packet\**" />
+    <EmbeddedResource Remove="protoc-21.12-osx-aarch_64\**" />
+    <EmbeddedResource Remove="ServerCore\**" />
+    <None Remove="Packet\**" />
+    <None Remove="protoc-21.12-osx-aarch_64\**" />
+    <None Remove="ServerCore\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Program.cs" />
+    <Compile Remove="ServerSession.cs" />
+    <Compile Remove="SessionManager.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="DummyClient.csproj.lscache" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ServerCore\ServerCore.csproj" />
   </ItemGroup>
 

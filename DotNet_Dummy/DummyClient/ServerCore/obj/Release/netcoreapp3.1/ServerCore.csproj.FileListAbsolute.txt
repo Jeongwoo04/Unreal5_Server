@@ -7,13 +7,3 @@
 /Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.csproj.CoreCompileInputs.cache
 /Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.dll
 /Users/jeson/Downloads/DummyClient/ServerCore/obj/Release/netcoreapp3.1/ServerCore.pdb
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\bin\Release\netcoreapp3.1\ServerCore.deps.json
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\bin\Release\netcoreapp3.1\ServerCore.dll
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\bin\Release\netcoreapp3.1\ServerCore.pdb
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\obj\Release\netcoreapp3.1\ServerCore.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\obj\Release\netcoreapp3.1\ServerCore.AssemblyInfoInputs.cache
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\obj\Release\netcoreapp3.1\ServerCore.AssemblyInfo.cs
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\obj\Release\netcoreapp3.1\ServerCore.csproj.CoreCompileInputs.cache
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\obj\Release\netcoreapp3.1\ServerCore.dll
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\obj\Release\netcoreapp3.1\ServerCore.pdb
-C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\ServerCore\obj\Release\netcoreapp3.1\ServerCore.sourcelink.json

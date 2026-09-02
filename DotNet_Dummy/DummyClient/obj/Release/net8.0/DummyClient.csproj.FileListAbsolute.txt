@@ -17,3 +17,12 @@
 /Users/jeson/Downloads/DummyClient/DummyClient/obj/Release/net8.0/DummyClient.pdb
 /Users/jeson/Downloads/DummyClient/DummyClient/obj/Release/net8.0/DummyClient.genruntimeconfig.cache
 /Users/jeson/Downloads/DummyClient/DummyClient/obj/Release/net8.0/ref/DummyClient.dll
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.csproj.AssemblyReference.cache
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.AssemblyInfoInputs.cache
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.AssemblyInfo.cs
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.csproj.CoreCompileInputs.cache
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.sourcelink.json
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.dll
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\refint\DummyClient.dll
+C:\Users\jeson\Desktop\unreal\DotNet_Dummy\DummyClient\obj\Release\net8.0\DummyClient.pdb
