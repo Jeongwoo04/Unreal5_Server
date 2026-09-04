@@ -34,4 +34,4 @@ using namespace std;
 #include "Time.h"
 
 #define USE_OPTIMIZED_SENDBUFFER_CHUNK
-//#define BENCHMARK
+#define BENCHMARK

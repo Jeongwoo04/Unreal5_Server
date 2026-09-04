@@ -20,6 +20,7 @@
 #include "GameSession.h"
 #include "GameMap.h"
 #include "Room.h"
+#include <shared_mutex>
 
 using GameSessionRef = shared_ptr<class GameSession>;
 extern float ServerTickInterval;
@@ -30,10 +31,11 @@ extern float ServerTickInterval;
 
 #define USE_OPTIMIZED_MEMORY_POOLING
 #define USE_OPTIMIZED_SENDBUFFER_CHUNK
-//#define BENCHMARK
+#define BENCHMARK
 
 extern RoomLog GRoomLog;
 extern RoundLog GRoundLog;
+extern std::shared_mutex GLogLock;
 extern atomic<int32> GMonitoringRoomID;
 extern std::mutex GMonitoringMutex;
 extern std::condition_variable GMonitoringCV;

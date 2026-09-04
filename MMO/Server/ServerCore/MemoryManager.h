@@ -21,6 +21,40 @@ public:
     static void Release(void* ptr);
 };
 
+// Control Block Allocator
+// allocate_shared를 사용하면 weak_count 가 남아있을경우
+// 제어블록이 남아 Chunk 내부에서 비워지는게 늦어질 수 있다.
+template<typename T>
+class ControlBlockAllocator
+{
+public:
+    using value_type = T;
+
+    ControlBlockAllocator() = default;
+
+    // _Ref_count_resource_alloc
+    // '내부 제어 블록 구조체(U 타입)' 할당자를 다른 타입으로 복사/변환하는 과정
+    template<typename U>
+    ControlBlockAllocator(const ControlBlockAllocator<U>&) {}
+
+    // 글로벌 Heap 메모리 파편화 완화를 위해 Pool에 제어블록을 위치시키도록
+    // n: 객체의 개수, T는 내부 제어 블록 구조체
+    // ControlBlockAllocator<Object> -> Rebind -> ControlBlockAllocator<제어블록구조체타입>
+    T* allocate(size_t n)
+    {
+        return static_cast<T*>(PoolAllocator::Alloc(static_cast<int32>(n * sizeof(T))));
+    }
+
+    // strong, weak count가 모두 0이 되어 제어 블록 수명이 다했을때 호출 됨
+    // C++ 표준 규격에 따라 반납 포인터와 크기, 2개의 인자를 받아야됨
+    void deallocate(T* ptr, size_t n)
+    {
+        PoolAllocator::Release(ptr);
+    }
+
+    template<typename U> friend class ControlBlockAllocator;
+};
+
 // Type 별 할당기 (placement new / delete 명시적 호출)
 // 메모리 할당 후 메모리 위에 생성자 호출
 template<typename Type, typename... Args>
@@ -138,9 +172,11 @@ public:
 
         auto self = shared_from_this();
 
+        ControlBlockAllocator<Type> controlBlockAlloc;
+
         return std::shared_ptr<Type>(ptr, [self](Type* p) {
             self->Release<Type>(p);
-            });
+            }, controlBlockAlloc);
     }
 
 public:
@@ -179,7 +215,7 @@ public:
                 {
                     uint32 absoluteIdx = (i * 64) + relativeIdx;
 
-                    Type* obj = reinterpret_cast<Type*>(static_cast<BYTE*>(_basePtr) + (absoluteIdx * sizeof(Type)));
+                    Type* obj = reinterpret_cast<Type*>(static_cast<BYTE*>(_basePtr) + (absoluteIdx * _alignSize));
 
                     obj->Update();
 

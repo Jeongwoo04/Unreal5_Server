@@ -136,7 +136,7 @@ struct RoomLog
 
 struct RoundLog
 {
-    int32 round;
+    int32 round = 0;
     unordered_map<string, double> totalRoom;
     int32 IOPending;
     vector<WorkerStats> workers;

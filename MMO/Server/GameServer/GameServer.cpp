@@ -57,8 +57,6 @@ void DoGameWorker()
 			LExecuteJobQueues = 0;
 			LWorkerActiveTime = 0;
 			LTimeSliceExceeded = 0;
-			//LImmediateEmpty = 0;
-			//LDeferEmpty = 0;
 		}
 #endif
 
@@ -140,7 +138,7 @@ void BenchMarksWriter()
 		{
 			cout << "CALCULATE\n";
 			GBenchMarkManager->CalculateData();
-			GBenchMarkManager->WriteCSV();
+			//GBenchMarkManager->WriteCSV();
 			GBenchMarkManager->SetProcessState(ProcessState::COLLECT_ROOM);
 			break;
 		}
@@ -207,6 +205,7 @@ int main()
 		});
 #endif
 	
+	/* TEMP
 	{
 		std::unique_lock<std::mutex> lock(GMonitoringMutex);
 
@@ -215,6 +214,7 @@ int main()
 				return GMonitoringRoomID.load(std::memory_order_acquire) >= 0;
 			});
 	}
+	*/
 
 	this_thread::sleep_for(1s);
 	DoRenderingWorker();

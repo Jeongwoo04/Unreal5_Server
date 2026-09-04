@@ -101,7 +101,7 @@ vector<BenchState> BenchMarkManager::CalculateStates(unordered_map<string, vecto
 
 	if (isTotal)
 	{
-		WRITE_LOCK;
+		std::shared_lock<std::shared_mutex> writeLock(GLogLock);
 		std::swap(GRoundLog.totalRoom, temp);
 	}
 
@@ -184,7 +184,7 @@ void BenchMarkManager::CalculateData()
 	}
 
 	{
-		WRITE_LOCK
+		std::shared_lock<std::shared_mutex> writeLock(GLogLock);
 		std::swap(GRoundLog.workers, temp);
 		GRoundLog.round = _roundCount++;
 	}

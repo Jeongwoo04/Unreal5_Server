@@ -121,11 +121,15 @@ void DoRenderingWorker()
 		// ----------------------------------------------------
 
 		RoomLog roomLog = GRoomLog;
-		
-		if (GRoundLog.round != lastRenderingRound)
+
 		{
-			renderRoundLog = GRoundLog;
-			lastRenderingRound = GRoundLog.round;
+			std::shared_lock<std::shared_mutex> readLock(GLogLock);
+
+			if (GRoundLog.round != lastRenderingRound)
+			{
+				renderRoundLog = GRoundLog;
+				lastRenderingRound = GRoundLog.round;
+			}
 		}
 
 

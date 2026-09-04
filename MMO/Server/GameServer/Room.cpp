@@ -52,7 +52,7 @@ void Room::Init(int32 mapId)
 
 void Room::UpdateTick()
 {
-	if (MonitoringRoom)
+	if (_roomId == 0)
 		_diag.BeginTick();
 
 #ifdef BENCHMARK
@@ -132,7 +132,7 @@ void Room::UpdateTick()
 
 #endif
 
-	if (MonitoringRoom)
+	if (_roomId == 0)
 	{
 		_diag.EndTick();
 		_diag.SendRoomData(_objectManager->CheckPools(), _roomId);
@@ -329,11 +329,13 @@ bool Room::HandleEnterPlayer(GameSessionRef gameSession, bool monitoringRoom)
 		return false;
 	player->SetSession(gameSession);
 
+	/* TEMP
 	if (monitoringRoom)
 	{
 		MonitoringRoom = true;
 		GMonitoringCV.notify_one();
 	}
+	*/
 
 	return EnterRoom(player);
 }
@@ -579,7 +581,7 @@ void Room::FlushImmediateBroadcast()
 	//int32 count = _immediateFlushQueue.size();
 	int32 byteSize = immediateFlushPkt.ByteSizeLong();
 	//_diag.SetImmediateFlushInfo(count, byteSize);
-	if (MonitoringRoom)
+	if (_roomId == 0)
 		_diag.SetImmediateFlushInfo(byteSize);
 
 	if (IsEmptyImmediatePkt(immediateFlushPkt))
@@ -775,7 +777,7 @@ void Room::FlushDeferBroadcast()
 
 	int32 byteSize = existingPkt.ByteSizeLong();
 	//_diag.SetDeferFlushInfo(count, byteSize);
-	if (MonitoringRoom)
+	if (_roomId == 0)
 		_diag.SetDeferFlushInfo(byteSize);
 
 	//Broadcast(sendBuffer);

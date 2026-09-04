@@ -15,6 +15,7 @@ Build/
 Intermediate/
 Saved/
 DerivedDataCache/
+*.tlog
 
 # 프로젝트 자동 생성 파일
 
